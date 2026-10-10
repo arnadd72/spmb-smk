@@ -53,3 +53,5 @@ _archive/**/.env
 _archive/**/storage/
 __pycache__/
 .venv/
+
+/src/generated/prisma

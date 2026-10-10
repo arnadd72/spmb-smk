@@ -1,0 +1,49 @@
+// Skema A0 (PRD v4 20.1): hanya yang dibutuhkan auth admin dan penyimpanan dokumen.
+// Model lain (Pendaftar, Jurusan, ...) ditambahkan di A2 sesuai PRD v4 Bagian 8.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Peran {
+  superadmin
+  panitia
+  konten
+}
+
+model User {
+  id                 BigInt    @id @default(autoincrement())
+  name               String
+  username           String    @unique
+  email              String?   @unique
+  passwordHash       String
+  peran              Peran
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
+/// Percobaan login untuk throttle (5 gagal per username per 15 menit).
+model PercobaanLogin {
+  id        BigInt   @id @default(autoincrement())
+  username  String
+  ip        String?
+  berhasil  Boolean
+  createdAt DateTime @default(now())
+
+  @@index([username, createdAt])
+}
+
+/// Key-value pengaturan sistem. Nilai rahasia (refresh token Drive) disimpan terenkripsi.
+model Pengaturan {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

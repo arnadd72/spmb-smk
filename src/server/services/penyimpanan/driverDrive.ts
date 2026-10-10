@@ -1,0 +1,85 @@
+import { Readable } from "node:stream";
+import type { drive_v3 } from "googleapis";
+import { pecahPath, type PenyimpananDokumen } from "./antarmuka";
+
+const MIME_FOLDER = "application/vnd.google-apps.folder";
+
+/**
+ * Penyimpanan dokumen pendaftar di Google Drive (scope drive.file). File dan folder tidak pernah
+ * dibagikan. Port TypeScript dari GoogleDriveDokumen.php (arsip) dengan perilaku yang sama.
+ */
+export class DriverDrive implements PenyimpananDokumen {
+  private cacheFolder = new Map<string, string>();
+
+  constructor(
+    private readonly drive: drive_v3.Drive,
+    private readonly idFolderRoot: string,
+  ) {}
+
+  async simpan(path: string, isi: Buffer, mime = "application/octet-stream"): Promise<string> {
+    const { folder, nama } = pecahPath(path);
+
+    let induk = this.idFolderRoot;
+    for (const f of folder) induk = await this.pastikanFolder(f, induk);
+
+    const res = await this.drive.files.create({
+      requestBody: { name: nama, parents: [induk] },
+      media: { mimeType: mime, body: Readable.from(isi) },
+      fields: "id",
+    });
+
+    const id = res.data.id;
+    if (!id) throw new Error("Google Drive tidak mengembalikan ID berkas.");
+    return id;
+  }
+
+  async ambilStream(referensi: string): Promise<Readable> {
+    const res = await this.drive.files.get({ fileId: referensi, alt: "media" }, { responseType: "stream" });
+    return res.data as unknown as Readable;
+  }
+
+  async hapus(referensi: string): Promise<void> {
+    await this.drive.files.delete({ fileId: referensi });
+  }
+
+  async ada(referensi: string): Promise<boolean> {
+    try {
+      const res = await this.drive.files.get({ fileId: referensi, fields: "id,trashed" });
+      return !res.data.trashed;
+    } catch (e) {
+      if (kodeGalat(e) === 404) return false;
+      throw e;
+    }
+  }
+
+  private async pastikanFolder(nama: string, induk: string): Promise<string> {
+    const kunci = `${induk}/${nama}`;
+    const tersimpan = this.cacheFolder.get(kunci);
+    if (tersimpan) return tersimpan;
+
+    const namaAman = nama.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const cari = await this.drive.files.list({
+      q: `name = '${namaAman}' and '${induk}' in parents and mimeType = '${MIME_FOLDER}' and trashed = false`,
+      fields: "files(id)",
+      pageSize: 1,
+    });
+
+    let id = cari.data.files?.[0]?.id ?? undefined;
+    if (!id) {
+      const buat = await this.drive.files.create({
+        requestBody: { name: nama, mimeType: MIME_FOLDER, parents: [induk] },
+        fields: "id",
+      });
+      id = buat.data.id ?? undefined;
+    }
+    if (!id) throw new Error("Gagal membuat folder di Google Drive.");
+
+    this.cacheFolder.set(kunci, id);
+    return id;
+  }
+}
+
+function kodeGalat(e: unknown): number | undefined {
+  const k = (e as { code?: number | string; status?: number }).code ?? (e as { status?: number }).status;
+  return typeof k === "number" ? k : Number(k) || undefined;
+}

@@ -87,6 +87,30 @@ Sebelum revisi ini, pengerjaan M0 (fondasi Laravel) sudah ~80% dan M1 (design sy
 
 Instruksi lengkap transisi ada di **Bagian 24**.
 
+### 1.3 Status pengerjaan dan keputusan implementasi (diperbarui tiap milestone)
+
+Bagian ini adalah catatan hidup untuk agen yang melanjutkan. Perbarui di commit yang sama dengan pekerjaannya.
+
+| Milestone | Status | Catatan |
+|---|---|---|
+| Transisi 24.1 (arsip Laravel, pindah ke root) | Selesai 11 Okt 2026 | Commit `2bed102`, `8f039de`. PRD v3.1 disimpan di `docs/arsip/PRD-v3.1.md` karena PRD ini merujuknya |
+| A0 Fondasi v4 | Selesai kecuali uji Drive nyata | Login admin, Prisma 7 + Postgres lokal, sesi JWT, kripto, driver Drive/Supabase-temp, rute OAuth Drive, CI. **Uji unggah-lihat-hapus ke Google Drive sungguhan menunggu kredensial OAuth** (lihat 24.2). Kodenya sudah diuji dengan mock |
+| A1 Design system | Selesai (M1 lama) | Dipindah tanpa perubahan isi |
+| A2 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
+
+Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
+
+1. **Postgres lokal tanpa Docker.** Mesin pengembang tidak punya Docker. `npm run db:start` (`scripts/db-lokal.mjs`) membuat cluster Postgres terpisah di `.local/pgdata` (port 5433, user `spmb`, password dev `spmb_dev`, database `spmb` dan `spmb_test`) memakai binary Postgres milik Laragon (`PG_BIN` bisa diubah). Docker tetap opsional: konfigurasi lama ada di `_archive/infra-docker/`. `.env.example` memakai port 5433 (bukan 5432 seperti contoh 23.7).
+2. **Prisma 7.10.0 (stabil)**, bukan tag `latest` npm (saat ini RC 8.x). Di Prisma 7 URL koneksi ada di `prisma.config.ts`, klien dibangkitkan ke `src/generated/prisma` (tidak di-commit, dibuat oleh `postinstall`), dan klien memakai adapter `@prisma/adapter-pg`.
+3. **`proxy.ts`, bukan `middleware.ts`.** Next.js 16 mengganti namanya. `src/proxy.ts` hanya pengecekan awal (ada cookie atau tidak). Keabsahan token dan peran diperiksa di layout panel dan di setiap route handler lewat `wajibSesiAdmin()`.
+4. **`cacheComponents` dan `partialPrefetching` dimatikan** di `next.config.ts`. Keduanya mewajibkan `<Suspense>` untuk semua akses data dinamis, tidak cocok dengan halaman admin dan wizard. `output: "standalone"` dihapus karena Vercel yang membangun.
+5. **`kripto.ts` di `src/server/services/kripto.ts`** (satu file untuk NIK, hash pencarian, token, dan refresh token Drive). Bagian 7.3 menyebut `penyimpanan/kripto.ts`; yang berlaku adalah lokasi di Bagian 8.
+6. **Sisi klien boleh mengimpor modul validasi murni** (`src/server/validasi`, `src/server/types`) lewat `schema-client.ts` per fitur, sesuai 6.4. Impor lain dari `src/server` dilarang.
+7. **Rute admin dibagi dua grup:** `(admin)/admin/login` tanpa AdminShell, dan `(admin)/admin/(panel)/*` dengan AdminShell dan pengecekan sesi di layout.
+8. **Pembatasan login:** 5 percobaan gagal per username dalam 15 menit (tabel `PercobaanLogin`). Pesan galat sama untuk username salah, password salah, dan akun nonaktif.
+9. **Rute OAuth Drive** (`api/v1/admin/google-drive/{status,hubungkan,callback,putuskan,uji}`) khusus `superadmin`. `state` OAuth disimpan di cookie httpOnly dan dicocokkan di callback. Tanpa `GOOGLE_DRIVE_CLIENT_ID/SECRET`, `hubungkan` menjawab 503 `NOT_CONFIGURED`.
+10. **Skema Prisma A0 hanya** `User`, `PercobaanLogin`, `Pengaturan`. Model lain menyusul di A2 (Bagian 8). Migrasi RLS (7.2) dikerjakan di B0 karena hanya relevan untuk Supabase.
+
 ---
 
 ## 2. Ringkasan Produk

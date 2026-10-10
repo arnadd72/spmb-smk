@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { masukSebagaiSuperadmin } from "./masuk";
 
 // Katalog M1 di 360 dan 1440 px: tanpa gulir horizontal, lolos axe, tangkapan layar di docs/design/.
 async function gulirSampaiBawah(page: Page) {
@@ -17,6 +18,7 @@ for (const lebar of [360, 1440]) {
   test.describe(`${lebar}px`, () => {
     test.beforeEach(async ({ page }) => {
       await page.setViewportSize({ width: lebar, height: 900 });
+      await masukSebagaiSuperadmin(page);
       await page.goto("/admin/_katalog");
       await expect(page.getByRole("heading", { name: "Katalog komponen" })).toBeVisible();
     });

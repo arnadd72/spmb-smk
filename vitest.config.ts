@@ -6,9 +6,12 @@ export default defineConfig({
   plugins: [react()],
   resolve: { alias: { "@": path.resolve(__dirname, "src") } },
   test: {
-    environment: "jsdom",
-    setupFiles: ["./tests/setup.ts"],
+    environment: "jsdom", // test server memakai "// @vitest-environment node"
+    globalSetup: ["./tests/global-setup.ts"],
+    setupFiles: ["./tests/setup-env.ts", "./tests/setup.ts"],
     include: ["src/**/*.test.{ts,tsx}", "tests/**/*.test.{ts,tsx}"],
     exclude: ["tests/e2e/**", "node_modules/**", "_archive/**"],
+    // Test database berbagi satu Postgres: jalankan berkas satu per satu.
+    fileParallelism: false,
   },
 });

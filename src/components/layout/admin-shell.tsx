@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 import { ListIcon, SignOutIcon, XIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
@@ -71,6 +72,13 @@ export function AdminShell({
   nama?: string;
 }) {
   const [buka, setBuka] = useState(false);
+  const router = useRouter();
+
+  async function keluar() {
+    await fetch("/api/v1/admin/logout", { method: "POST", credentials: "include" });
+    router.replace("/admin/login");
+    router.refresh();
+  }
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
@@ -119,6 +127,7 @@ export function AdminShell({
           <p className="ml-auto text-sm font-semibold text-tinta">{nama}</p>
           <button
             type="button"
+            onClick={keluar}
             className="flex min-h-11 items-center gap-2 rounded-kontrol px-3 text-sm font-semibold text-tinta hover:bg-permukaan-alt"
           >
             <SignOutIcon aria-hidden className="size-5" />

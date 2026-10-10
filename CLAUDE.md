@@ -24,7 +24,7 @@ Satu aplikasi Next.js full-stack (Vercel, Prisma, Postgres). Tidak ada lagi Lara
 - `src/app/`: tampilan dan route API (`src/app/api/v1/*`).
 - `src/server/`: SEMUA logic backend (db, auth, actions, services, validasi). Hanya di sini yang boleh bicara
   ke Prisma, Google Drive, Supabase, Vision, Resend.
-- `src/components`, `src/features`, `src/lib`, `src/styles`: sisi klien. Jangan impor dari `src/server`.
+- `src/components`, `src/features`, `src/lib`, `src/styles`: sisi klien. Jangan impor dari `src/server`, kecuali modul validasi murni (`src/server/validasi`, `src/server/types`) lewat `schema-client.ts` per fitur.
   Arah satu jalur: UI -> route handler (`src/app/api`) -> `src/server`. Server Component membaca data lewat
   fungsi `src/server` secara langsung; komponen klien lewat `apiFetch` ke `/api/v1`.
 - `src/server` tidak mengimpor dari `src/app` atau `src/components`. Service tidak tahu soal HTTP.

@@ -51,10 +51,18 @@ const jurusanOpsi = [
   { nilai: "TKR", label: "Teknik Kendaraan Ringan" },
 ];
 
-export function Katalog() {
+type JurusanSeed = {
+  kode: string;
+  nama: string;
+  kuota: number;
+  totalBobot: number;
+  bobot: { mapel: string; kode: string; bobot: number }[];
+};
+
+export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
   const [dialog, setDialog] = useState(false);
   const [langkah, setLangkah] = useState(3);
-  const [jurusan, setJurusan] = useState<string>();
+  const [jurusanDipilih, setJurusanDipilih] = useState<string>();
   const [memuat, setMemuat] = useState(false);
 
   function simulasiMuat() {
@@ -151,7 +159,7 @@ export function Katalog() {
             <Input inputMode="numeric" defaultValue="12345" />
           </Field>
           <Field label="Jurusan pilihan 1" wajib>
-            <Select opsi={jurusanOpsi} nilai={jurusan} onChange={setJurusan} />
+            <Select opsi={jurusanOpsi} nilai={jurusanDipilih} onChange={setJurusanDipilih} />
           </Field>
           <Field label="Nomor HP" bantuan="Opsional.">
             <Input type="tel" inputMode="numeric" disabled defaultValue="081234567890" />
@@ -238,6 +246,38 @@ export function Katalog() {
             <Skeleton className="h-10 w-full" />
           </div>
         </div>
+      </Bagian>
+
+      <Bagian judul="Data referensi (seed)" catatan="Jurusan dan bobot mata pelajaran dari database. Total bobot tiap jurusan harus 1,00.">
+        {jurusan.length === 0 ? (
+          <EmptyState judul="Belum ada data" deskripsi="Jalankan npm run db:seed." />
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2">
+            {jurusan.map((j) => (
+              <Card key={j.kode}>
+                <div className="flex items-baseline justify-between gap-3">
+                  <h3 className="font-display text-3xl font-extrabold text-primer-tua">{j.kode}</h3>
+                  <p className="angka text-sm text-tinta-redup">Kuota {j.kuota}</p>
+                </div>
+                <p className="mt-1 text-sm text-tinta-redup">{j.nama}</p>
+                <table className="mt-3 w-full text-left text-sm">
+                  <tbody>
+                    {j.bobot.map((b) => (
+                      <tr key={b.kode} className="border-b border-garis">
+                        <td className="py-1.5">{b.mapel}</td>
+                        <td className="py-1.5 text-right">{b.bobot.toFixed(2).replace(".", ",")}</td>
+                      </tr>
+                    ))}
+                    <tr>
+                      <td className="py-1.5 font-semibold">Total</td>
+                      <td className="py-1.5 text-right font-semibold">{j.totalBobot.toFixed(2).replace(".", ",")}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </Card>
+            ))}
+          </div>
+        )}
       </Bagian>
 
       <Bagian judul="Motion" catatan="Motion untuk UI. Semua statis bila perangkat meminta kurangi gerak.">

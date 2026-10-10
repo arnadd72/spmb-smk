@@ -1,5 +1,6 @@
-// Skema A0 (PRD v4 20.1): hanya yang dibutuhkan auth admin dan penyimpanan dokumen.
-// Model lain (Pendaftar, Jurusan, ...) ditambahkan di A2 sesuai PRD v4 Bagian 8.
+// Skema lengkap (PRD v4 Bagian 8, kolom Bagian A-D dari PRD v3.1 Lampiran 23.6, docs/arsip/PRD-v3.1.md).
+// Kolom sensitif (nik, noKk, noHp, noWa, noHpOrtu) berisi teks terenkripsi AES-GCM dari
+// src/server/services/kripto.ts, bukan data polos. nikHash dipakai untuk pencarian.
 
 generator client {
   provider = "prisma-client"
@@ -16,6 +17,32 @@ enum Peran {
   konten
 }
 
+enum Sumber {
+  daring
+  luring
+}
+
+enum StatusVerifikasi {
+  pending
+  approved
+  rejected
+  revision
+}
+
+enum StatusNilai {
+  belumDicek
+  sesuai
+  dikoreksi
+}
+
+enum BerkasSinkron {
+  menunggu
+  selesai
+  gagal
+}
+
+// ---------------------------------------------------------------- Akun admin
+
 model User {
   id                 BigInt    @id @default(autoincrement())
   name               String
@@ -28,6 +55,9 @@ model User {
   lastLoginAt        DateTime?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
+
+  diverifikasi Pendaftar[]
+  auditLogs    AuditLog[]
 }
 
 /// Percobaan login untuk throttle (5 gagal per username per 15 menit).
@@ -46,4 +76,327 @@ model Pengaturan {
   key       String   @id
   value     String
   updatedAt DateTime @updatedAt
+}
+
+// ----------------------------------------------------- Jurusan, mapel, bobot
+
+model Jurusan {
+  id           BigInt  @id @default(autoincrement())
+  kode         String  @unique
+  nama         String
+  deskripsi    String?
+  prospekKarir Json?
+  keunggulan   Json?
+  kuota        Int     @default(72)
+  gambar       String?
+  urutan       Int     @default(0)
+  isActive     Boolean @default(true)
+
+  bobot                BobotJurusan[]
+  pendaftarPilihan1    Pendaftar[]    @relation("pilihan1")
+  pendaftarPilihan2    Pendaftar[]    @relation("pilihan2")
+  pendaftarRekomendasi Pendaftar[]    @relation("rekomendasi")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model MataPelajaran {
+  id       BigInt         @id @default(autoincrement())
+  kode     String         @unique
+  nama     String
+  /// Variasi penulisan di rapor untuk pencocokan OCR (array string).
+  alias    Json
+  /// umum | madrasah | mulok
+  kelompok String
+  isActive Boolean        @default(true)
+  urutan   Int
+  bobot    BobotJurusan[]
+}
+
+model BobotJurusan {
+  id              BigInt  @id @default(autoincrement())
+  jurusanId       BigInt
+  mataPelajaranId BigInt
+  bobot           Decimal @db.Decimal(4, 3)
+
+  jurusan       Jurusan       @relation(fields: [jurusanId], references: [id], onDelete: Cascade)
+  mataPelajaran MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+
+  @@unique([jurusanId, mataPelajaranId])
+}
+
+// ------------------------------------------------------------- Wizard (draf)
+
+model PendaftaranDraft {
+  id              String    @id @default(uuid())
+  tokenHash       String    @unique
+  /// Data langkah wizard, dienkripsi di level aplikasi sebelum disimpan (PRD 17).
+  data            Json
+  langkahTerakhir Int       @default(1)
+  /// Path berkas di bucket draf-temp: {akta, kk, rapor: [...], kustom_*}
+  berkas          Json
+  ip              String?
+  userAgent       String?
+  expiresAt       DateTime
+  submittedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  ocrHasil OcrHasil[]
+
+  @@index([expiresAt])
+}
+
+// ----------------------------------------------------------------- Pendaftar
+
+model Pendaftar {
+  id               BigInt           @id @default(autoincrement())
+  nomorPendaftaran String           @unique
+  aksesTokenHash   String           @unique
+  periode          String
+  sumber           Sumber           @default(daring)
+  statusVerifikasi StatusVerifikasi @default(pending)
+  statusNilai      StatusNilai      @default(belumDicek)
+  catatanVerifikasi String?
+  catatanPenolakan  String?
+  diverifikasiOlehId BigInt?
+  diverifikasiAt     DateTime?
+  notifikasiEmailAt  DateTime?
+
+  // ---- Bagian A: data murid dan orang tua
+  namaLengkap     String
+  tempatLahir     String?
+  tanggalLahir    DateTime? @db.Date
+  nisn            String?
+  /// Terenkripsi. Pencarian lewat nikHash.
+  nik             String?
+  nikHash         String?
+  /// Terenkripsi.
+  noKk            String?
+  /// L | P
+  jenisKelamin    String?
+  agama           String?
+  anakKe          Int?
+  jumlahSaudara   Int?
+  asalSekolah     String?
+  tamatTahun      String?
+  noIjazah        String?
+  /// Terenkripsi.
+  noHp            String?
+  /// Terenkripsi.
+  noWa            String?
+  email           String?
+  alamat          String?
+  rt              String?
+  rw              String?
+  desa            String?
+  kecamatan       String?
+  kabupaten       String?
+  propinsi        String?
+  namaAyah        String?
+  ayahTtl         String?
+  ayahPendidikan  String?
+  pekerjaanAyah   String?
+  namaIbu         String?
+  ibuTtl          String?
+  ibuPendidikan   String?
+  pekerjaanIbu    String?
+  alamatOrtu      String?
+  ortuRt          String?
+  ortuRw          String?
+  ortuDesa        String?
+  ortuKecamatan   String?
+  ortuKabupaten   String?
+  ortuPropinsi    String?
+  /// Terenkripsi.
+  noHpOrtu        String?
+  /// Kode 01-05.
+  penghasilan     String?
+  referensiPendaftar String?
+
+  // ---- Bagian B: asal sekolah dan nilai ujian
+  smpKecamatan    String?
+  smpKabupaten    String?
+  smpPropinsi     String?
+  ijazahNomorTahun String?
+  lamaBelajar     String?
+  /// {b_indonesia, b_inggris, matematika, ipa}
+  nilaiUjian      Json?
+
+  // ---- Bagian C: kesehatan
+  golonganDarah   String?
+  tinggiBadan     Int?
+  beratBadan      Int?
+  penyakitPernahDiderita String?
+
+  // ---- Bagian D: hobi dan seragam
+  hobiOlahraga    String?
+  hobiKesenian    String?
+  hobiOrganisasi  String?
+  hobiPrestasi    String?
+  hobiLain        String?
+  ukuranSeragam   String?
+
+  // ---- Nilai rapor dan rekomendasi
+  /// {semester:[1..5], mapel:{kode:{"1":82,...,rata:84.2}}}
+  nilaiRapor           Json
+  /// ocr | ocr_dikoreksi | manual
+  nilaiRaporSumber     String
+  nilaiRaporKoreksi    Json?
+  rekomendasiJurusanId BigInt?
+  rekomendasiSkor      Json
+  rekomendasiVersi     String
+  jurusan1Id           BigInt?
+  jurusan2Id           BigInt?
+
+  // ---- Berkas (Google Drive) dan kustom
+  aktaFileId    String?
+  kkFileId      String?
+  raporFileIds  Json?
+  kustomFileIds Json?
+  driveFolderId String?
+  berkasMeta    Json?
+  berkasSinkron BerkasSinkron @default(menunggu)
+  dataKustom    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  diverifikasiOleh User?    @relation(fields: [diverifikasiOlehId], references: [id])
+  jurusan1         Jurusan? @relation("pilihan1", fields: [jurusan1Id], references: [id])
+  jurusan2         Jurusan? @relation("pilihan2", fields: [jurusan2Id], references: [id])
+  rekomendasi      Jurusan? @relation("rekomendasi", fields: [rekomendasiJurusanId], references: [id])
+  ocrHasil         OcrHasil[]
+
+  @@index([statusVerifikasi])
+  @@index([statusNilai])
+  @@index([jurusan1Id])
+  @@index([periode])
+  @@index([createdAt])
+  @@index([nisn])
+  @@index([nikHash])
+  @@index([namaLengkap])
+}
+
+model OcrHasil {
+  id          BigInt   @id @default(autoincrement())
+  draftId     String?
+  pendaftarId BigInt?
+  /// akta | kk | rapor
+  jenis       String
+  provider    String   @default("google_vision")
+  fields      Json
+  confidence  Json
+  durasiMs    Int
+  sukses      Boolean
+  createdAt   DateTime @default(now())
+
+  draft     PendaftaranDraft? @relation(fields: [draftId], references: [id])
+  pendaftar Pendaftar?        @relation(fields: [pendaftarId], references: [id])
+
+  @@index([createdAt])
+}
+
+// ------------------------------------------------------- Konten dan form builder
+
+model Faq {
+  id         BigInt   @id @default(autoincrement())
+  pertanyaan String
+  jawaban    String
+  /// Array kata kunci untuk pencarian Jaccard (Tanya Panitia).
+  keywords   Json
+  kategori   String?
+  urutan     Int      @default(0)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Berita {
+  id          BigInt    @id @default(autoincrement())
+  judul       String
+  slug        String    @unique
+  /// HTML yang sudah disanitasi di server.
+  isi         String
+  gambar      String?
+  isActive    Boolean   @default(true)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Event {
+  id        BigInt   @id @default(autoincrement())
+  judul     String
+  slug      String   @unique
+  deskripsi String?
+  tanggal   DateTime
+  lokasi    String?
+  gambar    String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Galeri {
+  id        BigInt   @id @default(autoincrement())
+  judul     String?
+  gambar    String
+  urutan    Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model Testimoni {
+  id        BigInt   @id @default(autoincrement())
+  nama      String
+  keterangan String?
+  isi       String
+  foto      String?
+  urutan    Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model FormField {
+  id           BigInt  @id @default(autoincrement())
+  /// Kunci unik: kolom bawaan atau "kustom_{slug}".
+  kunci        String  @unique
+  /// 1-8
+  langkah      Int
+  label        String
+  teksBantuan  String?
+  /// text | number | tel | email | date | textarea | select | radio | checkbox | file | tabel
+  tipe         String
+  /// Array {nilai, label} untuk select/radio.
+  opsi         Json?
+  placeholder  String?
+  nilaiDefault String?
+  tampil       Boolean @default(true)
+  wajib        Boolean @default(false)
+  /// Field bawaan yang tidak bisa disembunyikan atau dibuat opsional (mis. rapor).
+  terkunci     Boolean @default(false)
+  urutan       Int
+  isKustom     Boolean @default(false)
+
+  @@index([langkah, urutan])
+}
+
+model AuditLog {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt?
+  aksi        String
+  entitasTipe String?
+  entitasId   String?
+  dataLama    Json?
+  dataBaru    Json?
+  ip          String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([entitasTipe, entitasId])
 }

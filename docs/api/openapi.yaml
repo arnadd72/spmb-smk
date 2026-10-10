@@ -1,0 +1,284 @@
+openapi: 3.0.3
+info:
+  title: SPMB SMK Ma'arif NU 1 Wangon API
+  version: 0.2.0
+  description: |
+    Kontrak API (PRD v4 Bagian 9). Awal A2: auth admin, Google Drive, dan data referensi.
+    Endpoint lain ditambahkan per milestone. Tipe TypeScript dibangkitkan dari berkas ini
+    (`npm run gen:types`), jangan ditulis tangan.
+servers:
+  - url: /api/v1
+tags:
+  - name: Auth admin
+  - name: Google Drive
+  - name: Referensi
+components:
+  securitySchemes:
+    sesiAdmin:
+      type: apiKey
+      in: cookie
+      name: spmb_admin
+      description: JWT di cookie httpOnly, berlaku 8 jam.
+  schemas:
+    Galat:
+      type: object
+      required: [message, code]
+      properties:
+        message: { type: string, example: Data tidak valid. }
+        code:
+          type: string
+          enum: [VALIDATION_ERROR, UNAUTHENTICATED, INVALID_CREDENTIALS, FORBIDDEN, NOT_FOUND, TOO_MANY_REQUESTS, NOT_CONFIGURED, DRIVE_NOT_CONNECTED, DRIVE_TEST_FAILED, SERVER_ERROR]
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items: { type: string }
+    Peran:
+      type: string
+      enum: [superadmin, panitia, konten]
+    UserAdmin:
+      type: object
+      required: [id, nama, peran]
+      properties:
+        id: { type: string }
+        nama: { type: string }
+        peran: { $ref: '#/components/schemas/Peran' }
+    InputLogin:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, maxLength: 100 }
+        password: { type: string, maxLength: 200 }
+    StatusDrive:
+      type: object
+      required: [terhubung, email, adaKredensial]
+      properties:
+        terhubung: { type: boolean }
+        email: { type: string, nullable: true }
+        adaKredensial: { type: boolean }
+    BobotMapel:
+      type: object
+      required: [mapel, kode, bobot]
+      properties:
+        mapel: { type: string }
+        kode: { type: string }
+        bobot: { type: number }
+    JurusanDenganBobot:
+      type: object
+      required: [kode, nama, kuota, bobot, totalBobot]
+      properties:
+        kode: { type: string, example: AKL }
+        nama: { type: string }
+        kuota: { type: integer }
+        totalBobot: { type: number, example: 1 }
+        bobot:
+          type: array
+          items: { $ref: '#/components/schemas/BobotMapel' }
+    MataPelajaran:
+      type: object
+      required: [kode, nama, kelompok, alias]
+      properties:
+        kode: { type: string }
+        nama: { type: string }
+        kelompok: { type: string, enum: [umum, madrasah, mulok] }
+        alias:
+          type: array
+          items: { type: string }
+  responses:
+    TidakTerautentikasi:
+      description: Tanpa sesi atau sesi tidak sah.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Galat' }
+    Dilarang:
+      description: Peran tidak diizinkan, atau permintaan lintas origin.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Galat' }
+paths:
+  /admin/login:
+    post:
+      tags: [Auth admin]
+      summary: Masuk. Cookie sesi diset bila berhasil.
+      description: Maksimal 5 percobaan gagal per username per 15 menit (429 setelahnya).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/InputLogin' }
+      responses:
+        '200':
+          description: Berhasil.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user:
+                    type: object
+                    required: [id, nama, peran, wajibGantiPassword]
+                    properties:
+                      id: { type: string }
+                      nama: { type: string }
+                      peran: { $ref: '#/components/schemas/Peran' }
+                      wajibGantiPassword: { type: boolean }
+        '401':
+          description: Username atau password salah (pesan sama untuk akun tak dikenal dan nonaktif).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Galat' }
+        '422':
+          description: Input tidak valid.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Galat' }
+        '429':
+          description: Terlalu banyak percobaan gagal.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Galat' }
+  /admin/logout:
+    post:
+      tags: [Auth admin]
+      summary: Keluar. Cookie sesi dihapus.
+      responses:
+        '204': { description: Berhasil. }
+  /admin/me:
+    get:
+      tags: [Auth admin]
+      summary: Pengguna admin yang sedang masuk.
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [user]
+                properties:
+                  user: { $ref: '#/components/schemas/UserAdmin' }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+  /admin/google-drive/status:
+    get:
+      tags: [Google Drive]
+      summary: Status koneksi Google Drive (superadmin).
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/StatusDrive' }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+        '403': { $ref: '#/components/responses/Dilarang' }
+  /admin/google-drive/hubungkan:
+    get:
+      tags: [Google Drive]
+      summary: Mulai OAuth. Mengalihkan ke Google (superadmin).
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '302': { description: Redirect ke layar persetujuan Google. }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+        '403': { $ref: '#/components/responses/Dilarang' }
+        '503':
+          description: Kredensial OAuth belum diisi di environment (NOT_CONFIGURED).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Galat' }
+  /admin/google-drive/callback:
+    get:
+      tags: [Google Drive]
+      summary: Callback OAuth Google. Menyimpan refresh token terenkripsi, lalu redirect ke /admin.
+      security: [{ sesiAdmin: [] }]
+      parameters:
+        - { name: code, in: query, schema: { type: string } }
+        - { name: state, in: query, required: true, schema: { type: string } }
+        - { name: error, in: query, schema: { type: string } }
+      responses:
+        '302': { description: Redirect ke /admin?drive=terhubung atau drive=ditolak. }
+        '403': { $ref: '#/components/responses/Dilarang' }
+  /admin/google-drive/putuskan:
+    post:
+      tags: [Google Drive]
+      summary: Putuskan koneksi Google Drive (superadmin).
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  terhubung: { type: boolean, example: false }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+        '403': { $ref: '#/components/responses/Dilarang' }
+  /admin/google-drive/uji:
+    post:
+      tags: [Google Drive]
+      summary: Uji tulis, baca, dan hapus berkas kecil di Google Drive (superadmin).
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '200':
+          description: Lolos.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok: { type: boolean }
+                  tulis: { type: boolean }
+                  baca: { type: boolean }
+                  hapus: { type: boolean }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+        '403': { $ref: '#/components/responses/Dilarang' }
+        '409':
+          description: Drive belum dihubungkan.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Galat' }
+        '502':
+          description: Uji gagal di sisi Google Drive.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Galat' }
+  /admin/jurusan:
+    get:
+      tags: [Referensi]
+      summary: Jurusan beserta bobot mata pelajaran (panitia, superadmin).
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/JurusanDenganBobot' }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+        '403': { $ref: '#/components/responses/Dilarang' }
+  /admin/mapel:
+    get:
+      tags: [Referensi]
+      summary: Mata pelajaran aktif beserta alias OCR (panitia, superadmin).
+      security: [{ sesiAdmin: [] }]
+      responses:
+        '200':
+          description: OK.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/MataPelajaran' }
+        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
+        '403': { $ref: '#/components/responses/Dilarang' }

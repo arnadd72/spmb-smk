@@ -96,7 +96,8 @@ Bagian ini adalah catatan hidup untuk agen yang melanjutkan. Perbarui di commit 
 | Transisi 24.1 (arsip Laravel, pindah ke root) | Selesai 11 Okt 2026 | Commit `2bed102`, `8f039de`. PRD v3.1 disimpan di `docs/arsip/PRD-v3.1.md` karena PRD ini merujuknya |
 | A0 Fondasi v4 | Selesai kecuali uji Drive nyata | Login admin, Prisma 7 + Postgres lokal, sesi JWT, kripto, driver Drive/Supabase-temp, rute OAuth Drive, CI. **Uji unggah-lihat-hapus ke Google Drive sungguhan menunggu kredensial OAuth** (lihat 24.2). Kodenya sudah diuji dengan mock |
 | A1 Design system | Selesai (M1 lama) | Dipindah tanpa perubahan isi |
-| A2 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
+| A2 Data & auth | Selesai | Semua model Prisma (Bagian 8), seed (4 jurusan, 17 mapel, 19 bobot, 65 field formulir, 6 FAQ), matriks peran (`src/server/auth/peran.ts`), `GET /admin/jurusan` dan `/admin/mapel`, `docs/api/openapi.yaml` + tipe terbangkit `src/types/api.d.ts`. Test otomatis memindai SEMUA rute admin dan memastikan 401 tanpa sesi |
+| A3 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
 
 Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 
@@ -109,7 +110,11 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 7. **Rute admin dibagi dua grup:** `(admin)/admin/login` tanpa AdminShell, dan `(admin)/admin/(panel)/*` dengan AdminShell dan pengecekan sesi di layout.
 8. **Pembatasan login:** 5 percobaan gagal per username dalam 15 menit (tabel `PercobaanLogin`). Pesan galat sama untuk username salah, password salah, dan akun nonaktif.
 9. **Rute OAuth Drive** (`api/v1/admin/google-drive/{status,hubungkan,callback,putuskan,uji}`) khusus `superadmin`. `state` OAuth disimpan di cookie httpOnly dan dicocokkan di callback. Tanpa `GOOGLE_DRIVE_CLIENT_ID/SECRET`, `hubungkan` menjawab 503 `NOT_CONFIGURED`.
-10. **Skema Prisma A0 hanya** `User`, `PercobaanLogin`, `Pengaturan`. Model lain menyusul di A2 (Bagian 8). Migrasi RLS (7.2) dikerjakan di B0 karena hanya relevan untuk Supabase.
+10. **Migrasi RLS (7.2) dikerjakan di B0**, karena hanya relevan untuk Supabase.
+11. **Seed idempoten dan tidak menimpa perubahan panitia** (`prisma/seed-lib.ts`): jurusan, mapel, bobot, dan form field hanya dibuat bila belum ada. FAQ awal hanya dimasukkan bila tabel kosong dan harus ditinjau sekolah (isinya fakta dari PRD, tanpa tanggal).
+12. **Field `alamat` (langkah 5) dan `alamat_ortu` (langkah 6) ditambahkan** ke seed form field. Lampiran 23.3 tidak mencantumkannya padahal kolomnya ada di 23.6. Akta dan KK default opsional (keputusan S5 belum final).
+13. **Indeks `pg_trgm` untuk pencarian nama ditunda ke A6.** A2 memakai indeks biasa pada `namaLengkap`. Cari ekstensi `pg_trgm` di Postgres lokal sebelum A6.
+14. **Kolom sensitif Pendaftar** (`nik`, `noKk`, `noHp`, `noWa`, `noHpOrtu`) bertipe `String` berisi teks terenkripsi; pencarian NIK lewat `nikHash` (HMAC).
 
 ---
 

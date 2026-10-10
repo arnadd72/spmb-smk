@@ -1,10 +1,10 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
-import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { seedFaq, seedFormField, seedReferensi, seedSuperadmin } from "./seed-lib";
 
-// Seed A0: satu superadmin dari ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD. Seed lain (jurusan, mapel,
-// bobot, FAQ, form field) ditambahkan di A2. Idempoten: tidak menimpa password akun yang sudah ada.
+// Seed: superadmin dari ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD, lalu jurusan, mata pelajaran, bobot,
+// field formulir bawaan, dan FAQ awal. Idempoten.
 async function main() {
   const username = process.env.ADMIN_SEED_USERNAME?.trim().toLowerCase();
   const password = process.env.ADMIN_SEED_PASSWORD;
@@ -16,22 +16,14 @@ async function main() {
 
   const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL }) });
   try {
-    const ada = await prisma.user.findUnique({ where: { username } });
-    if (ada) {
-      console.log(`Superadmin "${username}" sudah ada, dilewati.`);
-      return;
-    }
-
-    await prisma.user.create({
-      data: {
-        name: "Super Admin",
-        username,
-        passwordHash: await bcrypt.hash(password, 12),
-        peran: "superadmin",
-        mustChangePassword: true,
-      },
-    });
-    console.log(`Superadmin "${username}" dibuat.`);
+    console.log((await seedSuperadmin(prisma, username, password)) ? `Superadmin "${username}" dibuat.` : `Superadmin "${username}" sudah ada, dilewati.`);
+    await seedReferensi(prisma);
+    await seedFormField(prisma);
+    await seedFaq(prisma);
+    console.log(
+      `Referensi: ${await prisma.jurusan.count()} jurusan, ${await prisma.mataPelajaran.count()} mapel, ` +
+        `${await prisma.bobotJurusan.count()} bobot, ${await prisma.formField.count()} field formulir, ${await prisma.faq.count()} FAQ.`,
+    );
   } finally {
     await prisma.$disconnect();
   }

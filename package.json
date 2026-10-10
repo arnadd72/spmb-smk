@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "format": "prettier --write src",
-    "gen:types": "openapi-typescript ../docs/api/openapi.yaml -o src/types/api.d.ts",
+    "gen:types": "openapi-typescript docs/api/openapi.yaml -o src/types/api.d.ts",
     "postinstall": "prisma generate",
     "db:start": "node scripts/db-lokal.mjs start",
     "db:stop": "node scripts/db-lokal.mjs stop",

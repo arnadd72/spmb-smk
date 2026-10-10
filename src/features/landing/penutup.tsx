@@ -1,38 +1,81 @@
+"use client";
+
+import Image from "next/image";
 import Link from "next/link";
+import { useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Reveal } from "@/components/motion/reveal";
+import { useGsapPublik } from "@/components/motion/use-gsap";
+import { Magnetik } from "./magnetik";
 
 export function Penutup() {
+  const akar = useRef<HTMLElement>(null);
+
+  useGsapPublik(akar, {
+    animasi: ({ gsap, SplitText, akar: el }) => {
+      const judul = el.querySelector<HTMLElement>("[data-judul-penutup]");
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines" }) : null;
+      if (split) {
+        gsap.from(split.chars, {
+          yPercent: 120,
+          duration: 0.9,
+          ease: "expo.out",
+          stagger: 0.02,
+          scrollTrigger: { trigger: judul, start: "top 82%", once: true },
+        });
+      }
+      gsap.from("[data-aksi]", {
+        opacity: 0,
+        y: 24,
+        duration: 0.7,
+        ease: "power3.out",
+        stagger: 0.1,
+        scrollTrigger: { trigger: el.querySelector("[data-aksi]"), start: "top 92%", once: true },
+      });
+      // Lambang besar berputar pelan mengikuti gulir, hanya sebagai latar.
+      gsap.to("[data-lambang-latar]", { rotate: 90, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
+      return () => split?.revert();
+    },
+  });
+
   return (
-    <section aria-labelledby="judul-penutup" className="relative overflow-hidden bg-primer-tua py-20 text-kertas lg:py-28">
-      <div
+    <section ref={akar} aria-labelledby="judul-penutup" className="relative overflow-hidden bg-ink py-20 text-kertas lg:py-28">
+      <Image
+        data-lambang-latar
+        src="/images/sekolah/lambang.png"
+        alt=""
+        width={800}
+        height={800}
         aria-hidden
-        className="pointer-events-none absolute -bottom-40 -left-32 size-[32rem] rounded-full opacity-[0.1]"
-        style={{
-          background: "repeating-conic-gradient(from 0deg, var(--kertas) 0deg 6deg, transparent 6deg 12deg)",
-          maskImage: "radial-gradient(circle, black 30%, transparent 70%)",
-        }}
+        className="pointer-events-none absolute -right-40 top-1/2 size-[34rem] -translate-y-1/2 object-contain opacity-[0.09]"
       />
-      <Reveal className="relative mx-auto max-w-7xl px-4 lg:px-8">
-        <h2 id="judul-penutup" className="max-w-3xl text-4xl font-extrabold sm:text-5xl lg:text-6xl">
-          Siapkan rapor dan akta, pendaftaran siap dimulai.
+      <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
+        <h2
+          id="judul-penutup"
+          data-judul-penutup
+          className="max-w-[14ch] text-[clamp(2.1rem,5.4vw,4.75rem)] font-bold leading-[0.92] tracking-[-0.02em]"
+        >
+          Siapkan rapor dan akta, <span className="text-kuning">mulai</span> hari ini.
         </h2>
-        <p className="mt-5 max-w-xl text-lg text-kertas/85">
+        <p data-aksi className="mt-6 max-w-[46ch] text-base text-kertas/80 lg:text-lg">
           Sudah mendaftar? Masukkan nomor pendaftaran dan tanggal lahir untuk melihat status verifikasi.
         </p>
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link href="/daftar/langkah/1">
-            <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
-              Daftar Sekarang
-            </Button>
-          </Link>
-          <Link href="/cek-status">
-            <Button varian="terang" ukuran="lg" className="w-full sm:w-auto">
-              Cek Status
-            </Button>
-          </Link>
+        <div className="mt-10 flex flex-col gap-3 sm:flex-row">
+          <Magnetik className="sm:inline-block" kekuatan={0.4}>
+            <Link data-aksi href="/daftar/langkah/1" className="block">
+              <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
+                Daftar Sekarang
+              </Button>
+            </Link>
+          </Magnetik>
+          <Magnetik className="sm:inline-block" kekuatan={0.4}>
+            <Link data-aksi href="/cek-status" className="block">
+              <Button varian="terang" ukuran="lg" className="w-full sm:w-auto">
+                Cek Status
+              </Button>
+            </Link>
+          </Magnetik>
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }

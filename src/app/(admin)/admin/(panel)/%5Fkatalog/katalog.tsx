@@ -101,12 +101,12 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
         </ul>
       </Bagian>
 
-      <Bagian judul="Tipografi" catatan="Bricolage Grotesque untuk judul dan angka besar, Plus Jakarta Sans untuk isi.">
+      <Bagian judul="Tipografi" catatan="Clash Display untuk judul dan angka besar, Satoshi untuk isi.">
         <div className="flex flex-col gap-3">
           <p className="font-display text-5xl font-extrabold text-primer-tua sm:text-6xl">AKL MPLB FKK TKR</p>
           <h3 className="text-3xl font-bold">Belajar terampil, tumbuh berakhlak</h3>
           <p className="max-w-2xl text-base leading-relaxed">
-            Isi paragraf memakai Plus Jakarta Sans 16 px dengan tinggi baris 1,5. Pendaftaran dibuka sesuai jadwal gelombang dan
+            Isi paragraf memakai Satoshi 16 px dengan tinggi baris 1,5. Pendaftaran dibuka sesuai jadwal gelombang dan
             ditutup otomatis di luar jadwal.
           </p>
           <p className="text-sm text-tinta-redup">Teks bantuan 14 px, abu hijau.</p>

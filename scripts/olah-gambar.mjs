@@ -10,17 +10,20 @@ const keluar = join(akar, "public", "images", "sekolah");
 mkdirSync(keluar, { recursive: true });
 
 const daftar = [
+  { dari: "osis.jpg", ke: "gedung-siswa.webp", lebar: 1600 },
+  { dari: "mplb.png", ke: "praktik-mplb.webp", lebar: 1600 },
+  { dari: "tkr.png", ke: "praktik-tkr.webp", lebar: 700 }, // sumber 700 px, tidak diperbesar agar tidak buram
   { dari: "istighotsah.jpg", ke: "istighotsah.webp", lebar: 1280 },
-  { dari: "tkr.png", ke: "praktik-tkr.webp", lebar: 1400 }, // diperbesar 2x dari 700 px, tetap kasar tapi dipakai kecil
   { dari: "p5-gelar-karya.jpg", ke: "p5-karya.webp", lebar: 1280 },
-  { dari: "jumat-bersih.jpg", ke: "p5-kostum.webp", lebar: 1400 },
+  { dari: "jumat-bersih.jpg", ke: "p5-kostum.webp", lebar: 700 },
   { dari: "kultum.jpg", ke: "kultum.webp", lebar: 1280 },
+  { dari: "mbg.jpg", ke: "kelas-otkp.webp", lebar: 1280 },
 ];
 
 for (const g of daftar) {
   const info = await sharp(join(masuk, g.dari))
-    .resize({ width: g.lebar, withoutEnlargement: false })
-    .webp({ quality: 82 })
+    .resize({ width: g.lebar, withoutEnlargement: true })
+    .webp({ quality: 86 })
     .toFile(join(keluar, g.ke));
   console.log(g.ke, `${info.width}x${info.height}`, `${Math.round(info.size / 1024)} KB`);
 }

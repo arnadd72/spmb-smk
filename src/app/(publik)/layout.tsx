@@ -1,5 +1,7 @@
 import { Footer } from "@/components/layout/footer";
 import { Navbar } from "@/components/layout/navbar";
+import { Pembuka } from "@/features/landing/pembuka";
+import { SmoothScroll } from "@/features/landing/smooth-scroll";
 
 export default function LayoutPublik({ children }: LayoutProps<"/">) {
   return (
@@ -10,6 +12,8 @@ export default function LayoutPublik({ children }: LayoutProps<"/">) {
       >
         Lewati ke konten
       </a>
+      <Pembuka />
+      <SmoothScroll />
       <Navbar />
       <main id="konten" className="flex-1">
         {children}

@@ -16,6 +16,12 @@
   --kertas-garis: #e9e4d8;
   --tinta: #16201a;
   --emas: #d9a21b;
+  /* Palet landing: warna sekolah (hijau, kuning) ditambah tinta pekat dan dua penyeimbang hangat/sejuk */
+  --ink: #0e1512;
+  --kuning: #f4b400;
+  --jingga: #ff6b35;
+  --mint: #9ae0cc;
+  --hijau-terang: #12b558;
 
   /* Semantik: tema terang (wizard, admin, PDF, email selalu terang) */
   --latar: var(--kertas);
@@ -27,8 +33,8 @@
   --primer: var(--hijau-nu);
   --primer-tinta: #ffffff;
   --primer-tua: var(--hijau-tua);
-  --aksen: var(--emas);
-  --aksen-tinta: #16201a;
+  --aksen: var(--kuning);
+  --aksen-tinta: #0e1512;
   --fokus: #0b5fb3;
 
   /* Status: kontras AA di atas latar kertas */
@@ -79,6 +85,11 @@
   --color-hijau-gelap: var(--hijau-gelap);
   --color-hijau-tua: var(--hijau-tua);
   --color-kertas: var(--kertas);
+  --color-ink: var(--ink);
+  --color-kuning: var(--kuning);
+  --color-jingga: var(--jingga);
+  --color-mint: var(--mint);
+  --color-hijau-terang: var(--hijau-terang);
   --color-sukses: var(--sukses);
   --color-sukses-latar: var(--sukses-latar);
   --color-info: var(--info);
@@ -88,8 +99,8 @@
   --color-bahaya: var(--bahaya);
   --color-bahaya-latar: var(--bahaya-latar);
 
-  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-clash), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
 
   /* Satu sistem radius: 6 px kontrol, 14 px kartu, penuh untuk pil */
   --radius-kontrol: 6px;
@@ -122,7 +133,8 @@
   h4 {
     font-family: var(--font-display);
     line-height: 1.1;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.01em;
+    word-spacing: 0.08em;
     text-wrap: balance;
   }
 
@@ -162,4 +174,16 @@
   to {
     opacity: 1;
   }
+}
+
+/* Cadangan tirai pembuka bila JS tidak jalan: terangkat sendiri setelah 3 detik. */
+@keyframes pembuka-tutup {
+  to {
+    transform: translateY(-100%);
+    visibility: hidden;
+  }
+}
+
+.pembuka {
+  animation: pembuka-tutup 0.6s cubic-bezier(0.7, 0, 0.2, 1) 3.2s forwards;
 }

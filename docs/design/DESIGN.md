@@ -1,7 +1,9 @@
 # Design system SPMB (hasil M1)
 
 Acuan: `docs/PRD.md` Bagian 16. Bila dokumen ini bertentangan dengan PRD, PRD yang menang.
-Arah visual: "Editorial Hijau Pesantren Modern". Hangat, terpercaya, modern. Keterbacaan mengalahkan efek.
+Arah visual: warna sekolah (hijau dan kuning) dengan tinta pekat, mint, dan jingga sebagai penyeimbang; foto warna asli; tipografi tegas. Keterbacaan mengalahkan efek.
+
+> Pembaruan 11 Okt 2026 (permintaan pemilik proyek, dicatat di PRD 1.3 butir 19): font diganti ke Clash Display dan Satoshi, duotone hijau pada foto dihapus, palet diperluas, motion landing dinaikkan. Bagian di bawah yang masih menyebut Bricolage, Plus Jakarta Sans, emas, atau duotone sudah tidak berlaku untuk situs publik.
 
 Katalog hidup: `/admin/_katalog` (hanya di lingkungan lokal, 404 di produksi).
 Tangkapan layar: `docs/design/katalog-360.png` dan `docs/design/katalog-1440.png`.
@@ -19,15 +21,18 @@ Semua token ada di `frontend/src/styles/globals.css`. Komponen memakai nama toke
 | `tinta` / `tinta-redup` | `#16201A` / `#4A5A50` | Teks utama / bantuan |
 | `primer` / `primer-tua` | `#057A3C` / `#03452A` | Tombol utama, judul |
 | `hijau-gelap` | `#0E1F17` | Footer, latar gelap |
-| `aksen` | `#D9A21B` | Emas kunyit, satu elemen penting per layar |
+| `aksen` / `kuning` | `#F4B400` | Kuning sekolah: tombol utama dan sorotan |
+| `ink` | `#0E1512` | Tinta pekat: judul, latar bagian gelap, footer |
+| `mint` | `#9AE0CC` | Latar bagian saran jurusan, aksen sejuk |
+| `jingga` | `#FF6B35` | Penyeimbang hangat (kartu alur) |
 | `sukses`, `info`, `peringatan`, `bahaya` (+ `-latar`) | lihat CSS | Status, kontras AA di atas kertas |
 
 Tema gelap disiapkan lewat atribut `data-tema="gelap"` untuk situs publik. Wizard dan admin tetap terang.
 
 ## Tipografi
 
-- Display: Bricolage Grotesque (`font-display`). Judul, kode jurusan, angka besar.
-- Isi: Plus Jakarta Sans (`font-sans`). Dasar 16 px, tinggi baris 1,5.
+- Display: Clash Display 500/600/700 (`font-display`). Judul, kode jurusan, angka besar. Jarak huruf rapat ringan (-0,01 sampai -0,03 em) dan jarak kata dilonggarkan (0,08 em); jangan lebih rapat dari itu.
+- Isi: Satoshi 400/500/700 (`font-sans`). Dasar 16 px, tinggi baris 1,5.
 - Angka di tabel, skor, dan statistik memakai `tabular-nums` (kelas `angka` atau tag `table`).
 - Dilarang menambah keluarga font ketiga.
 

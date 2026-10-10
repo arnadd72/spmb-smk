@@ -9,8 +9,8 @@ const tautanCepat: Array<[string, string]> = [
 
 export function Footer() {
   return (
-    <footer className="mt-auto bg-hijau-gelap text-kertas">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 py-12 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
+    <footer className="mt-auto bg-ink text-kertas">
+      <div className="mx-auto grid max-w-[100rem] gap-10 px-4 py-12 lg:grid-cols-[1.4fr_1fr_1fr] lg:px-8">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-kertas/70">
             Lembaga Pendidikan Ma&apos;arif NU PCNU Kab. Banyumas
@@ -52,7 +52,7 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-kertas/15">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 text-sm text-kertas/70 lg:px-8">
+        <div className="mx-auto flex max-w-[100rem] items-center justify-between px-4 py-4 text-sm text-kertas/70 lg:px-8">
           <p>SPMB SMK Ma&apos;arif NU 1 Wangon</p>
           <Link href="/admin/login" className="inline-block min-h-11 py-2.5 underline-offset-2 hover:underline">
             Masuk panitia

@@ -1,45 +1,79 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { PlusIcon } from "@phosphor-icons/react";
+import { useGsapPublik } from "@/components/motion/use-gsap";
 import { cn } from "@/lib/cn";
-import type { FaqLanding } from "@/server/actions/ambilLanding";
+import type { FaqLanding as FaqData } from "@/server/actions/ambilLanding";
 
-export function FaqLanding({ faq }: { faq: FaqLanding[] }) {
+export function FaqLanding({ faq }: { faq: FaqData[] }) {
+  const akar = useRef<HTMLElement>(null);
   const [buka, setBuka] = useState<string | null>(null);
   const prefix = useId();
   const kurangiGerak = useReducedMotion();
 
+  useGsapPublik(akar, {
+    animasi: ({ gsap, SplitText, akar: el }) => {
+      const judul = el.querySelector<HTMLElement>("[data-judul-faq]");
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "words", mask: "words" }) : null;
+      if (split) {
+        gsap.from(split.words, {
+          yPercent: 110,
+          duration: 0.8,
+          ease: "expo.out",
+          stagger: 0.06,
+          scrollTrigger: { trigger: judul, start: "top 85%", once: true },
+        });
+      }
+      gsap.from("[data-item-faq]", {
+        opacity: 0,
+        y: 28,
+        duration: 0.7,
+        ease: "power3.out",
+        stagger: 0.07,
+        scrollTrigger: { trigger: el.querySelector("[data-daftar-faq]"), start: "top 82%", once: true },
+      });
+      return () => split?.revert();
+    },
+  });
+
   if (faq.length === 0) return null;
 
   return (
-    <section id="faq" aria-labelledby="judul-faq" className="bg-latar py-20 lg:py-28">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20 lg:px-8">
-        <h2 id="judul-faq" className="text-3xl font-extrabold text-primer-tua sm:text-4xl lg:text-5xl">
+    <section ref={akar} id="faq" aria-labelledby="judul-faq" className="bg-latar py-16 lg:py-24">
+      <div className="mx-auto grid max-w-[100rem] gap-12 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24 lg:px-10">
+        <h2
+          id="judul-faq"
+          data-judul-faq
+          className="max-w-[12ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.96] tracking-[-0.015em] text-ink"
+        >
           Pertanyaan yang sering muncul.
         </h2>
 
-        <ul className="divide-y divide-garis border-y border-garis">
+        <ul data-daftar-faq className="divide-y divide-ink/15 border-y border-ink/15">
           {faq.map((f) => {
             const terbuka = buka === f.id;
             const idJawaban = `${prefix}-${f.id}`;
             return (
-              <li key={f.id}>
+              <li key={f.id} data-item-faq>
                 <h3>
                   <button
                     type="button"
                     aria-expanded={terbuka}
                     aria-controls={idJawaban}
                     onClick={() => setBuka(terbuka ? null : f.id)}
-                    className="flex min-h-14 w-full items-center justify-between gap-4 py-4 text-left text-lg font-bold text-tinta"
+                    className="group flex min-h-16 w-full items-center justify-between gap-4 py-5 text-left font-display text-lg font-semibold text-ink lg:text-xl"
                   >
                     {f.pertanyaan}
-                    <PlusIcon
-                      aria-hidden
-                      weight="bold"
-                      className={cn("size-5 shrink-0 text-primer transition-transform duration-300", terbuka && "rotate-45")}
-                    />
+                    <span
+                      className={cn(
+                        "grid size-10 shrink-0 place-items-center rounded-full transition-colors duration-300",
+                        terbuka ? "bg-kuning" : "bg-ink text-kertas group-hover:bg-kuning group-hover:text-ink",
+                      )}
+                    >
+                      <PlusIcon aria-hidden weight="bold" className={cn("size-5 transition-transform duration-300", terbuka && "rotate-45")} />
+                    </span>
                   </button>
                 </h3>
                 <AnimatePresence initial={false}>
@@ -50,10 +84,10 @@ export function FaqLanding({ faq }: { faq: FaqLanding[] }) {
                       initial={kurangiGerak ? false : { height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}
                       exit={kurangiGerak ? undefined : { height: 0, opacity: 0 }}
-                      transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+                      transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       className="overflow-hidden"
                     >
-                      <p className="pb-5 pr-9 text-tinta-redup">{f.jawaban}</p>
+                      <p className="max-w-[60ch] pb-6 pr-14 text-base text-ink/75">{f.jawaban}</p>
                     </motion.div>
                   )}
                 </AnimatePresence>

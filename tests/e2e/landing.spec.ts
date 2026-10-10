@@ -55,24 +55,21 @@ for (const lebar of [360, 1440]) {
 test.describe("interaksi landing (desktop)", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("program keahlian: gulir mengganti jurusan aktif, tombol kode juga bisa diklik", async ({ page }) => {
+  test("program keahlian: gulir vertikal menggeser panel ke samping (scroll horizontal GSAP)", async ({ page }) => {
     await page.goto("/");
-    await page.waitForTimeout(1500); // GSAP dimuat lazy setelah hidrasi
+    await page.waitForTimeout(1500); // GSAP dan Lenis dimuat lazy setelah hidrasi
 
-    const tab = (kode: string) => page.getByRole("tab", { name: new RegExp(`^${kode}`) });
-    await expect(tab("AKL")).toHaveAttribute("aria-selected", "true");
+    const jalur = page.locator("#jurusan [data-jalur]");
+    const sebelum = await jalur.evaluate((e) => new DOMMatrixReadOnly(getComputedStyle(e).transform).m41);
 
-    // Gulir ke bagian program lalu lewati ruang pin: jurusan aktif harus berubah.
-    await page.locator("#jurusan").scrollIntoViewIfNeeded();
     const atas = await page.locator("#jurusan").evaluate((e) => e.getBoundingClientRect().top + window.scrollY);
-    await page.evaluate((y) => window.scrollTo(0, y), atas + 64 + 900);
-    await page.waitForTimeout(600);
-    await expect(tab("AKL")).toHaveAttribute("aria-selected", "false");
-    await page.screenshot({ path: "docs/design/landing-1440-program.png" });
+    await page.evaluate((y) => window.scrollTo(0, y + 64 + 1400), atas);
+    await page.waitForTimeout(900);
 
-    await tab("TKR").click();
-    await expect(tab("TKR")).toHaveAttribute("aria-selected", "true");
-    await expect(page.getByRole("heading", { name: "Teknik Kendaraan Ringan" })).toBeVisible();
+    const sesudah = await jalur.evaluate((e) => new DOMMatrixReadOnly(getComputedStyle(e).transform).m41);
+    expect(sesudah, "panel harus bergeser ke kiri").toBeLessThan(sebelum - 300);
+    await page.screenshot({ path: "docs/design/landing-1440-program.png" });
+    await expect(page.getByRole("heading", { name: "Teknik Kendaraan Ringan" })).toBeAttached();
   });
 
   test("FAQ: akordeon membuka dan menutup dengan aria-expanded", async ({ page }) => {
@@ -99,3 +96,40 @@ test("prefers-reduced-motion: konten tetap tampil tanpa animasi", async ({ brows
   expect(opasitas).toBe("1");
   await ctx.close();
 });
+
+// Regresi: bagian jurusan pernah terlempar ke bawah layar karena di-pin dua kali (tween kedua memakai ulang
+// scrollTrigger yang punya pin: true). Selama rentang pin, bagian harus menempel di bawah navbar dan
+// minimal satu panel terlihat, di beberapa ukuran laptop umum.
+for (const [lebar, tinggi] of [
+  [1280, 720],
+  [1366, 768],
+  [1536, 864],
+] as const) {
+  test(`jurusan tidak kosong saat digulir di laptop ${lebar}x${tinggi}`, async ({ page }) => {
+    await page.setViewportSize({ width: lebar, height: tinggi });
+    await page.goto("/");
+    await page.waitForTimeout(2200);
+
+    const awal = await page.locator("#jurusan").evaluate((e) => e.getBoundingClientRect().top + window.scrollY);
+    // Panjang rentang pin = padding pin-spacer yang dipasang GSAP; uji di awal, tengah, dan dekat akhir.
+    const panjang = await page.locator("#jurusan").evaluate((e) => parseFloat(getComputedStyle(e.parentElement as HTMLElement).paddingBottom));
+    expect(panjang, "rentang pin terpasang").toBeGreaterThan(1000);
+    for (const offset of [100, Math.round(panjang * 0.4), Math.round(panjang * 0.85)]) {
+      await page.evaluate((y) => window.scrollTo(0, y), awal - 64 + offset);
+      await page.waitForTimeout(500);
+      const r = await page.evaluate(() => {
+        const s = document.querySelector("#jurusan") as HTMLElement;
+        const t = s.getBoundingClientRect();
+        const terlihat = [...s.querySelectorAll("[data-panel]")].some((p) => {
+          const b = p.getBoundingClientRect();
+          return b.right > 40 && b.left < innerWidth - 40;
+        });
+        return { atas: Math.round(t.top), terlihat, geserY: new DOMMatrixReadOnly(getComputedStyle(s).transform).m42 };
+      });
+      expect(r.atas, `bagian jurusan menempel di bawah navbar pada offset ${offset}`).toBeGreaterThanOrEqual(60);
+      expect(r.atas).toBeLessThanOrEqual(70);
+      expect(r.terlihat, `ada panel terlihat pada offset ${offset}`).toBe(true);
+      expect(r.geserY, "tidak ada geseran translateY ekstra (pin ganda)").toBe(0);
+    }
+  });
+}

@@ -2,16 +2,18 @@ import type { ButtonHTMLAttributes } from "react";
 import { SpinnerGapIcon } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/cn";
 
-type Varian = "utama" | "aksen" | "sekunder" | "terang" | "hantu" | "bahaya";
+type Varian = "utama" | "aksen" | "sekunder" | "terang" | "gelap" | "hantu" | "bahaya";
 type Ukuran = "md" | "lg";
 
 const varian: Record<Varian, string> = {
   utama: "bg-primer text-primer-tinta hover:bg-primer-tua",
-  // Emas: hanya satu per layar (PRD 16.2), untuk CTA utama atau sorotan.
+  // Kuning sekolah: untuk CTA utama atau sorotan.
   aksen: "bg-aksen text-aksen-tinta hover:brightness-95",
   sekunder: "border border-primer text-primer-tua bg-transparent hover:bg-permukaan-alt",
   // Tombol sekunder di atas latar hijau gelap.
   terang: "border border-kertas/60 bg-transparent text-kertas hover:bg-kertas/10",
+  // Tombol pekat di atas latar terang.
+  gelap: "bg-ink text-kertas hover:bg-ink/85",
   hantu: "text-primer-tua bg-transparent hover:bg-permukaan-alt",
   bahaya: "bg-bahaya text-white hover:brightness-90",
 };

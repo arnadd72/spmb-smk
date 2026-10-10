@@ -45,6 +45,16 @@ export function useGsapPublik(akar: RefObject<HTMLElement | null>, { animasi, mi
       const mm = gsap.matchMedia();
       mm.add(kondisi, () => animasi({ gsap, ScrollTrigger, SplitText, akar: el }), el);
       revert = () => mm.revert();
+
+      // Beberapa bagian membuat ScrollTrigger (dan pin) secara tidak berurutan karena dimuat async.
+      // Posisi pin harus dihitung setelah semua pin di atasnya terpasang, jadi urutkan lalu segarkan
+      // sekali (debounce lintas komponen).
+      const w = window as unknown as { __segarkanSt?: ReturnType<typeof setTimeout> };
+      if (w.__segarkanSt) clearTimeout(w.__segarkanSt);
+      w.__segarkanSt = setTimeout(() => {
+        ScrollTrigger.sort();
+        ScrollTrigger.refresh();
+      }, 250);
     })();
 
     return () => {

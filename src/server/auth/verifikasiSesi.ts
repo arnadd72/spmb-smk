@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { bacaToken, NAMA_COOKIE_ADMIN, type IsiSesi, type PeranAdmin } from "@/server/auth/sesi";
 import { GalatApi } from "@/server/types/galat";
 
@@ -16,5 +17,16 @@ export async function wajibSesiAdmin(...peranBoleh: PeranAdmin[]): Promise<IsiSe
   const sesi = await ambilSesiAdmin();
   if (!sesi) throw GalatApi.tidakTerautentikasi();
   if (peranBoleh.length > 0 && !peranBoleh.includes(sesi.peran)) throw GalatApi.dilarang();
+  return sesi;
+}
+
+/**
+ * Untuk halaman (Server Component) admin: belum masuk diarahkan ke login, peran tidak cocok diarahkan
+ * ke dashboard. Rute API tetap memakai wajibSesiAdmin yang menjawab 401/403.
+ */
+export async function wajibPeranHalaman(...peranBoleh: PeranAdmin[]): Promise<IsiSesi> {
+  const sesi = await ambilSesiAdmin();
+  if (!sesi) redirect("/admin/login");
+  if (peranBoleh.length > 0 && !peranBoleh.includes(sesi.peran)) redirect("/admin?akses=ditolak");
   return sesi;
 }

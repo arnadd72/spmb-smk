@@ -4,6 +4,7 @@ export type JurusanDenganBobot = {
   kode: string;
   nama: string;
   kuota: number;
+  isActive: boolean;
   bobot: { mapel: string; kode: string; bobot: number }[];
   totalBobot: number;
 };
@@ -21,6 +22,7 @@ export async function ambilJurusanDenganBobot(): Promise<JurusanDenganBobot[]> {
       kode: j.kode,
       nama: j.nama,
       kuota: j.kuota,
+      isActive: j.isActive,
       bobot,
       totalBobot: Math.round(bobot.reduce((a, b) => a + b.bobot, 0) * 1000) / 1000,
     };

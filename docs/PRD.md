@@ -97,7 +97,7 @@ Bagian ini adalah catatan hidup untuk agen yang melanjutkan. Perbarui di commit 
 | A0 Fondasi v4 | Selesai kecuali uji Drive nyata | Login admin, Prisma 7 + Postgres lokal, sesi JWT, kripto, driver Drive/Supabase-temp, rute OAuth Drive, CI. **Uji unggah-lihat-hapus ke Google Drive sungguhan menunggu kredensial OAuth** (lihat 24.2). Kodenya sudah diuji dengan mock |
 | A1 Design system | Selesai (M1 lama) | Dipindah tanpa perubahan isi |
 | A2 Data & auth | Selesai | Semua model Prisma (Bagian 8), seed (4 jurusan, 17 mapel, 19 bobot, 65 field formulir, 6 FAQ), matriks peran (`src/server/auth/peran.ts`), `GET /admin/jurusan` dan `/admin/mapel`, `docs/api/openapi.yaml` + tipe terbangkit `src/types/api.d.ts`. Test otomatis memindai SEMUA rute admin dan memastikan 401 tanpa sesi |
-| A3 Konten & landing | Sebagian | **Landing selesai** (hero, program keahlian pin GSAP, alur daftar, kehidupan sekolah, saran jurusan, FAQ, penutup; uji 360 dan 1440 px, axe, reduced motion). **Belum:** CRUD konten dan jurusan, pengaturan, detail jurusan `/jurusan/[kode]`, berita, revalidasi on-demand |
+| A3 Konten & landing | Hampir selesai | **Selesai:** landing, `/jurusan`, `/jurusan/[kode]`, `/berita`, `/berita/[slug]`, CRUD admin berita/agenda/galeri/testimoni/FAQ, ubah jurusan, pengaturan (termasuk blok Google Drive), revalidasi halaman publik saat konten disimpan. **Belum:** unggah gambar langsung ke Supabase Storage (sementara alamat gambar diisi manual), landing menampilkan berita/agenda/galeri/testimoni dari database, editor bobot (A6), dan endpoint publik JSON `/api/v1/landing`, `/jurusan`, `/berita`, `/faq` (ditambah saat dibutuhkan klien: wizard A4, Tanya Panitia A8) |
 | A4 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
 
 Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
@@ -125,6 +125,9 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
     - **Palet:** hijau NU dipertahankan sebagai warna merek, ditambah tinta pekat `ink`, kuning sekolah `kuning` (menggantikan emas sebagai `aksen`), `mint`, dan `jingga`. Bagian halaman berganti latar (krem, tinta, kuning, mint, hijau) agar tidak monoton hijau.
     - **Foto:** warna asli, tanpa duotone, tanpa overlay hijau. Foto kecil (700 px) tidak diperbesar melebihi ukuran aslinya.
     - **Motion landing (dial naik dari 6 ke 9 dari 10):** gulir halus Lenis (dependensi baru `lenis`, hanya di layout publik) disinkronkan dengan ScrollTrigger; tirai pembuka sekali per sesi; hero dengan SplitText dan foto yang mengembang jadi layar penuh (pin); kalimat yang terbuka kata demi kata saat digulir; satu marquee dengan laju dan kemiringan mengikuti kecepatan gulir; scroll horizontal untuk program keahlian; kartu alur bertumpuk (sticky stack); foto galeri dengan klip dan parallax; hitung naik skor contoh; tombol magnetik; bilah progres gulir. Semua mati bila `prefers-reduced-motion`. Wizard dan admin tetap tenang (dial 2 dan 1).
+
+20. **CRUD konten generik** (`src/server/actions/konten.ts`, `src/app/api/_lib/konten.ts`): satu implementasi untuk berita, event, galeri, testimoni, dan FAQ. HTML berita disanitasi saat disimpan (`sanitize-html`, daftar putih ketat). Slug dibuat dari judul dan tidak berubah saat judul diedit. Setiap buat/ubah/hapus dicatat di audit log. Peran: konten dan superadmin untuk lima entitas itu; jurusan dan pengaturan hanya superadmin. Pengaturan hanya menerima kunci yang dikenal (`SKEMA_PENGATURAN`); kunci rahasia seperti token Drive tidak bisa diubah lewat sini.
+21. **Halaman admin memeriksa peran di server** (`wajibPeranHalaman`): peran tidak cocok diarahkan ke dashboard dengan pesan. Rute API tetap menjawab 401/403.
 
 ---
 

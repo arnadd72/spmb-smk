@@ -1,23 +1,57 @@
 "use client";
 
 // GSAP hanya untuk route publik (PRD 16.5). Jangan impor file ini dari wizard atau admin.
-// Pemanggil wajib memuat komponennya lewat next/dynamic agar GSAP tidak masuk bundle awal.
-import gsap from "gsap";
-import { useGSAP } from "@gsap/react";
-import type { RefObject } from "react";
+// GSAP dimuat lazy lewat import() setelah hidrasi, jadi tidak masuk bundle awal, dan seluruh isi HTML
+// tetap dirender server (SEO). Animasi hanya jalan bila perangkat tidak meminta kurangi gerak.
+import { useEffect, type RefObject } from "react";
 
-export function useGsapPublik(
-  lingkup: RefObject<HTMLElement | null>,
-  animasi: (gsapInstance: typeof gsap) => void,
-  dependensi: unknown[] = [],
-) {
-  useGSAP(
-    () => {
+export type PerkakasGsap = {
+  gsap: typeof import("gsap").default;
+  ScrollTrigger: typeof import("gsap/ScrollTrigger").ScrollTrigger;
+  SplitText: typeof import("gsap/SplitText").SplitText;
+  /** Akar komponen, untuk selector berlingkup. */
+  akar: HTMLElement;
+};
+
+type Opsi = {
+  /** Dijalankan bila prefers-reduced-motion: no-preference. Boleh mengembalikan fungsi pembersih. */
+  animasi: (p: PerkakasGsap) => void | (() => void);
+  /** Lebar minimum (px) agar animasi aktif, mis. 1024 untuk pin desktop. */
+  minLebar?: number;
+};
+
+export function useGsapPublik(akar: RefObject<HTMLElement | null>, { animasi, minLebar }: Opsi) {
+  useEffect(() => {
+    const el = akar.current;
+    if (!el) return;
+
+    let batal = false;
+    let revert: (() => void) | undefined;
+
+    (async () => {
+      const [{ default: gsap }, { ScrollTrigger }, { SplitText }] = await Promise.all([
+        import("gsap"),
+        import("gsap/ScrollTrigger"),
+        import("gsap/SplitText"),
+      ]);
+      if (batal) return;
+      gsap.registerPlugin(ScrollTrigger, SplitText);
+
+      const kondisi = minLebar
+        ? `(prefers-reduced-motion: no-preference) and (min-width: ${minLebar}px)`
+        : "(prefers-reduced-motion: no-preference)";
+
+      // matchMedia otomatis membersihkan animasi dan ScrollTrigger saat kondisi berubah atau di-revert.
       const mm = gsap.matchMedia();
-      // Tanpa preferensi kurangi gerak saja animasi dijalankan.
-      mm.add("(prefers-reduced-motion: no-preference)", () => animasi(gsap));
-      return () => mm.revert();
-    },
-    { scope: lingkup, dependencies: dependensi },
-  );
+      mm.add(kondisi, () => animasi({ gsap, ScrollTrigger, SplitText, akar: el }), el);
+      revert = () => mm.revert();
+    })();
+
+    return () => {
+      batal = true;
+      revert?.();
+    };
+    // Sengaja sekali saat mount: `animasi` dan opsi stabil per komponen.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 }

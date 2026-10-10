@@ -97,7 +97,8 @@ Bagian ini adalah catatan hidup untuk agen yang melanjutkan. Perbarui di commit 
 | A0 Fondasi v4 | Selesai kecuali uji Drive nyata | Login admin, Prisma 7 + Postgres lokal, sesi JWT, kripto, driver Drive/Supabase-temp, rute OAuth Drive, CI. **Uji unggah-lihat-hapus ke Google Drive sungguhan menunggu kredensial OAuth** (lihat 24.2). Kodenya sudah diuji dengan mock |
 | A1 Design system | Selesai (M1 lama) | Dipindah tanpa perubahan isi |
 | A2 Data & auth | Selesai | Semua model Prisma (Bagian 8), seed (4 jurusan, 17 mapel, 19 bobot, 65 field formulir, 6 FAQ), matriks peran (`src/server/auth/peran.ts`), `GET /admin/jurusan` dan `/admin/mapel`, `docs/api/openapi.yaml` + tipe terbangkit `src/types/api.d.ts`. Test otomatis memindai SEMUA rute admin dan memastikan 401 tanpa sesi |
-| A3 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
+| A3 Konten & landing | Sebagian | **Landing selesai** (hero, program keahlian pin GSAP, alur daftar, kehidupan sekolah, saran jurusan, FAQ, penutup; uji 360 dan 1440 px, axe, reduced motion). **Belum:** CRUD konten dan jurusan, pengaturan, detail jurusan `/jurusan/[kode]`, berita, revalidasi on-demand |
+| A4 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
 
 Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 
@@ -115,6 +116,10 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 12. **Field `alamat` (langkah 5) dan `alamat_ortu` (langkah 6) ditambahkan** ke seed form field. Lampiran 23.3 tidak mencantumkannya padahal kolomnya ada di 23.6. Akta dan KK default opsional (keputusan S5 belum final).
 13. **Indeks `pg_trgm` untuk pencarian nama ditunda ke A6.** A2 memakai indeks biasa pada `namaLengkap`. Cari ekstensi `pg_trgm` di Postgres lokal sebelum A6.
 14. **Kolom sensitif Pendaftar** (`nik`, `noKk`, `noHp`, `noWa`, `noHpOrtu`) bertipe `String` berisi teks terenkripsi; pencarian NIK lewat `nikHash` (HMAC).
+15. **Aset foto landing** diambil dari situs sekolah (smkmanu1wangon.sch.id), diolah ke WebP oleh `scripts/olah-gambar.mjs` ke `public/images/sekolah/` (sumber mentah di `.local/aset-mentah`, tidak di-commit). Foto jurusan hanya ada untuk TKR; AKL, MPLB, FKK memakai tipografi kode jurusan sebagai visual (PRD v3.1 16.3) sampai sekolah menyediakan foto. Semua foto diberi perlakuan duotone hijau-kertas (`FotoDuotone`).
+16. **Copy landing bersifat usulan** (keputusan S14 belum final): judul "Belajar terampil, tumbuh berakhlak.", tagline "SMK Pusat Keunggulan" (dari logo resmi), dan keterangan foto. Bagian sambutan kepala sekolah, berita, agenda, dan testimoni disembunyikan sampai datanya ada (nama dan sambutan kepala sekolah belum diketahui).
+17. **Aturan CTA landing:** satu label per maksud ("Daftar Sekarang", "Cek Status"), emas (`aksen`) hanya di hero dan penutup, tombol navbar hijau. Bagian "Saran jurusan" memakai contoh simulasi yang dilabeli jelas, dihitung dengan rumus 12.1 dan bobot 12.3.
+18. **GSAP dimuat lazy** lewat `useGsapPublik` (import() setelah hidrasi) dan hanya di komponen `src/features/landing`. Pin bagian program hanya di layar >= 1024 px dan tanpa reduced motion; tombol kode jurusan tetap bisa diklik di semua kondisi.
 
 ---
 

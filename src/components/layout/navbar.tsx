@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ListIcon, XIcon } from "@phosphor-icons/react";
@@ -27,9 +28,12 @@ export function Navbar() {
   return (
     <header className="sticky top-0 z-30 border-b border-garis bg-latar/95 backdrop-blur-sm">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-4 px-4 lg:px-8">
-        <Link href="/" className="font-display text-lg font-extrabold leading-none text-primer-tua">
-          SMK Ma&apos;arif NU 1 Wangon
-          <span className="block text-xs font-semibold tracking-wide text-tinta-redup">SPMB</span>
+        <Link href="/" className="flex items-center gap-3 font-display text-lg font-extrabold leading-none text-primer-tua">
+          <Image src="/images/sekolah/lambang.png" alt="" width={40} height={40} className="size-10 object-contain" priority />
+          <span>
+            SMK Ma&apos;arif NU 1 Wangon
+            <span className="mt-1 block text-xs font-semibold tracking-wide text-tinta-redup">SPMB</span>
+          </span>
         </Link>
 
         <nav aria-label="Menu utama" className="hidden items-center gap-1 lg:flex">
@@ -46,7 +50,7 @@ export function Navbar() {
 
         <div className="flex items-center gap-2">
           <Link href="/daftar/langkah/1" className="hidden sm:block">
-            <Button varian="aksen">Daftar Sekarang</Button>
+            <Button>Daftar Sekarang</Button>
           </Link>
           <button
             type="button"
@@ -79,7 +83,7 @@ export function Navbar() {
             ))}
           </nav>
           <Link href="/daftar/langkah/1" onClick={() => setBuka(false)} className="mt-6 block">
-            <Button varian="aksen" ukuran="lg" className="w-full">
+            <Button ukuran="lg" className="w-full">
               Daftar Sekarang
             </Button>
           </Link>

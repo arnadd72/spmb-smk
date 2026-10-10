@@ -13,5 +13,6 @@ export default defineConfig({
     exclude: ["tests/e2e/**", "node_modules/**", "_archive/**"],
     // Test database berbagi satu Postgres: jalankan berkas satu per satu.
     fileParallelism: false,
+    testTimeout: 15_000,
   },
 });

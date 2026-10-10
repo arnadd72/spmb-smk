@@ -1,28 +1,34 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+import { AlurDaftar } from "@/features/landing/alur-daftar";
+import { FaqLanding } from "@/features/landing/faq-landing";
+import { Hero } from "@/features/landing/hero";
+import { KehidupanSekolah } from "@/features/landing/kehidupan-sekolah";
+import { Penutup } from "@/features/landing/penutup";
+import { ProgramKeahlian } from "@/features/landing/program-keahlian";
+import { SaranJurusan } from "@/features/landing/saran-jurusan";
+import { ambilDataLanding } from "@/server/actions/ambilLanding";
 
-// Penampung sementara. Landing sesungguhnya dikerjakan di M3 (PRD 10.2, 16.3).
-export default function Beranda() {
+// Landing dirender server dan disegarkan tiap 5 menit (PRD v3.1 10.2). Revalidasi on-demand saat
+// admin menyimpan konten ditambahkan di A3 (revalidatePath).
+export const revalidate = 300;
+
+export const metadata = {
+  title: { absolute: "SPMB SMK Ma'arif NU 1 Wangon | Penerimaan Murid Baru" },
+  description:
+    "Pendaftaran murid baru SMK Ma'arif NU 1 Wangon, Banyumas: AKL, MPLB, FKK, dan TKR. Daftar tanpa akun, unggah rapor, dapatkan saran jurusan.",
+};
+
+export default async function Beranda() {
+  const data = await ambilDataLanding();
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-16 lg:px-8 lg:py-24">
-      <h1 className="max-w-3xl text-4xl font-extrabold text-primer-tua sm:text-5xl lg:text-6xl">
-        Portal SPMB SMK Ma&apos;arif NU 1 Wangon
-      </h1>
-      <p className="mt-5 max-w-xl text-lg text-tinta-redup">
-        Pendaftaran murid baru tanpa akun. Unggah dokumen, isi data, dan terima nomor pendaftaran.
-      </p>
-      <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-        <Link href="/daftar/langkah/1">
-          <Button varian="aksen" ukuran="lg" penuhMobile>
-            Daftar Sekarang
-          </Button>
-        </Link>
-        <Link href="/cek-status">
-          <Button varian="sekunder" ukuran="lg" penuhMobile>
-            Cek Status
-          </Button>
-        </Link>
-      </div>
-    </section>
+    <>
+      <Hero tahunAjaran={data.tahunAjaran} />
+      <ProgramKeahlian jurusan={data.jurusan} />
+      <AlurDaftar />
+      <KehidupanSekolah />
+      <SaranJurusan />
+      <FaqLanding faq={data.faq} />
+      <Penutup />
+    </>
   );
 }

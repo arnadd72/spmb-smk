@@ -1,109 +1,115 @@
-# PRD: Portal SPMB SMK Ma'arif NU 1 Wangon v3
+# PRD: Portal SPMB SMK Ma'arif NU 1 Wangon v4
 
 | | |
 |---|---|
-| **Dokumen** | Product Requirements Document v3.1 |
-| **Revisi v3.1** | Penyimpanan dokumen pendaftar pindah ke Google Drive (akun Google pribadi via OAuth). Lihat Bagian 7.5 |
-| **Menggantikan** | PRD v2.0 (10 Oktober 2026) |
-| **Dasar** | Audit kode v1 (`web_ppdb`, commit `cbed97b`), audit PRD v2, arahan pemilik proyek 10 Oktober 2026 |
-| **Tujuan** | Cetak biru membangun ulang portal SPMB: tanpa login siswa, OCR sebagai satu-satunya fitur cerdas, rekomendasi jurusan dari nilai rapor, desain baru, frontend dan backend terpisah |
+| **Dokumen** | Product Requirements Document v4.0 |
+| **Menggantikan** | PRD v3.1 (10 Oktober 2026) |
+| **Perubahan utama** | Arsitektur dipindah total dari Laravel ke **Next.js full-stack** agar hosting, database, storage, dan OCR bisa hampir sepenuhnya gratis. PDF formulir wajib sama persis dengan template resmi. Urutan kerja dibalik: fitur & tampilan selesai dulu, baru penyiapan layanan produksi |
+| **Dasar** | PRD v3.1, arahan pemilik proyek 11 Oktober 2026, status progres proyek saat ini (Bagian 1.2) |
 | **Bahasa antarmuka** | Bahasa Indonesia |
-| **Status** | Acuan proyek baru. Keputusan yang masih terbuka ditandai **[KEPUTUSAN]** |
+| **Status** | Acuan proyek aktif. Keputusan terbuka ditandai **[KEPUTUSAN]**. Bagian yang terkunci menunggu berkas dari Anda ditandai **[BLOKIR]** |
 
-> **Cara pakai di proyek baru (untuk Claude Code / agen AI)**
-> 1. Simpan file ini sebagai `docs/PRD.md` di root monorepo.
-> 2. Isi `CLAUDE.md` di root dengan: `Baca docs/PRD.md sebelum mengerjakan fitur apa pun. PRD adalah sumber kebenaran fitur, skema data, API, dan aturan desain. Jangan menambah fitur di luar PRD tanpa konfirmasi.`
-> 3. Tambahkan `backend/CLAUDE.md` dan `frontend/CLAUDE.md` yang merujuk Bagian 6 (struktur folder) dan aturan per lapisan.
-> 4. Kerjakan sesuai milestone Bagian 20. Setiap fitur punya kriteria terima yang langsung dijadikan test.
-> 5. Bagian 18 berisi bug v1 dan temuan audit v2. Jangan diulang.
+> **Cara pakai (untuk Claude Code / agen AI apa pun)**
+> 1. File ini adalah `docs/PRD.md` — sumber kebenaran tunggal. Baca seluruhnya sebelum menyentuh kode, termasuk kalau Anda agen baru yang belum pernah melihat proyek ini.
+> 2. Bagian 24 berisi instruksi transisi khusus karena proyek ini baru dipindah dari arsitektur Laravel. Baca itu LEBIH DULU bila ada kode lama di repo.
+> 3. Ikuti roadmap dua fase di Bagian 20. Fase A (fitur & tampilan) dikerjakan dulu, dengan database dan storage LOKAL. Fase B (produksi) baru setelah tim pemilik proyek menyetujui tampilan dan fitur.
+> 4. Bagian 15.1 soal PDF formulir berstatus **[BLOKIR]** sampai `docs/template-formulir.docx` dan `docs/template-formulir.md` tersedia. Kerjakan bagian lain dulu; jangan menebak-nebak isi template.
+> 5. Jangan menambah fitur, library, atau mengubah arsitektur di luar PRD ini tanpa bertanya. Kalau ada keputusan baru, PRD diperbarui dulu baru kode menyusul.
 
 ---
 
 ## Daftar Isi
 
-1. Ringkasan Perubahan v2 ke v3
+1. Ringkasan Perubahan & Status Proyek
 2. Ringkasan Produk
 3. Tujuan & KPI
 4. Ruang Lingkup
 5. Aktor & Hak Akses
 6. Arsitektur, Tech Stack & Struktur Folder
-7. Konfigurasi Supabase
-8. Skema Database
-9. Kontrak API
+7. Database, Storage & Layanan Eksternal
+8. Skema Database (Prisma)
+9. Kontrak API (Route Handlers)
 10. Fitur Publik & Wizard Pendaftaran
-11. Fitur Cerdas: OCR (KK, Akta, Rapor)
+11. OCR: Google Cloud Vision API
 12. Rekomendasi Jurusan dari Nilai Rapor
 13. Panel Admin
 14. Form Builder Dinamis
 15. Dokumen Keluaran (PDF, XLSX, Email)
 16. Arahan Desain & Motion
 17. Keamanan & Privasi
-18. Bug v1 & Temuan Audit PRD v2
+18. Bug v1 & Temuan Audit
 19. Strategi Testing
-20. Milestone
-21. Deployment & Operasional
+20. Roadmap Dua Fase
+21. Deployment (Vercel)
 22. Keputusan & Pertanyaan Terbuka
 23. Lampiran
+24. Instruksi Transisi untuk Claude Code
 
 ---
 
-## 1. Ringkasan Perubahan v2 ke v3
+## 1. Ringkasan Perubahan & Status Proyek
 
-| # | Area | PRD v2 | PRD v3 | Alasan |
+### 1.1 Apa yang berubah dari v3.1
+
+| # | Area | v3.1 | v4 | Alasan |
 |---|---|---|---|---|
-| 1 | Login siswa | Tidak ada (sudah benar) | **Tetap tanpa login.** Pendaftar memakai draf bertoken, token sukses, dan cek status nomor + tanggal lahir | Arahan pemilik |
-| 2 | Fitur cerdas | OCR + rekomendasi minat & nilai + chatbot | **OCR satu-satunya fitur cerdas.** Chatbot menjadi pencarian FAQ biasa (bukan AI) | Arahan pemilik |
-| 3 | Engine OCR | EasyOCR ditetapkan | **Belum ditetapkan.** Arsitektur driver yang bisa ditukar + spike benchmark (Bagian 11.4) | Arahan pemilik |
-| 4 | Rekomendasi | Nilai 60% + minat 30% (+10% kuota), rapor opsional | **Hanya dari nilai rapor yang diunggah** dan dibaca OCR, lalu dikonfirmasi siswa. Minat dihapus. Rapor wajib | Arahan pemilik |
-| 5 | Mata pelajaran | `ipa_biologi`, `ipa_fisika`, `ipa_kimia`, `ips_ekonomi` | **Mengikuti rapor SMP/MTs Kurikulum Merdeka** (IPA dan IPS terpadu) lewat tabel master mapel | Temuan audit: rapor SMP tidak memecah IPA |
-| 6 | Arsitektur | Laravel monolit Blade + Alpine | **Monorepo terpisah:** `backend/` (Laravel API) dan `frontend/` (Next.js + React) + `ocr-service/` | Arahan pemilik + kebutuhan Framer Motion |
-| 7 | Animasi | GSAP saja | **GSAP + Motion (dulu Framer Motion)** dengan pembagian peran jelas | Arahan pemilik |
-| 8 | State wizard | Session Laravel + autosave `localStorage` | **Draf di server** (tabel `pendaftaran_drafts`, token di cookie httpOnly). `localStorage` tidak menyimpan data pribadi | API tanpa session + keamanan perangkat bersama |
-| 9 | Desain | Banyak skill komunitas, arahan umum | **Arah visual konkret** (palet, tipografi, komposisi) + daftar larangan anti AI slop | Arahan pemilik |
-| 10 | Nama | Campur PPDB/SPMB | **SPMB** di seluruh UI. Format nomor menjadi keputusan sekolah | Istilah resmi saat ini |
-| 11 | Penyimpanan dokumen | Supabase Storage bucket privat (Free 1 GB) | **Google Drive akun Google pribadi** via OAuth (15 GB gratis). Konten publik tetap di Supabase Storage. Berkas sementara wizard di disk privat VPS | Hemat biaya: 200-300 pendaftar × 3-5 MB per periode melebihi 1 GB Supabase Free |
+| 1 | Backend | Laravel 13 (API terpisah) | **Dihapus.** Logic backend pindah ke Next.js Route Handlers | Laravel butuh server nyala 24 jam → tidak bisa hosting gratis |
+| 2 | Hosting | VPS + Docker Compose | **Vercel** (push ke git, otomatis deploy) | Gratis (Hobby), tanpa VPS, tanpa Docker di produksi |
+| 3 | Struktur folder | `backend/` dan `frontend/` terpisah penuh (dua aplikasi) | **Satu aplikasi Next.js**, dipisah secara logis: `src/app/` (tampilan + route API), `src/server/` (semua logic backend: db, service, validasi) | Konsekuensi dari satu-aplikasi; lihat 6.1 untuk detail trade-off |
+| 4 | Database | Supabase (dipakai sejak awal lewat Laravel) | Supabase tetap dipakai, tapi **baru disambungkan di Fase B**. Selama Fase A pakai Postgres lokal (Docker, sudah ada) | Prioritas baru: fitur jalan dulu secara lokal |
+| 5 | ORM | Eloquent (Laravel) | **Prisma** | Standar Next.js + Postgres, tipe TypeScript otomatis |
+| 6 | OCR | Driver dipilih lewat spike benchmark (PaddleOCR/EasyOCR/dll, self-hosted) | **Google Cloud Vision API** langsung dari Route Handler | Self-hosted OCR butuh server Python nyala terus → tidak gratis. Vision API gratis 1.000 unit/bulan |
+| 7 | Storage dokumen | Google Drive (OAuth) | **Tetap Google Drive**, klien Node (`googleapis`) menggantikan klien PHP | Sudah diputuskan di v3.1, tetap dipakai |
+| 8 | Storage sementara wizard | Disk lokal privat VPS | **Bucket privat Supabase Storage** (`draf-temp`) | Di serverless, disk tidak persisten antar request. Lihat 7.4 |
+| 9 | Email | SMTP + queue Laravel | **Resend** (API) | Gratis 3.000 email/bulan, tanpa server SMTP sendiri |
+| 10 | Tugas terjadwal | `php artisan schedule:work` tiap jam | **Vercel Cron**, maksimal 1x/hari di paket gratis | Konsekuensi Vercel Hobby; jadwal disesuaikan (20.3) |
+| 11 | PDF formulir | Dibuat meniru formulir kertas (DomPDF) | **Wajib sama persis (100%)** dengan `docs/template-formulir.*` yang akan diberikan pemilik proyek, dibuat dengan menimpa teks di atas PDF template yang terkunci | Permintaan baru pemilik proyek |
+| 12 | Urutan pengerjaan | Fondasi infra dulu (M0), fitur belakangan | **Dibalik.** Semua tampilan & fitur selesai dulu (lokal), baru pasang Supabase/Drive/Vercel produksi | Supaya tim bisa melihat dan mencoba sebelum infra produksi disiapkan |
+| 13 | Validasi | Dua tempat: FormRequest Laravel + Zod frontend | **Satu skema Zod**, dipakai bareng di client dan server | Konsekuensi baik dari satu aplikasi: tidak ada duplikasi aturan validasi |
+
+### 1.2 Status proyek saat ini (dicatat 11 Oktober 2026)
+
+Sebelum revisi ini, pengerjaan M0 (fondasi Laravel) sudah ~80% dan M1 (design system Next.js) **sudah selesai**:
+
+**Yang sudah ada dan statusnya di v4:**
+
+| Pekerjaan lama | Status di v4 |
+|---|---|
+| Struktur monorepo `backend/`+`frontend/`, 4 `CLAUDE.md` | Dirombak. Struktur baru di Bagian 6.4 |
+| Laravel 13 + migrasi RLS + `PenyimpananDokumen` (driver lokal & Google Drive) + OAuth + tabel `pengaturans` + command `spmb:drive-*` + endpoint health | **Diarsipkan**, tidak dipakai lagi. Konsepnya (abstraksi storage, alur OAuth) dipakai ulang sebagai acuan desain saat menulis versi TypeScript-nya |
+| `ocr-service/` FastAPI kosong | **Diarsipkan**, tidak dipakai lagi (OCR pindah ke Vision API langsung dari Next.js) |
+| Docker Compose dev & prod + Nginx | **Diarsipkan** untuk referensi lokal (dev Postgres-nya masih dipakai, lihat 7.1), konfigurasi prod/Nginx tidak relevan lagi karena hosting pindah ke Vercel |
+| CI GitHub Actions (3 proyek) | Ditulis ulang untuk satu proyek Next.js |
+| **Next.js 16: token desain, font, komponen `ui/*`, wrapper motion, layout tiga area, katalog `/admin/_katalog`** | **Dipakai penuh, tidak diulang.** Ini kerja frontend murni, tidak bergantung Laravel. Pindahkan ke struktur folder baru (Bagian 6.4), sisanya tetap |
+| Dokumentasi di `docs/design/` (tangkapan layar 360 & 1440 px, hasil axe) | Tetap dipakai sebagai acuan |
+
+**Kesimpulan:** kerja M1 (design system) nyaris 100% bisa dipakai lagi. Kerja M0 (backend Laravel) jadi referensi konsep saja, kodenya ditulis ulang di TypeScript. Tidak ada yang hilang sia-sia — keputusan arsitektur dari M0 (storage abstraction, alur OAuth Drive) tetap dipakai, hanya bahasanya yang beda.
+
+Instruksi lengkap transisi ada di **Bagian 24**.
 
 ---
 
 ## 2. Ringkasan Produk
 
-Portal SPMB (Sistem Penerimaan Murid Baru) adalah situs pendaftaran daring SMK Ma'arif NU 1 Wangon, Banyumas, Jawa Tengah. Isinya:
+*(Tidak berubah dari v3.1.)* Portal SPMB (Sistem Penerimaan Murid Baru) adalah situs pendaftaran daring SMK Ma'arif NU 1 Wangon, Banyumas, Jawa Tengah, berisi:
 
 1. **Situs informasi sekolah**: profil, program keahlian, berita, agenda, galeri, testimoni alumni, FAQ.
-2. **Wizard pendaftaran 8 langkah tanpa login**, mengikuti formulir kertas resmi (Bagian A-D). OCR membaca Akta, KK, dan **rapor**, lalu nilai rapor dipakai untuk rekomendasi jurusan.
+2. **Wizard pendaftaran 8 langkah tanpa login**, mengikuti formulir kertas resmi. OCR membaca Akta, KK, dan rapor; nilai rapor dipakai untuk rekomendasi jurusan. Hasil akhir: nomor pendaftaran, halaman sukses bertoken, dan **PDF formulir yang harus identik dengan formulir kertas resmi** (Bagian 15.1).
 3. **Panel admin panitia**: dashboard, verifikasi berkas dan nilai, data pendaftar, kuota, konten, form builder, pengaturan, ekspor.
 
-Identitas sekolah (kop surat dan footer):
-
-- LEMBAGA PENDIDIKAN MA'ARIF NU PCNU KAB. BANYUMAS
-- SMK MA'ARIF NU 1 WANGON
-- Jl. Karangjengkol RT.02/RW.04 Wangon, Banyumas 53176
-- Telepon (0281) 513425 · smk_maarifnu1wgn@yahoo.co.id · www.smkmanu1wangon.sch.id
-
-Program keahlian:
-
-| Kode | Nama | Kuota default |
-|---|---|---|
-| AKL | Akuntansi dan Keuangan Lembaga | 72 |
-| MPLB | Manajemen Perkantoran dan Layanan Bisnis | 72 |
-| FKK | Farmasi Klinis dan Komunitas (formulir kertas: "LP. Kefarmasian Klinis dan Komunitas") **[KEPUTUSAN]** | 72 |
-| TKR | Teknik Kendaraan Ringan | 108 |
+Identitas sekolah dan program keahlian sama seperti v3.1 (lihat Lampiran 23.1).
 
 ---
 
 ## 3. Tujuan & KPI
 
+Sama seperti v3.1, dengan tambahan:
+
 | # | Tujuan | KPI |
 |---|---|---|
-| 1 | Daftar cepat dari HP | Median waktu isi wizard ≤ 12 menit di Android kelas menengah |
-| 2 | Kurangi salah ketik data kependudukan | ≥ 85% field Akta/KK berstatus HIGH terisi benar (sampel 30 dokumen) |
-| 3 | Nilai rapor terbaca otomatis | ≥ 90% nilai mapel terbaca benar dari rapor PDF digital, ≥ 75% dari foto rapor (sampel 30) |
-| 4 | Rekomendasi bisa dijelaskan | 100% rekomendasi menampilkan rincian kontribusi tiap mapel |
-| 5 | Data panitia terpusat | Cari & filter 2.000 pendaftar ≤ 2 detik |
-| 6 | Dokumen pribadi aman | 0 berkas KK/Akta/Rapor bisa diakses tanpa login admin (test otomatis + manual) |
-| 7 | Formulir resmi otomatis | PDF identik dengan formulir kertas (kop, Bagian A-D, 2 lembar tanda terima) |
-| 8 | Konten & formulir dikelola sendiri | Panitia mengubah konten dan isian formulir tanpa developer |
-| 9 | Performa & aksesibilitas | LCP < 2,5 dtk di 4G, CLS < 0,1, INP < 200 ms, Lighthouse a11y ≥ 95 |
+| 1-9 | *(lihat v3.1, tidak berubah: kecepatan wizard, akurasi OCR, rekomendasi bisa dijelaskan, performa, dll.)* | |
+| 10 | **PDF formulir identik dengan template** | Perbandingan visual piksel-per-piksel (overlay) antara PDF hasil sistem dan `docs/template-formulir.*` menunjukkan 0 pergeseran elemen tetap (kop, garis, label) |
+| 11 | **Biaya operasional minimal** | Total biaya bulanan di luar musim pendaftaran: Rp 0. Saat musim pendaftaran ramai: < Rp 50.000/bulan (potensi kelebihan kuota gratis Vision API) |
 
 ---
 
@@ -111,1226 +117,707 @@ Program keahlian:
 
 ### 4.1 Masuk lingkup
 
-- Seluruh fitur publik dan admin di Bagian 10-15.
-- OCR Akta, KK, dan rapor dengan engine yang bisa ditukar.
-- Rekomendasi jurusan berbasis bobot nilai rapor per jurusan (aturan transparan, bukan machine learning).
-- Pencarian FAQ berbasis kata kunci (tanpa AI).
-- PDF formulir, rekap PDF/XLSX, email kode pendaftaran.
-- Form builder dinamis.
-- Penyimpanan dokumen pendaftar di Google Drive (Bagian 7.5).
+Sama seperti v3.1 Bagian 4.1, dengan catatan: metode sistem cerdas **hanya OCR** (tanpa chatbot AI, tanpa SPK/ML), sesuai v3.1.
 
-### 4.2 Di luar lingkup v3
+### 4.2 Di luar lingkup v4
 
-- **Login / akun siswa** (termasuk login Google).
-- Tes minat & bakat, chatbot AI, metode SPK lain (SAW/TOPSIS/AHP) dan machine learning. Bisa masuk fase berikutnya; arsitektur rekomendasi dibuat sebagai service agar mudah diganti.
-- Pembayaran daring.
-- Integrasi Dapodik / verifikasi NISN otomatis.
-- Notifikasi WhatsApp otomatis via API.
-- Multi-sekolah, aplikasi mobile native.
+Sama seperti v3.1 Bagian 4.2 (tanpa login siswa, tanpa pembayaran daring, tanpa integrasi Dapodik, dst), ditambah:
+
+- **Self-hosted OCR engine.** Tidak ada lagi spike benchmark PaddleOCR/EasyOCR/Tesseract — sudah diputuskan pakai Google Cloud Vision API (Bagian 11).
+- **VPS/Docker di produksi.** Deploy hanya lewat Vercel.
 
 ---
 
 ## 5. Aktor & Hak Akses
 
-| Aktor | Deskripsi | Hak akses |
-|---|---|---|
-| Pengunjung | Calon siswa / orang tua, **tanpa akun** | Lihat situs, isi wizard (draf bertoken), cek status |
-| Pendaftar | Sudah submit, **tanpa akun** | Halaman sukses & PDF formulir lewat token, cek status (nomor + tanggal lahir) |
-| Panitia (`panitia`) | Petugas SPMB | Dashboard, data pendaftar, verifikasi berkas & nilai, edit, input manual, ekspor, kuota |
-| Admin konten (`konten`) | Operator situs | CRUD berita, agenda, galeri, testimoni, FAQ |
-| Super admin (`superadmin`) | Ketua panitia / IT | Semua hak + pengaturan, form builder, mapel & bobot jurusan, akun admin, audit log |
-
-Semua endpoint `/api/v1/admin/*` wajib terautentikasi (Sanctum) dan dicek peran lewat Policy/Gate.
+Sama seperti v3.1 Bagian 5. Mekanisme autentikasi berubah (Bagian 7.5 dan 17), tapi peran (superadmin/panitia/konten) dan cakupan aksesnya tidak berubah.
 
 ---
 
 ## 6. Arsitektur, Tech Stack & Struktur Folder
 
-### 6.1 Jawaban: Laravel + Framer Motion + GSAP
+### 6.1 Keputusan: satu aplikasi Next.js, backend lewat Route Handlers
 
-- **GSAP** tidak terikat framework. Bisa dipakai di Blade maupun React. Sejak 2025 seluruh plugin GSAP (ScrollTrigger, SplitText, dll.) gratis untuk penggunaan umum.
-- **Framer Motion** (sekarang bernama **Motion**, paket `motion`, impor `motion/react`) adalah library **React**. Komponen `<motion.div>`, `AnimatePresence`, dan layout animation tidak bisa dipakai di Blade murni. Motion punya versi JavaScript vanilla, tapi fitur unggulannya ada di React.
-- Karena itu v3 memisahkan **frontend React (Next.js)** dari **backend Laravel (API)**. Keduanya bisa dipakai berdampingan, sekaligus memenuhi keinginan struktur folder yang terpisah.
+**Kenapa Laravel dibuang:** Laravel adalah server PHP yang harus menyala terus-menerus (PHP-FPM). Tidak ada cara menjalankannya gratis secara andal (lihat diskusi hosting gratis sebelumnya — Render free tier tidur saat idle, Oracle Always Free sering kehabisan slot dan bisa ditarik kembali kalau idle). Vercel, sebaliknya, menjalankan Next.js sebagai fungsi serverless yang hanya aktif saat ada request, dan paket gratisnya genuinely cukup untuk trafik sekolah ini.
 
-Alternatif yang dipertimbangkan (dicatat di `docs/adr/0001-arsitektur.md`):
+**Konsekuensi yang perlu disadari:** permintaan awal proyek ini ("frontend dan backend dipisah foldernya") tadinya berarti dua aplikasi terpisah yang bisa di-deploy sendiri-sendiri. Dengan satu aplikasi Next.js, itu tidak lagi berlaku secara infrastruktur — hanya ada satu proses yang di-deploy. **Pemisahan tetap dijaga secara logis** lewat struktur folder (6.4): kode tampilan (`src/app`) tidak pernah mengimpor langsung dari kode database/service (`src/server`) kecuali lewat route handler atau server action yang jelas batasnya. Ini trade-off yang disadari, bukan diabaikan diam-diam.
 
-| Opsi | Kelebihan | Kekurangan | Putusan |
-|---|---|---|---|
-| A. Laravel API + Next.js (terpisah) | Folder benar-benar terpisah, React penuh (Motion + GSAP), SSR untuk SEO landing, ekosistem komponen luas | Dua aplikasi untuk di-deploy, perlu konfigurasi auth SPA | **Dipilih** |
-| B. Laravel + Inertia.js + React | Satu aplikasi, auth sederhana | Frontend tetap di dalam `backend/resources/js`, tidak terpisah | Cadangan bila tim kecil kesulitan deploy |
-| C. Laravel Blade + Alpine (v2) | Paling sederhana | Tidak bisa Framer Motion, CSS v1 sulit dirawat | Ditolak |
+**Alternatif yang dipertimbangkan dan ditolak:**
+
+| Opsi | Kenapa ditolak |
+|---|---|
+| Laravel + VPS berbayar murah | Bukan "hampir gratis" sesuai permintaan terbaru. Tetap jadi opsi cadangan bila Vercel/Supabase/Vision API ternyata tidak cukup saat produksi (lihat 22, D5) |
+| Next.js frontend + Laravel di Render/Railway free | Render free tidur saat idle (bikin OCR & wizard lambat/timeout), Railway sudah tidak gratis |
+| Full Supabase (pakai Edge Functions sebagai backend, bukan Next.js API) | Edge Functions (Deno) punya ekosistem library lebih kecil dari Node, dan tim lebih familiar dengan Next.js penuh. Next.js Route Handlers dipilih karena satu bahasa (TypeScript) dari ujung ke ujung |
 
 ### 6.2 Diagram arsitektur
 
 ```
-                      Browser (HP / Laptop)
-                               │ HTTPS, satu domain: spmb.smkmanu1wangon.sch.id
-                      ┌────────▼─────────┐
-                      │      Nginx       │
-                      │  /api/*, /sanctum/*  ──► Laravel (PHP-FPM)
-                      │  selain itu          ──► Next.js (Node, standalone)
-                      └──────────────────┘
-  ┌───────────────────────────┐        ┌──────────────────────────────────┐
-  │ frontend/ (Next.js)       │ fetch  │ backend/ (Laravel 13, API only)  │
-  │ - Landing SSG/ISR (SEO)   │──────► │ - REST /api/v1, Sanctum (admin)  │
-  │ - Wizard (client)         │        │ - Draf wizard, validasi, submit  │
-  │ - Panel admin (client)    │        │ - Rekomendasi, PDF, XLSX, Mail   │
-  │ - Motion + GSAP           │        │ - Proxy lihat dokumen, audit log │
-  └───────────────────────────┘        │ - Temp wizard: disk privat VPS   │
-                                       └──┬─────────┬─────────┬────────┬──┘
-                               pgsql SSL  │   S3 API│  Drive  │   HTTP │ + token
-                                          │         │  API v3 │ (OAuth)│
-                           ┌──────────────▼┐ ┌──────▼──────┐ ┌▼───────▼──┐ ┌──────────────────┐
-                           │ Supabase      │ │ Supabase    │ │ Google    │ │ ocr-service/     │
-                           │ PostgreSQL    │ │ Storage     │ │ Drive     │ │ FastAPI + driver │
-                           │ RLS ON        │ │ konten      │ │ dokumen   │ │ engine terpilih  │
-                           │               │ │ publik      │ │ pendaftar │ │                  │
-                           └───────────────┘ └─────────────┘ └───────────┘ └──────────────────┘
-```
+                           Browser (HP / Laptop)
+                                    │ HTTPS
+                                    ▼
+                    ┌───────────────────────────────┐
+                    │   Vercel (Next.js, satu app)   │
+                    │                                 │
+                    │  src/app/(publik)   → halaman   │
+                    │  src/app/(daftar)   → wizard     │
+                    │  src/app/(admin)    → panel admin│
+                    │  src/app/api/v1/*   → Route      │
+                    │                       Handlers   │
+                    │  src/server/*       → db, service,│
+                    │                       validasi    │
+                    └───┬──────────┬──────────┬────────┘
+                        │          │          │
+            Prisma/pgSSL│   Drive  │   Vision │  Resend API
+                        │   API    │   API    │
+            ┌───────────▼┐ ┌───────▼─┐ ┌──────▼───┐
+            │  Supabase   │ │ Google  │ │  Google  │
+            │  Postgres   │ │ Drive   │ │  Cloud   │
+            │  (RLS ON)   │ │(dokumen)│ │  Vision  │
+            └─────────────┘ └─────────┘ │  (OCR)   │
+                        │                └──────────┘
+            ┌───────────▼───────┐
+            │ Supabase Storage   │
+            │ konten-publik      │
+            │ draf-temp (privat) │
+            └────────────────────┘
 
-Catatan diagram: panah ke ocr-service adalah HTTP internal dengan token; panah ke Google Drive memakai OAuth akun Google yang dihubungkan admin.
+Vercel Cron (1x/hari) → route /api/v1/cron/* → bersih draf kedaluwarsa,
+                          retry upload Drive gagal, ringkasan email
+```
 
 Prinsip:
 
-- **Satu domain** (Nginx membagi path) sehingga cookie Sanctum tetap first-party dan tidak perlu CORS lintas domain.
-- Laravel satu-satunya klien database dan storage. Browser tidak pernah memegang kunci Supabase maupun token Google.
-- Dokumen siswa tidak pernah punya URL publik. File di Google Drive tidak dibagikan ke siapa pun; admin melihatnya lewat proxy Laravel.
-- Kegagalan layanan sekunder (OCR, Drive, email) tidak menggagalkan pendaftaran. Selalu ada jalur isi manual.
-- Validasi otoritatif ada di backend. Validasi frontend hanya untuk kenyamanan.
+- **Satu origin.** Tampilan dan API berada di domain yang sama, jadi cookie sesi admin tetap first-party, tanpa CORS.
+- **`src/server` adalah satu-satunya yang bicara ke Prisma, Drive API, dan Vision API.** Komponen UI tidak pernah memanggil layanan eksternal langsung.
+- **Dokumen siswa tidak pernah punya URL publik** — sama seperti v3.1, hanya klien Node yang berbeda.
+- **Validasi otoritatif selalu di server** (dalam route handler), meski skema Zod yang sama dipakai juga di client untuk UX instan.
 
 ### 6.3 Tech stack
 
-Versi: pakai rilis stabil terbaru saat M0, lalu kunci di `composer.lock` dan `package-lock.json`.
-
 | Lapisan | Teknologi | Catatan |
 |---|---|---|
-| Backend | Laravel 13, PHP 8.3+ | Mode API (`php artisan install:api`) |
-| Auth admin | Laravel Sanctum (SPA cookie) | Siswa tidak login |
-| Database | Supabase PostgreSQL (driver `pgsql`) | Bagian 7 |
-| Storage dokumen pendaftar | **Google Drive API v3** (`google/apiclient`), OAuth akun Google pribadi, scope `drive.file` | Bagian 7.5 |
-| Storage konten publik | Supabase Storage via driver `s3` (`league/flysystem-aws-s3-v3`) | Bucket `konten-publik` |
-| Storage sementara | Disk lokal privat Laravel (`storage/app/private`) | Berkas wizard sebelum submit |
-| PDF | barryvdh/laravel-dompdf | Template Blade di backend (khusus PDF & email) |
-| Excel | maatwebsite/excel | |
-| Queue & cache | driver `database` | Email, unggah ke Google Drive, pembersihan temp |
-| Frontend | Next.js (App Router) + React + TypeScript | `output: 'standalone'` |
-| Styling | Tailwind CSS v4 | Token di `@theme` |
-| Komponen dasar | Radix UI primitives (headless) | Gaya sendiri. Dilarang memakai tampilan default shadcn/ui apa adanya |
-| Animasi UI | Motion (`motion/react`) | Transisi langkah, layout, micro-interaction |
-| Animasi landing | GSAP + ScrollTrigger (+ SplitText) via `@gsap/react` | Hanya halaman publik |
-| Form | React Hook Form + Zod | Skema dibangun dari form schema API |
-| Data fetching | TanStack Query (admin & wizard) | Landing pakai fetch server component |
-| Ikon | Phosphor Icons (`@phosphor-icons/react`) | Satu keluarga ikon |
-| Grafik admin | Recharts atau Chart.js (pilih satu di M1) | |
-| OCR | `ocr-service/` Python FastAPI, engine via driver | Bagian 11 |
-| Testing | PHPUnit/Pest (backend), Vitest + Testing Library (frontend), Playwright (E2E), pytest (OCR) | |
-| Kualitas | Laravel Pint, Larastan; ESLint + Prettier; Ruff | |
+| Framework | Next.js 16 (App Router), React, TypeScript | Sudah berjalan dari M1 lama |
+| Hosting | Vercel (Hobby di awal, upgrade ke Pro kalau trafik/berbayar jadi relevan) | `maxDuration` route OCR/submit diset hingga 60-180 dtk (Hobby mengizinkan hingga 300 dtk dengan fluid compute) |
+| Database | Supabase PostgreSQL | Lokal (Docker) di Fase A, Supabase asli di Fase B |
+| ORM | **Prisma** | `DATABASE_URL` lewat Supabase connection pooler (transaction mode) untuk query, `directUrl` khusus migrasi |
+| Validasi | **Zod**, satu skema dipakai di client (React Hook Form) dan server (route handler) | Hilangkan duplikasi aturan |
+| Styling | Tailwind CSS v4 | Sudah ada dari M1 |
+| Komponen dasar | Radix UI primitives | Sudah ada dari M1 |
+| Animasi UI | Motion (`motion/react`) | Sudah ada dari M1 |
+| Animasi landing | GSAP + ScrollTrigger | Sudah ada dari M1 |
+| Auth admin | Sesi custom: JWT (`jose`) di cookie httpOnly, hash password `bcryptjs` | Lebih ringan dari NextAuth untuk kasus login-sederhana 3 peran |
+| OCR | **Google Cloud Vision API** (`@google-cloud/vision` atau REST) | Bagian 11 |
+| Storage dokumen pendaftar | **Google Drive API** (`googleapis`), OAuth | Bagian 7.3 |
+| Storage sementara wizard & konten publik | **Supabase Storage** (`@supabase/supabase-js`) | Bagian 7.4 |
+| Email | **Resend** (`resend` npm) | Bagian 15.4 |
+| PDF | **`pdf-lib`** menimpa teks di atas PDF template terkunci | Bagian 15.1 |
+| Barcode | **`bwip-js`** (Code 39, murni Node, tanpa dependensi native) | |
+| Excel | **`exceljs`** | |
+| Tugas terjadwal | **Vercel Cron** (`vercel.json`) | Bagian 20.3 |
+| Grafik admin | Recharts | |
+| Ikon | Phosphor Icons (`@phosphor-icons/react`) | Sudah ada dari M1 |
+| Testing | Vitest + Testing Library (unit/komponen), Playwright (E2E) | Backend dan frontend satu runner karena satu bahasa |
+| Kualitas | ESLint, Prettier, TypeScript strict mode | |
 
-### 6.4 Struktur folder monorepo
+### 6.4 Struktur folder (satu aplikasi)
 
 ```
-spmb-v3/
+spmb-v4/
 ├── CLAUDE.md                       # Aturan umum agen AI, rujuk docs/PRD.md
-├── README.md                       # Cara menjalankan lokal
+├── README.md
 ├── docs/
 │   ├── PRD.md                      # Dokumen ini
-│   ├── adr/                        # Architecture Decision Record (0001-arsitektur, 0002-engine-ocr, ...)
-│   ├── api/openapi.yaml            # Kontrak API, sumber tipe frontend
-│   └── design/DESIGN.md            # Design system hasil M1
-├── backend/                        # Laravel 13, API only
-│   ├── CLAUDE.md
-│   ├── app/
-│   │   ├── Actions/                # Satu kelas = satu use case
-│   │   │   ├── Pendaftaran/        # BuatDraf, SimpanLangkah, SubmitPendaftaran
-│   │   │   └── Verifikasi/         # SetujuiPendaftar, TolakPendaftar, MintaRevisi
-│   │   ├── Enums/                  # StatusVerifikasi, Sumber, PeranAdmin, JenisDokumen, ConfidenceLevel
-│   │   ├── Exports/                # ParticipantsExport
-│   │   ├── Http/
-│   │   │   ├── Controllers/Api/V1/Public/   # Landing, Jurusan, Berita, Faq, Draf, Ocr, CekStatus, Sukses
-│   │   │   ├── Controllers/Api/V1/Admin/    # Dashboard, Pendaftar, Dokumen, Kuota, Konten, FormField, Mapel, ...
-│   │   │   ├── Middleware/
-│   │   │   ├── Requests/           # FormRequest per endpoint
-│   │   │   └── Resources/          # JsonResource per entitas
-│   │   ├── Jobs/                   # KirimEmailKode, UnggahDokumenKeDrive, BersihkanTemp
-│   │   ├── Mail/
-│   │   ├── Models/
-│   │   ├── Policies/
-│   │   └── Services/
-│   │       ├── Ocr/                # OcrClient (HTTP ke ocr-service), DTO hasil
-│   │       ├── Rekomendasi/        # RekomendasiService (Bagian 12)
-│   │       ├── Penyimpanan/        # PenyimpananDokumen (interface), GoogleDriveDokumen, LokalDokumen (dev/test), GoogleDriveOAuth
-│   │       ├── Nomor/              # GeneratorNomorPendaftaran
-│   │       ├── FormSchema/         # FormFieldConfig
-│   │       └── Pdf/                # FormulirPdf, Code39Barcode
-│   ├── config/
-│   ├── database/{migrations,seeders,factories}/
-│   ├── resources/views/{pdf,mail}/ # Blade hanya untuk PDF & email
-│   ├── routes/{api.php,console.php}
-│   └── tests/{Feature,Unit}/
-├── frontend/                       # Next.js + React + TypeScript
-│   ├── CLAUDE.md
-│   ├── public/{images,fonts}/
-│   └── src/
-│       ├── app/
-│       │   ├── (publik)/           # page.tsx (landing), jurusan/[kode], berita, cek-status
-│       │   ├── (daftar)/daftar/    # langkah/[n], sukses/[token]
-│       │   └── (admin)/admin/      # login, dashboard, peserta, dokumen, kuota, konten, ...
-│       ├── components/
-│       │   ├── ui/                 # Button, Input, Select, FileDrop, Badge, Card, Dialog, Stepper, EmptyState, Skeleton
-│       │   ├── layout/             # Navbar, Footer, AdminShell
-│       │   └── motion/             # Reveal, StaggerList, PageTransition (wrapper Motion), useGsap hooks
-│       ├── features/               # Kode per fitur, isi: components/, hooks/, api.ts, schema.ts
-│       │   ├── landing/
-│       │   ├── wizard/
-│       │   ├── ocr/
-│       │   ├── rekomendasi/
-│       │   ├── cek-status/
-│       │   ├── faq/
-│       │   └── admin/{dashboard,pendaftar,verifikasi,konten,form-builder,pengaturan}/
-│       ├── lib/                    # api-client.ts, auth.ts, format.ts, image-compress.ts
-│       ├── types/                  # Tipe hasil generate dari openapi.yaml
-│       └── styles/                 # globals.css (@theme token Tailwind v4)
-├── ocr-service/                    # Python FastAPI
-│   ├── CLAUDE.md
-│   ├── app/
-│   │   ├── main.py                 # Rute /ocr/akta, /ocr/kk, /ocr/rapor, /health
-│   │   ├── engines/                # base.py (interface), paddle.py, easyocr.py, tesseract.py, cloud_*.py
-│   │   ├── parsers/                # akta.py, kk.py, rapor.py (tidak bergantung engine)
-│   │   ├── pdf_text.py             # Ekstraksi teks PDF digital tanpa OCR
-│   │   └── preprocess.py
-│   ├── benchmark/                  # Skrip & dataset uji (dataset tidak di-commit)
-│   ├── tests/
-│   └── Dockerfile
-└── infra/
-    ├── docker-compose.yml          # nginx, backend, frontend, ocr, queue worker, scheduler
-    ├── docker-compose.dev.yml      # + postgres lokal untuk test
-    └── nginx/spmb.conf
+│   ├── template-formulir.docx      # [BLOKIR] menunggu dari pemilik proyek
+│   ├── template-formulir.md        # [BLOKIR] menunggu dari pemilik proyek
+│   ├── adr/                        # 0001-arsitektur-nextjs.md, dst
+│   ├── api/openapi.yaml
+│   └── design/                     # tangkapan layar & catatan M1 (sudah ada)
+├── prisma/
+│   ├── schema.prisma
+│   ├── migrations/
+│   └── seed.ts
+├── public/
+│   └── fonts/, images/
+├── vercel.json                     # cron, maxDuration per route
+├── src/
+│   ├── app/                        # SEMUA tampilan + route API (Next.js App Router)
+│   │   ├── (publik)/               # page.tsx (landing), jurusan/[kode], berita, cek-status
+│   │   ├── (daftar)/daftar/        # langkah/[n], sukses/[token]
+│   │   ├── (admin)/admin/          # login, dashboard, peserta, verifikasi, konten, ...
+│   │   └── api/v1/
+│   │       ├── landing/, jurusan/, berita/, faq/, form-schema/, mapel/
+│   │       ├── draf/               # route.ts, langkah/[n], berkas/[jenis], ocr/[jenis], rekomendasi, submit
+│   │       ├── sukses/[token]/, formulir/[token]/, cek-status/
+│   │       ├── admin/              # login, logout, me, dashboard, pendaftar, dokumen, kuota, ...
+│   │       └── cron/               # bersih-draf, retry-drive, ringkasan-email (dipanggil Vercel Cron)
+│   │
+│   ├── server/                     # SEMUA logic backend. UI TIDAK BOLEH impor dari sini kecuali lewat api/
+│   │   ├── db/                     # client.ts (Prisma singleton)
+│   │   ├── auth/                   # sesi.ts (buat/verifikasi JWT), middleware peran
+│   │   ├── actions/                # Satu file = satu use case: buatDraf.ts, submitPendaftaran.ts, ...
+│   │   ├── services/
+│   │   │   ├── ocr/                # client.ts (panggil Vision API), parser/ (akta, kk, rapor)
+│   │   │   ├── rekomendasi/        # hitungSkor.ts
+│   │   │   ├── penyimpanan/        # interface PenyimpananDokumen + driverDrive.ts + driverSupabaseTemp.ts
+│   │   │   ├── nomor/              # generatorNomorPendaftaran.ts
+│   │   │   ├── formSchema/
+│   │   │   ├── pdf/                # generateFormulirPdf.ts, barcode.ts
+│   │   │   ├── xlsx/
+│   │   │   └── email/              # client Resend + template
+│   │   ├── validasi/                # skema Zod, satu per langkah wizard & entitas admin
+│   │   └── types/
+│   │
+│   ├── components/
+│   │   ├── ui/                     # Button, Input, Select, FileDrop, Badge, Card, Dialog, Stepper, ... (sudah ada M1)
+│   │   ├── layout/                 # Navbar, Footer, AdminShell (sudah ada M1)
+│   │   └── motion/                 # Reveal, StaggerList, PageTransition, useGsap hooks (sudah ada M1)
+│   ├── features/                   # Kode per fitur sisi klien: components/, hooks/, schema-client.ts
+│   │   ├── landing/, wizard/, ocr/, rekomendasi/, cek-status/, faq/
+│   │   └── admin/{dashboard,pendaftar,verifikasi,konten,form-builder,pengaturan}/
+│   ├── lib/                        # api-client.ts (fetch wrapper), format.ts, image-compress.ts
+│   └── styles/                     # globals.css (@theme token Tailwind v4, sudah ada M1)
+├── tests/
+│   ├── unit/                       # src/server/* (Vitest)
+│   ├── component/                  # src/components, src/features (Testing Library)
+│   └── e2e/                        # Playwright
+└── _archive/                       # Kerja lama, TIDAK dipakai, disimpan untuk referensi (Bagian 24)
+    ├── backend-laravel/
+    └── ocr-service-python/
 ```
 
 Aturan perawatan:
 
-- **Backend**: controller tipis, logika di `Actions/` dan `Services/`, validasi di `FormRequest`, output lewat `JsonResource`. Tidak ada query di controller selain pemanggilan sederhana.
-- **Frontend**: kode dikelompokkan per fitur di `features/`. `components/ui` tidak boleh mengimpor dari `features/`. Komponen > 200 baris dipecah.
-- **Kontrak API** di `docs/api/openapi.yaml`. Tipe TypeScript di-generate (`openapi-typescript`), bukan ditulis tangan.
-- **OCR**: parser tidak tahu engine apa yang dipakai. Engine hanya mengembalikan kata + bounding box + skor.
+- **`src/server` tidak pernah mengimpor dari `src/app` atau `src/components`.** Arahnya satu jalur: UI → route handler (`src/app/api`) → `src/server`.
+- **Satu skema Zod per entitas**, disimpan di `src/server/validasi/`, diimpor baik oleh route handler (validasi otoritatif) maupun oleh form client (`src/features/*/schema-client.ts` cukup re-export skema server bila tidak perlu beda).
+- **Service di `src/server/services/` tidak boleh tahu soal HTTP.** Mereka menerima dan mengembalikan objek biasa; route handler yang menerjemahkan ke `Request`/`Response`.
+- Kontrak API tetap didokumentasikan di `docs/api/openapi.yaml` agar gampang diaudit, meski sekarang klien dan server satu bahasa.
 
 ---
 
-## 7. Konfigurasi Supabase
+## 7. Database, Storage & Layanan Eksternal
 
-### 7.1 Proyek
+### 7.1 Fase A vs Fase B — penting
 
-1. Buat proyek Supabase di region **Southeast Asia (Singapore)**.
-2. Simpan Project Ref, password database, connection string pooler (salin dari dashboard, host pooler bisa berbeda per proyek).
-3. **Project Settings → Data API**: matikan bila tidak dipakai. Apa pun pilihannya, RLS wajib aktif di semua tabel (7.4).
+PRD ini sengaja memisahkan **apa yang dipakai saat membangun fitur (Fase A)** dari **apa yang dipakai saat produksi (Fase B)**, sesuai arahan pemilik proyek. Baca ini dulu sebelum bagian lain di bawah supaya tidak bingung kredensial mana yang dibutuhkan kapan.
 
-### 7.2 Koneksi database
+| Layanan | Fase A (bangun fitur) | Fase B (go-live) |
+|---|---|---|
+| Database | **Postgres lokal** via Docker (compose dev yang sudah ditulis sebelumnya masih dipakai, tinggal arahkan `DATABASE_URL` ke situ) | Supabase Postgres (project asli sekolah) |
+| Storage dokumen pendaftar | Google Drive — **boleh pakai akun Google pribadi developer**, folder uji coba terpisah dari folder final | Google Drive akun final (lihat 22, D4) |
+| Storage sementara & konten publik | Supabase Storage — **bisa pakai project Supabase gratis milik developer sendiri** untuk uji coba, atau langsung project final bila sudah dibuat | Project Supabase final |
+| OCR (Vision API) | **API key Google Cloud milik developer**, kuota gratis 1.000 unit/bulan cukup untuk testing | Bisa lanjut pakai key yang sama, atau pindah ke project Google Cloud resmi sekolah |
+| Email | Resend — API key bisa langsung dipakai dari awal (tidak ada perbedaan dev/prod yang berarti) | Sama, domain pengirim diverifikasi saat go-live |
+| Hosting | `next dev` di laptop | Vercel (deploy pertama kali di Fase B) |
 
-Pakai **Session Pooler (port 5432)** untuk aplikasi dan migrasi. Transaction Pooler (6543) hanya bila menambah `PDO::ATTR_EMULATE_PREPARES => true`.
+Intinya: **semua fitur di Fase A dites dengan kredensial "murah/pribadi" seadanya**, supaya tidak menunggu akun resmi sekolah selesai dibuat. Begitu tim sudah melihat dan menyetujui tampilan serta fitur, Fase B tinggal mengganti nilai env ke akun final — kode tidak berubah karena semua akses layanan eksternal sudah di belakang `src/server/services/*`.
+
+### 7.2 Supabase — database
+
+Setup project (dilakukan di **Fase B**, lihat 7.1):
+
+1. Buat project Supabase, region Southeast Asia (Singapore).
+2. Ambil **connection string pooler** (transaction mode, port 6543) untuk `DATABASE_URL`, dan **session pooler** (port 5432) atau direct connection untuk `DIRECT_URL` (dipakai Prisma migrate).
+3. `DB_SSLMODE=require`.
 
 ```env
-DB_CONNECTION=pgsql
-DB_HOST=<host-session-pooler-dari-dashboard>
-DB_PORT=5432
-DB_DATABASE=postgres
-DB_USERNAME=postgres.<PROJECT_REF>
-DB_PASSWORD=
-DB_SSLMODE=require
+DATABASE_URL="postgresql://postgres.<PROJECT_REF>:<PASSWORD>@<POOLER_HOST>:6543/postgres?pgbouncer=true"
+DIRECT_URL="postgresql://postgres.<PROJECT_REF>:<PASSWORD>@<POOLER_HOST>:5432/postgres"
 ```
 
-Penyesuaian Postgres: `EXTRACT(YEAR FROM created_at)`, pencarian `ilike`, kolom JSON `jsonb`, status memakai `string` + PHP Enum (bukan `enum()`).
-
-### 7.3 Storage konten publik (Supabase)
-
-Supabase Storage **hanya** dipakai untuk gambar konten publik yang ukurannya kecil (cukup dalam kuota Free). Dokumen pendaftar tidak disimpan di sini (lihat 7.5).
-
-Aktifkan **S3 Connection**, buat access key, lalu satu bucket:
-
-| Bucket | Akses | Isi | Batas | MIME |
-|---|---|---|---|---|
-| `konten-publik` | Public | Hero, galeri, foto kepala sekolah, berita, agenda, testimoni, foto jurusan | 4 MB | jpeg, png, webp |
-
-```php
-// backend/config/filesystems.php
-'supabase_public' => [
-    'driver' => 's3',
-    'key' => env('SUPABASE_S3_KEY'),
-    'secret' => env('SUPABASE_S3_SECRET'),
-    'region' => env('SUPABASE_S3_REGION', 'ap-southeast-1'),
-    'bucket' => env('SUPABASE_BUCKET_PUBLIC', 'konten-publik'),
-    'endpoint' => env('SUPABASE_S3_ENDPOINT'),
-    'url' => env('SUPABASE_PUBLIC_URL'),
-    'use_path_style_endpoint' => true,
-    'visibility' => 'public',
-    'throw' => true,
-],
-'dokumen_temp' => [
-    'driver' => 'local',
-    'root' => storage_path('app/private/draf'),
-    'visibility' => 'private',
-    'throw' => true,
-],
+```prisma
+// prisma/schema.prisma
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 ```
 
-- Gambar konten dikompres ke WebP sisi panjang maks 1.920 px sebelum diunggah.
-- Kompresi dokumen di browser sebelum unggah: sisi panjang maks 2.000 px untuk rapor (agar angka tetap terbaca OCR), 1.600 px untuk lainnya, JPEG kualitas 0,85.
+RLS tetap diaktifkan di semua tabel (migrasi terakhir, sama seperti v3.1 Bagian 7.4), karena Prisma mengakses lewat role `postgres` (bypass RLS secara sah) sementara akses langsung dari browser (via Supabase client untuk Storage) tetap dibatasi RLS.
 
-### 7.4 Keamanan Supabase
+**Catatan "tidur" Supabase Free:** project free di-pause otomatis setelah 7 hari tanpa aktivitas. Mitigasi: cron harian (Bagian 20.3) yang sudah jalan tiap hari otomatis menghitung sebagai aktivitas, jadi project tidak akan sempat idle 7 hari selama cron jalan.
 
-```sql
-do $$
-declare t record;
-begin
-  for t in select tablename from pg_tables where schemaname = 'public' loop
-    execute format('alter table public.%I enable row level security', t.tablename);
-  end loop;
-end $$;
-```
+### 7.3 Google Drive — dokumen pendaftar
 
-- Jalankan lewat migrasi terakhir. Laravel memakai role `postgres` (bypass RLS); akses anon via Data API tertolak.
-- Service role key dan S3 secret hanya di `.env` backend.
-- Backup: paket Pro, atau `pg_dump` terjadwal ke penyimpanan terpisah.
-- Free tier: kuota database terbatas dan proyek bisa dijeda saat tidak aktif. **[KEPUTUSAN]** paket Pro selama masa pendaftaran.
+Sama seperti v3.1 Bagian 7.5, dengan penyesuaian klien:
 
-### 7.5 Penyimpanan dokumen pendaftar (Google Drive)
+- Library: `googleapis` (Node), bukan `google/apiclient` (PHP).
+- Alur OAuth: route handler `src/app/api/v1/admin/google-drive/hubungkan` dan `.../callback`, refresh token disimpan terenkripsi (`src/server/services/penyimpanan/kripto.ts`, pakai `AES-256-GCM` dengan kunci dari env) di tabel `pengaturan`.
+- Scope tetap `drive.file`. Status aplikasi OAuth wajib **"In production"** sebelum go-live (Fase B) — selama Fase A boleh "Testing" karena token di-refresh manual oleh developer.
+- Struktur folder, aturan privasi, kuota, retry, dan ketentuan lain: **tidak berubah dari v3.1 Bagian 7.5.1-7.5.3.**
 
-**Keputusan v3.1:** dokumen pendaftar (Akta, KK, halaman rapor, berkas field kustom, berkas input manual admin) disimpan di **Google Drive akun Google pribadi** yang dihubungkan lewat OAuth. Gratis 15 GB.
+### 7.4 Supabase Storage — sementara wizard & konten publik
 
-**Perkiraan kapasitas:** 1 pendaftar ≈ 3-5 MB setelah kompresi. 300 pendaftar ≈ 1-1,5 GB per periode, sehingga 15 GB cukup untuk beberapa periode. Kuota 15 GB dipakai bersama Gmail dan Google Foto akun tersebut.
+Perubahan penting dari v3.1: **tidak ada lagi "disk lokal privat VPS"** untuk berkas wizard, karena di Vercel serverless tidak ada disk yang persisten antar request. Sebagai gantinya:
 
-#### 7.5.1 Alur berkas
+| Bucket | Akses | Isi | Catatan |
+|---|---|---|---|
+| `draf-temp` | Private | `{draf_id}/{jenis}-{acak}.{ext}` — berkas yang diunggah selama wizard, sebelum submit | Dihapus oleh cron harian setelah draf kedaluwarsa atau setelah berhasil dipindah ke Drive |
+| `konten-publik` | Public | Hero, galeri, foto kepala sekolah, berita, agenda, testimoni, foto jurusan | Sama seperti v3.1 |
+
+Alur berkas (menggantikan v3.1 Bagian 7.5.1):
 
 ```
 Wizard (sebelum submit)
-  unggah → disk privat VPS: storage/app/private/draf/{draf_id}/{jenis}-{acak}.{ext}
-         → OCR membaca berkas dari disk lokal
-Submit berhasil
-  → job UnggahDokumenKeDrive (queue, retry 5x, backoff 1, 5, 15, 60, 240 menit)
-  → buat folder Drive: SPMB/{periode}/{nomor_pendaftaran} - {NAMA}/
-  → unggah tiap berkas (resumable upload untuk > 5 MB), simpan file ID ke tabel pendaftar
-  → setelah semua sukses: hapus salinan lokal, berkas_sinkron = selesai
-  → bila gagal permanen: berkas lokal TIDAK dihapus, berkas_sinkron = gagal, admin melihat peringatan
-Admin melihat dokumen
-  → GET /api/v1/admin/pendaftar/{id}/dokumen/{jenis}/{index}
-  → Laravel cek login & peran → ambil file dari Drive (files.get alt=media) → stream ke browser
-    (bila belum tersinkron, ambil dari disk lokal) → catat audit log
+  unggah → Supabase Storage bucket draf-temp: {draf_id}/{jenis}-{acak}.{ext}
+         → OCR (Vision API) membaca langsung dari URL privat sementara (signed URL 5 menit) bucket ini
+Submit berhasil (dalam satu route handler, synchronous — Vercel Hobby mengizinkan hingga 300 dtk)
+  → ambil semua berkas draf-temp
+  → unggah ke Google Drive: SPMB/{periode}/{nomor} - {NAMA}/
+  → simpan file ID Drive ke tabel pendaftar
+  → hapus berkas dari draf-temp
+  → bila upload Drive gagal: catat berkas_sinkron = 'gagal', JANGAN hapus dari draf-temp,
+    cron harian retry-drive akan mengulang
 ```
 
-Struktur folder di Drive:
+Karena Vercel Hobby kini mengizinkan durasi fungsi hingga 300 detik (bukan 10 detik seperti dulu), proses unggah ke Drive bisa dilakukan **langsung di dalam request submit**, tanpa perlu antrean/job terpisah — jauh lebih sederhana dari rancangan queue di v3.1.
 
-```
-SPMB/
-└── 2027-2028/
-    ├── SPMB-2027-0001 - AHMAD FAUZI/
-    │   ├── akta.jpg
-    │   ├── kk.jpg
-    │   ├── rapor-1.jpg
-    │   ├── rapor-2.jpg
-    │   └── kustom-surat-keterangan.pdf
-    └── SPMB-2027-0002 - SITI AMINAH/
-```
+### 7.5 Autentikasi admin
 
-Nama yang mudah dibaca ini disengaja agar panitia tetap bisa membuka dokumen langsung dari Google Drive bila website sedang bermasalah.
+Menggantikan Laravel Sanctum:
 
-#### 7.5.2 Setup OAuth (sekali, oleh developer)
-
-1. Google Cloud Console → buat proyek → aktifkan **Google Drive API**.
-2. **OAuth consent screen**: tipe External, isi nama aplikasi "SPMB SMK Ma'arif NU 1 Wangon", scope hanya `https://www.googleapis.com/auth/drive.file` (aplikasi hanya bisa melihat file yang dibuatnya sendiri, bukan seluruh isi Drive).
-3. **Publish app ke status "In production".** Di status "Testing", refresh token kedaluwarsa setelah 7 hari dan unggahan akan berhenti tanpa peringatan.
-4. Buat **OAuth Client ID** tipe Web application, redirect URI `https://spmb.smkmanu1wangon.sch.id/api/v1/admin/google-drive/callback`.
-5. Isi `GOOGLE_DRIVE_CLIENT_ID`, `GOOGLE_DRIVE_CLIENT_SECRET`, `GOOGLE_DRIVE_REDIRECT_URI` di `backend/.env`.
-6. Superadmin membuka **Pengaturan → Google Drive → Hubungkan**, login dengan akun Google yang dipakai, lalu menyetujui akses.
-7. Backend menyimpan refresh token **terenkripsi** di `pengaturans` (`google_drive_refresh_token`), email akun (`google_drive_email`), dan ID folder root `SPMB` (dibuat otomatis bila belum ada).
-
-#### 7.5.3 Ketentuan
-
-| Aspek | Ketentuan |
-|---|---|
-| Abstraksi | Semua akses lewat interface `PenyimpananDokumen` (`simpan`, `ambilStream`, `hapus`, `ada`). Driver: `google_drive` (produksi), `lokal` (dev & test). Pindah ke penyimpanan lain kelak cukup menambah driver, env `DOKUMEN_DRIVER` |
-| Privasi | File dan folder tidak pernah dibagikan (tanpa "Anyone with the link"). Tidak ada URL Drive yang dikirim ke browser |
-| Token | Refresh token terenkripsi (`Crypt`), access token di cache ≤ 50 menit. Bila token dicabut (ganti password, cabut akses), status di Pengaturan menjadi "Terputus", dashboard menampilkan peringatan, unggahan menunggu di antrean dan berkas tetap aman di disk lokal sampai akun dihubungkan ulang |
-| Kuota | Dashboard admin menampilkan pemakaian Drive (`about.get storageQuota`). Peringatan kuning ≥ 80%, merah ≥ 95% |
-| Rate limit | Unggah lewat queue worker tunggal, maks 3 file paralel, retry dengan exponential backoff untuk error 403 `rateLimitExceeded` / 429 / 5xx |
-| Konsistensi | Kolom `berkas_sinkron` (`menunggu` / `selesai` / `gagal`). Perintah `php artisan spmb:sinkron-drive` mengulang yang gagal |
-| Hapus data | Menghapus pendaftar (atau `spmb:arsip`) menghapus foldernya di Drive (pindah ke Sampah Drive, terhapus permanen otomatis setelah 30 hari) |
-| Cadangan | Ekspor berkala: unduh folder `SPMB/{periode}` sebagai ZIP dari Google Drive setelah periode selesai, simpan di penyimpanan milik sekolah |
-| Akun | Sementara memakai akun Google pribadi. Disarankan kelak memindahkan ke akun khusus SPMB atau akun sekolah: hubungkan akun baru di Pengaturan, jalankan `spmb:pindah-drive` (unduh dari akun lama, unggah ke akun baru, perbarui file ID). **[KEPUTUSAN]** |
+- Login: `POST /api/v1/admin/login` memverifikasi `bcryptjs.compare`, lalu menerbitkan JWT (`jose`, algoritma `HS256`) berisi `{sub: userId, peran}`, masa berlaku 8 jam, disimpan di cookie `spmb_admin` (httpOnly, Secure, SameSite=Lax).
+- Setiap route `api/v1/admin/*` diverifikasi lewat `src/server/auth/verifikasiSesi.ts` yang dipanggil di awal handler (atau lewat `middleware.ts` Next.js untuk proteksi halaman `(admin)/admin/*` di sisi tampilan).
+- Peran dicek per endpoint (mis. endpoint konten menerima `konten`+`superadmin`, endpoint pengaturan hanya `superadmin`).
+- Draf wizard: token acak 40 karakter di cookie `spmb_draft` (httpOnly), hash SHA-256 disimpan di kolom `tokenHash` tabel `PendaftaranDraft` — **mekanismenya sama persis seperti v3.1**, hanya bukan lagi berbasis session Laravel.
 
 ---
 
-## 8. Skema Database
+## 8. Skema Database (Prisma)
 
-Satu migrasi per tabel, bentuk final.
+Isinya sama persis secara konsep dengan v3.1 Bagian 8 (tabel, kolom, relasi, index semuanya dipertahankan), hanya dituliskan ulang sebagai `schema.prisma` memakai penamaan `camelCase` (konvensi Prisma/TypeScript) alih-alih `snake_case` Laravel. Ringkasan model (lihat v3.1 Bagian 8.1-8.9 untuk detail tiap kolom beserta aturan validasinya — semua itu tetap berlaku):
 
-### 8.1 `users` (admin)
+```prisma
+model User {
+  id                 BigInt   @id @default(autoincrement())
+  name               String
+  username           String   @unique
+  email              String?  @unique
+  passwordHash       String
+  peran              Peran
+  isActive           Boolean  @default(true)
+  mustChangePassword Boolean  @default(true)
+  lastLoginAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+enum Peran { superadmin panitia konten }
 
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| name | varchar(150) | |
-| username | varchar(100) unique | |
-| email | varchar unique nullable | |
-| password | varchar | bcrypt |
-| role | varchar(20) | `superadmin` / `panitia` / `konten` |
-| is_active | boolean default true | |
-| must_change_password | boolean default true | |
-| last_login_at | timestamptz nullable | |
-| remember_token, timestamps | | |
+model Jurusan {
+  id           BigInt   @id @default(autoincrement())
+  kode         String   @unique
+  nama         String
+  deskripsi    String?
+  prospekKarir Json?
+  keunggulan   Json?
+  kuota        Int      @default(72)
+  gambar       String?
+  urutan       Int      @default(0)
+  isActive     Boolean  @default(true)
+  bobot        BobotJurusan[]
+  pendaftarPilihan1 Pendaftar[] @relation("pilihan1")
+  pendaftarPilihan2 Pendaftar[] @relation("pilihan2")
+  pendaftarRekomendasi Pendaftar[] @relation("rekomendasi")
+}
 
-Seeder membuat satu `superadmin` dari `ADMIN_SEED_USERNAME` / `ADMIN_SEED_PASSWORD`.
+model MataPelajaran {
+  id       BigInt   @id @default(autoincrement())
+  kode     String   @unique
+  nama     String
+  alias    Json     // array string untuk pencocokan OCR
+  kelompok String   // umum | madrasah | mulok
+  isActive Boolean  @default(true)
+  urutan   Int
+  bobot    BobotJurusan[]
+}
 
-### 8.2 `jurusan`
+model BobotJurusan {
+  id              BigInt @id @default(autoincrement())
+  jurusanId       BigInt
+  mataPelajaranId BigInt
+  bobot           Decimal @db.Decimal(4,3)
+  jurusan         Jurusan       @relation(fields: [jurusanId], references: [id], onDelete: Cascade)
+  mataPelajaran   MataPelajaran @relation(fields: [mataPelajaranId], references: [id], onDelete: Cascade)
+  @@unique([jurusanId, mataPelajaranId])
+}
 
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| kode | varchar(10) unique | AKL, MPLB, FKK, TKR |
-| nama | varchar | |
-| deskripsi | text nullable | |
-| prospek_karir | jsonb nullable | Array string |
-| keunggulan | jsonb nullable | Array string (pengganti `minat_terkait` untuk tampilan) |
-| kuota | integer default 72 | |
-| gambar | varchar nullable | Path bucket publik |
-| urutan | integer default 0 | |
-| is_active | boolean default true | |
-| timestamps | | |
+model PendaftaranDraft {
+  id              String   @id @default(uuid())
+  tokenHash       String   @unique
+  data            Json     // terenkripsi di level aplikasi sebelum disimpan (lihat 17)
+  langkahTerakhir Int      @default(1)
+  berkas          Json     // {akta, kk, rapor: [...], kustom_*} path di bucket draf-temp
+  ip              String?
+  userAgent       String?
+  expiresAt       DateTime
+  submittedAt     DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
 
-### 8.3 `mata_pelajaran` (baru v3)
+model Pendaftar {
+  id                   BigInt   @id @default(autoincrement())
+  nomorPendaftaran     String   @unique
+  aksesTokenHash       String   @unique
+  periode              String
+  sumber               Sumber   @default(daring)
+  statusVerifikasi     StatusVerifikasi @default(pending)
+  statusNilai          StatusNilai @default(belumDicek)
+  catatanVerifikasi    String?
+  catatanPenolakan     String?
+  diverifikasiOlehId   BigInt?
+  diverifikasiAt       DateTime?
+  notifikasiEmailAt    DateTime?
 
-Master mapel yang dibaca dari rapor dan dipakai bobot rekomendasi.
+  // Bagian A-D: identik dengan v3.1 Lampiran 23.6 (nama, NIK terenkripsi, dst — lihat lampiran)
+  // ...
 
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| kode | varchar(30) unique | mis. `matematika`, `ipa` |
-| nama | varchar(100) | Nama tampil |
-| alias | jsonb | Variasi penulisan di rapor untuk pencocokan OCR, mis. `["ilmu pengetahuan alam", "ipa"]` |
-| kelompok | varchar(20) | `umum` / `madrasah` / `mulok` |
-| is_active | boolean default true | |
-| urutan | integer | |
+  nilaiRapor           Json     // {semester:[...], mapel:{kode:{semester:nilai,...,rata}}}
+  nilaiRaporSumber      String   // ocr | ocr_dikoreksi | manual
+  nilaiRaporKoreksi     Json?
+  rekomendasiJurusanId  BigInt?
+  rekomendasiSkor       Json
+  rekomendasiVersi      String
+  jurusan1Id            BigInt?
+  jurusan2Id            BigInt?
 
-Seed default di Lampiran 23.2.
+  aktaFileId            String?
+  kkFileId              String?
+  raporFileIds          Json?
+  kustomFileIds         Json?
+  driveFolderId         String?
+  berkasMeta            Json?
+  berkasSinkron         BerkasSinkron @default(menunggu)
+  dataKustom            Json?
 
-### 8.4 `bobot_jurusan` (baru v3)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| jurusan_id | FK jurusan, cascade | |
-| mata_pelajaran_id | FK mata_pelajaran, cascade | |
-| bobot | numeric(4,3) | 0-1. Total per jurusan disarankan 1 (dinormalisasi otomatis) |
-| unique(jurusan_id, mata_pelajaran_id) | | |
+  jurusan1       Jurusan? @relation("pilihan1", fields: [jurusan1Id], references: [id])
+  jurusan2       Jurusan? @relation("pilihan2", fields: [jurusan2Id], references: [id])
+  rekomendasi    Jurusan? @relation("rekomendasi", fields: [rekomendasiJurusanId], references: [id])
+  ocrHasil       OcrHasil[]
+}
+enum Sumber { daring luring }
+enum StatusVerifikasi { pending approved rejected revision }
+enum StatusNilai { belumDicek sesuai dikoreksi }
+enum BerkasSinkron { menunggu selesai gagal }
 
-### 8.5 `pendaftaran_drafts` (baru v3)
+model OcrHasil {
+  id           BigInt   @id @default(autoincrement())
+  draftId      String?
+  pendaftarId  BigInt?
+  jenis        String   // akta | kk | rapor
+  provider     String   @default("google_vision")
+  fields       Json
+  confidence   Json
+  durasiMs     Int
+  sukses       Boolean
+  createdAt    DateTime @default(now())
+  pendaftar    Pendaftar? @relation(fields: [pendaftarId], references: [id])
+}
 
-Pengganti session wizard. Siswa tidak login.
-
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | uuid PK | |
-| token_hash | varchar(64) unique | SHA-256 dari token acak. Token asli hanya di cookie httpOnly `spmb_draft` |
-| data | jsonb | `{step1: {...}, step2: {...}, ...}` terenkripsi di level aplikasi (cast `encrypted:array`) |
-| langkah_terakhir | smallint | Langkah tertinggi yang lolos validasi |
-| berkas | jsonb | Path disk lokal privat per jenis: `{akta, kk, rapor: [..], kustom_*}` |
-| ip, user_agent | varchar | |
-| expires_at | timestamptz | Default 7 hari sejak aktivitas terakhir |
-| submitted_at | timestamptz nullable | |
-| timestamps | | |
-
-### 8.6 `pendaftar`
-
-**Meta & status**
-
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| nomor_pendaftaran | varchar(20) unique | Bagian 10.6 |
-| akses_token | varchar(64) unique | Hash token halaman sukses/formulir |
-| periode | varchar(10) | mis. `2027/2028` |
-| sumber | varchar(20) default `daring` | `daring` / `luring` |
-| status_verifikasi | varchar(20) default `pending` | `pending` / `approved` / `rejected` / `revision` |
-| status_nilai | varchar(20) default `belum_dicek` | **Baru v3**: `belum_dicek` / `sesuai` / `dikoreksi` (verifikasi nilai rapor oleh panitia) |
-| catatan_verifikasi | text nullable | Tampil ke siswa |
-| catatan_penolakan | varchar nullable | |
-| diverifikasi_oleh | FK users nullable | |
-| diverifikasi_at | timestamptz nullable | |
-| notifikasi_email_at | timestamptz nullable | |
-| timestamps | | |
-
-**Bagian A, B, C, D**: sama seperti PRD v2 (Lampiran 23.6 memuat daftar lengkap kolom). Perubahan:
-
-- Kolom `minat` **dihapus**.
-- `nik`, `no_kk`, `no_hp`, `no_wa`, `no_hp_ortu` disimpan terenkripsi (`encrypted` cast) **dan** kolom hash pencarian `nik_hash`, `nisn` tetap plain untuk pencarian. **[KEPUTUSAN]** bila performa pencarian NIK lebih penting daripada enkripsi, simpan plain + masking di UI.
-
-**Nilai rapor & rekomendasi (diubah v3)**
-
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| nilai_rapor | jsonb | `{"semester": [1,2,3,4,5], "mapel": {"matematika": {"1": 82, "2": 85, ..., "rata": 84.2}, ...}}` |
-| nilai_rapor_sumber | varchar(20) | `ocr` / `ocr_dikoreksi` / `manual` |
-| nilai_rapor_koreksi | jsonb nullable | Daftar sel yang diubah siswa: `{mapel, semester, ocr, final}` |
-| rekomendasi_jurusan_id | FK jurusan nullable | Peringkat 1 |
-| rekomendasi_skor | jsonb | `{"AKL": {"skor": 84.1, "rincian": {"matematika": 37.9, ...}}, ...}` |
-| rekomendasi_versi | varchar(20) | Versi bobot saat dihitung (snapshot), agar perubahan bobot tidak mengubah histori |
-| jurusan_1_id, jurusan_2_id | FK jurusan nullable | Pilihan siswa |
-
-**Berkas & kustom**
-
-| Kolom | Tipe |
-|---|---|
-| akta_file_id, kk_file_id | varchar nullable (file ID Google Drive) |
-| rapor_file_ids | jsonb (array file ID, rapor bisa beberapa halaman/semester) |
-| kustom_file_ids | jsonb nullable (`{kustom_xxx: file_id}`) |
-| drive_folder_id | varchar nullable |
-| berkas_lokal | jsonb nullable (path disk lokal selama belum tersinkron) |
-| berkas_meta | jsonb nullable (nama asli, MIME, ukuran per berkas, untuk tampilan admin tanpa memanggil Drive) |
-| berkas_sinkron | varchar(10) default `menunggu` (`menunggu` / `selesai` / `gagal`) |
-| data_kustom | jsonb nullable |
-
-**Indeks**: unique `nomor_pendaftaran`, `akses_token`; index `status_verifikasi`, `status_nilai`, `jurusan_1_id`, `periode`, `created_at`, `nisn`, `nik_hash`; `pg_trgm` + GIN pada `nama_lengkap`.
-
-### 8.7 `ocr_hasil` (baru v3)
-
-Menyimpan hasil OCR untuk audit dan benchmark engine. **Gambar tidak disimpan di sini.**
-
-| Kolom | Tipe | Keterangan |
-|---|---|---|
-| id | bigint PK | |
-| draft_id | uuid FK nullable | |
-| pendaftar_id | FK nullable | Diisi saat submit |
-| jenis | varchar(10) | `akta` / `kk` / `rapor` |
-| engine | varchar(30) | mis. `paddleocr`, `easyocr`, `pdf_text` |
-| engine_versi | varchar(30) | |
-| fields | jsonb | Hasil terstruktur |
-| confidence | jsonb | Per field |
-| durasi_ms | integer | |
-| sukses | boolean | |
-| created_at | | |
-
-Teks mentah OCR tidak disimpan permanen (mengandung data pribadi); hanya dikirim ke browser untuk diagnosis selama wizard.
-
-### 8.8 Konten, pengaturan, form builder, audit
-
-Sama seperti PRD v2:
-
-- `faqs` (pertanyaan, jawaban, keywords jsonb, kategori, urutan, is_active)
-- `beritas` (judul, slug, isi HTML tersanitasi, gambar, is_active, published_at)
-- `events` (judul, slug, deskripsi, tanggal, lokasi, gambar, is_active)
-- `galeris`, `testimonis`
-- `pengaturans` key-value dengan cache
-- `form_fields` (kunci, langkah, label, teks_bantuan, tipe, opsi, placeholder, nilai_default, tampil, wajib, urutan, is_kustom)
-- `audit_logs` (user_id, aksi, entitas_tipe, entitas_id, data_lama, data_baru, ip, user_agent, created_at)
-- Tabel bawaan Laravel: `sessions` (admin), `cache`, `jobs`, `failed_jobs`, `personal_access_tokens` (tidak dipakai bila SPA cookie, boleh dibiarkan).
-
-### 8.9 Relasi
-
+// Faq, Berita, Event, Galeri, Testimoni, Pengaturan, FormField, AuditLog:
+// identik secara konsep dengan v3.1 Bagian 8.8, ditulis ulang sebagai model Prisma.
 ```
-jurusan 1──* bobot_jurusan *──1 mata_pelajaran
-jurusan 1──* pendaftar (jurusan_1_id, jurusan_2_id, rekomendasi_jurusan_id)
-pendaftaran_drafts 1──1 pendaftar (setelah submit)
-pendaftaran_drafts 1──* ocr_hasil ; pendaftar 1──* ocr_hasil
-users 1──* pendaftar (diverifikasi_oleh) ; users 1──* audit_logs
-```
+
+Catatan migrasi dari rancangan v3.1: kolom data sensitif (NIK, no KK, no HP) **tidak lagi memakai cast `encrypted` ala Laravel**, melainkan dienkripsi secara eksplisit di `src/server/services/kripto.ts` sebelum `prisma.create`/`update`, dan didekripsi saat dibaca untuk tampilan admin. Ini sama levelnya, hanya eksplisit karena Prisma tidak punya fitur cast-terenkripsi bawaan.
 
 ---
 
-## 9. Kontrak API
+## 9. Kontrak API (Route Handlers)
 
-Prefix `/api/v1`. JSON. Error format seragam:
+Bentuk endpoint **tidak berubah** dari v3.1 Bagian 9 — path, method, dan perilaku tiap endpoint tetap sama persis, supaya dokumentasi lama tetap relevan. Yang berubah hanya implementasinya (Route Handler Next.js, bukan Controller Laravel).
+
+Format respons tetap sama:
 
 ```json
 { "message": "Data tidak valid.", "errors": { "nik": ["NIK harus 16 digit."] }, "code": "VALIDATION_ERROR" }
 ```
 
-### 9.1 Publik
+**Rujuk v3.1 Bagian 9.1 dan 9.2 untuk daftar lengkap endpoint publik dan admin** — semua tetap berlaku, dengan dua perubahan path:
 
-| Method | Endpoint | Fungsi | Throttle |
-|---|---|---|---|
-| GET | `/landing` | Data landing sekaligus (jurusan, berita, agenda, galeri, testimoni, FAQ, pengaturan publik) | 60/mnt |
-| GET | `/jurusan`, `/jurusan/{kode}` | Daftar & detail jurusan + sisa kuota | 60/mnt |
-| GET | `/berita`, `/berita/{slug}` | Arsip & detail berita | 60/mnt |
-| GET | `/faq?q=` | Pencarian FAQ (Bagian 10.8) | 30/mnt |
-| GET | `/form-schema` | Konfigurasi isian wizard per langkah (Bagian 14) | 60/mnt |
-| GET | `/mapel` | Mapel aktif untuk tabel nilai rapor | 60/mnt |
-| POST | `/draf` | Buat draf, set cookie `spmb_draft` | 10/mnt |
-| GET | `/draf` | Ambil isi draf (berdasar cookie) | 60/mnt |
-| PUT | `/draf/langkah/{n}` | Validasi & simpan langkah n | 30/mnt |
-| POST | `/draf/berkas/{jenis}` | Unggah berkas (`akta`, `kk`, `rapor`, `kustom_*`) ke temp | 20/mnt |
-| DELETE | `/draf/berkas/{jenis}/{index?}` | Hapus berkas temp | 20/mnt |
-| POST | `/draf/ocr/{jenis}` | Jalankan OCR untuk berkas yang sudah diunggah | 10/mnt |
-| GET | `/draf/rekomendasi` | Hitung rekomendasi dari nilai di draf | 30/mnt |
-| POST | `/draf/submit` | Submit final (header `Idempotency-Key`) | 5/mnt |
-| DELETE | `/draf` | Mulai ulang (hapus draf & berkas temp) | 10/mnt |
-| GET | `/ocr/health` | Status layanan OCR | 30/mnt |
-| GET | `/sukses/{token}` | Ringkasan pendaftar | 30/mnt |
-| GET | `/formulir/{token}` | Unduh PDF formulir | 10/mnt |
-| POST | `/cek-status` | Body `{nomor, tanggal_lahir}` | 10/mnt |
+- `/admin/pengaturan/uji-drive` tetap ada.
+- Tambahan: `/api/v1/cron/bersih-draf`, `/api/v1/cron/retry-drive`, `/api/v1/cron/ringkasan` — dipanggil Vercel Cron (dilindungi header rahasia `CRON_SECRET`, bukan oleh admin biasa).
 
-### 9.2 Admin (Sanctum SPA cookie)
+Setiap Route Handler mengikuti pola:
 
-| Method | Endpoint |
-|---|---|
-| GET | `/sanctum/csrf-cookie` |
-| POST | `/admin/login`, `/admin/logout` |
-| GET | `/admin/me` |
-| PUT | `/admin/me/password` |
-| GET | `/admin/dashboard` |
-| GET | `/admin/pendaftar` (cari, filter, sort, paginasi, `?export=xlsx\|pdf`) |
-| GET/PUT | `/admin/pendaftar/{id}` |
-| POST | `/admin/pendaftar/manual` |
-| POST | `/admin/pendaftar/{id}/approve`, `/reject`, `/revisi` |
-| POST | `/admin/pendaftar/{id}/nilai/verifikasi` (status_nilai + koreksi) |
-| GET | `/admin/pendaftar/{id}/dokumen` (daftar berkas + meta + status sinkron) |
-| GET | `/admin/pendaftar/{id}/dokumen/{jenis}/{index?}` (stream dari Drive / disk lokal + audit; `?unduh=1` untuk unduh) |
-| GET | `/admin/pendaftar/{id}/formulir` (PDF) |
-| GET | `/admin/ekspor/xlsx` |
-| GET/PUT | `/admin/kuota` |
-| CRUD | `/admin/jurusan`, `/admin/mapel`, `/admin/jurusan/{id}/bobot` |
-| CRUD | `/admin/berita`, `/admin/event`, `/admin/galeri`, `/admin/testimoni`, `/admin/faq` |
-| CRUD | `/admin/form-field` + `POST /admin/form-field/urutan`, `POST /admin/form-field/{id}/toggle` |
-| GET/PUT | `/admin/pengaturan` |
-| GET | `/admin/google-drive/status` (terhubung/terputus, email, kuota) |
-| GET | `/admin/google-drive/hubungkan` (redirect OAuth, superadmin) |
-| GET | `/admin/google-drive/callback` |
-| POST | `/admin/google-drive/putuskan`, `/admin/google-drive/uji` (tulis-baca-hapus file kecil), `/admin/google-drive/sinkron-ulang` |
-| CRUD | `/admin/users` (superadmin) |
-| GET | `/admin/audit` (superadmin) |
-| GET | `/admin/ocr/statistik` (akurasi & durasi per engine dari `ocr_hasil`) |
-
-Konfigurasi Sanctum: `SANCTUM_STATEFUL_DOMAINS=spmb.smkmanu1wangon.sch.id`, `SESSION_DOMAIN` sama, cookie `secure` + `SameSite=Lax`.
+```ts
+// src/app/api/v1/draf/langkah/[n]/route.ts
+export async function PUT(req: Request, { params }: { params: { n: string } }) {
+  const sesi = await ambilDraf(req);              // dari src/server
+  const body = await req.json();
+  const data = skemaLangkah(Number(params.n)).parse(body); // Zod, lempar error → 422 otomatis
+  const hasil = await simpanLangkah(sesi, Number(params.n), data); // src/server/actions
+  return Response.json(hasil);
+}
+```
 
 ---
 
 ## 10. Fitur Publik & Wizard Pendaftaran
 
-### 10.1 Layout publik
+**Tidak berubah secara fungsional dari v3.1 Bagian 10** (layout publik, landing, detail jurusan, 8 langkah wizard, mekanisme draf, Tanya Panitia, cek status). Penyesuaian teknis saja:
 
-- Navbar: logo, Beranda, Jurusan, Alur Daftar, Berita, FAQ, Cek Status, tombol "Daftar Sekarang". Mobile: menu layar penuh.
-- Footer: identitas sekolah, kontak, tautan cepat, tautan login admin kecil.
-- Widget "Tanya Panitia" (pencarian FAQ) di kanan bawah.
-- Tahun ajaran dari pengaturan `tahun_ajaran`.
-
-### 10.2 Landing (`/`)
-
-Dirender server (SSG + revalidate 5 menit atau on-demand revalidation saat admin menyimpan konten).
-
-| Section | Isi wajib |
-|---|---|
-| Hero | Judul, subjudul ≤ 20 kata, CTA Daftar + Cek Status, foto asli sekolah, info gelombang aktif |
-| Sambutan | Foto kepala sekolah, kutipan singkat |
-| Program keahlian | 4 jurusan, menuju `/jurusan/{kode}` |
-| Alur pendaftaran | Langkah ringkas, termasuk "unggah rapor, dapat rekomendasi jurusan" |
-| Berita & agenda | 3 berita, 3 agenda |
-| Galeri | 8 foto |
-| Testimoni alumni | 6 testimoni |
-| FAQ | 6 pertanyaan |
-
-Kriteria terima: konten nonaktif tidak tampil; section kosong disembunyikan atau tampil empty state; hero admin dipakai bila ada.
-
-### 10.3 Detail jurusan (`/jurusan/[kode]`)
-
-Kode tidak peka huruf. Tidak ada / nonaktif → 404. Isi: nama, deskripsi, prospek karier, keunggulan, **mapel yang paling berpengaruh untuk rekomendasi** (dari `bobot_jurusan`), daya tampung (kuota, terdaftar pilihan 1, sisa), CTA daftar.
-
-### 10.4 Wizard 8 langkah (`/daftar/langkah/[n]`)
-
-**Mekanisme umum**
-
-- Tanpa login. Saat pertama membuka wizard, frontend memanggil `POST /draf`; backend membuat draf dan cookie httpOnly `spmb_draft` (7 hari).
-- Setiap "Lanjut" memanggil `PUT /draf/langkah/{n}`. Backend memvalidasi dengan aturan + form builder, menyimpan ke `data`, memperbarui `langkah_terakhir`.
-- Gerbang langkah: frontend menolak membuka langkah > `langkah_terakhir + 1`; backend juga menolak menyimpan langkah yang prasyaratnya belum ada.
-- Siswa bisa menutup browser dan melanjutkan di perangkat yang sama selama draf belum kedaluwarsa. Tombol "Mulai ulang" menghapus draf.
-- `localStorage` hanya untuk preferensi UI (mis. langkah terakhir dilihat), **bukan data pribadi**.
-- Stepper "Langkah X dari 8 · Nama langkah", sticky di mobile. Tombol Kembali tanpa kehilangan isian.
-- Transisi antar langkah dengan Motion (geser + fade ≤ 250 ms), nonaktif saat `prefers-reduced-motion`.
-
-**Langkah 1 · Persetujuan & identitas awal**
-
-| Field | Aturan |
-|---|---|
-| nama_lengkap | required, min 3, max 255 |
-| nisn | required, digits:10 |
-| tanggal_lahir | required, date, before:today (dipakai untuk cek status & pencocokan Akta) |
-| setuju | required, accepted |
-
-Tampilkan persyaratan, jadwal, dan teks persetujuan UU PDP (tujuan pengumpulan data, penyimpanan, kontak sekolah). Di luar jadwal gelombang, wizard tertutup dengan pesan jadwal berikutnya.
-
-**Langkah 2 · Akta & KK + OCR**
-
-- Dua slot unggah (kamera HP via `capture="environment"`), jpg/png/webp/pdf ≤ 5 MB. Wajib/opsional sesuai form builder **[KEPUTUSAN]**.
-- Setelah unggah: pratinjau → `POST /draf/ocr/{akta|kk}` → kartu hasil yang bisa diedit dengan lencana keyakinan (Tinggi / Perlu dicek). Status proses dengan skeleton + teks ("Membaca dokumen..."), `aria-live`.
-- Aturan isi otomatis: HIGH terisi + lencana hijau; MEDIUM terisi + lencana kuning; LOW/NOT_FOUND kosong.
-- Nama & TTL hanya dari Akta. NIK siswa dari anggota KK yang namanya paling mirip nama Langkah 1. Bila nama Akta berbeda jauh dari nama Langkah 1, tampilkan peringatan.
-- Hasil mengisi draf langkah 5 dan 6 (nama, tempat/tanggal lahir, jenis kelamin, NIK, no KK, alamat, nama & pekerjaan ortu).
-- OCR mati / gagal: pesan ramah, lanjut isi manual.
-
-**Langkah 3 · Rapor + OCR nilai (wajib)**
-
-- Unggah rapor SMP/MTs. Bisa beberapa berkas (satu per semester atau satu PDF berisi semua halaman), maks 10 berkas, masing-masing ≤ 5 MB.
-- Semester yang dipakai: default **semester 1-5** **[KEPUTUSAN]**, diatur di pengaturan `semester_rapor`.
-- Proses: `POST /draf/ocr/rapor` → backend mengirim berkas ke ocr-service → hasil berupa tabel mapel × semester.
-- UI menampilkan **tabel nilai yang bisa diedit**: baris = mapel aktif, kolom = semester, kolom terakhir rata-rata otomatis. Sel hasil OCR ber-confidence rendah diberi tanda kuning. Sel yang diubah siswa diberi penanda "diubah".
-- Validasi: nilai 0-100, semua mapel yang punya bobot di jurusan mana pun wajib terisi minimal di satu semester. Mapel di rapor yang tidak dikenali ditampilkan di bagian "Tidak dikenali" agar siswa bisa memetakannya ke mapel yang benar.
-- Bila OCR gagal total: siswa mengisi tabel manual (`nilai_rapor_sumber = manual`). Berkas rapor tetap wajib diunggah sebagai bukti.
-- Pernyataan di bawah tabel: "Nilai akan dicocokkan panitia dengan rapor asli saat verifikasi berkas."
-
-**Langkah 4 · Rekomendasi & pilihan jurusan**
-
-- `GET /draf/rekomendasi` → kartu 4 jurusan diurutkan skor (Bagian 12), masing-masing menampilkan skor, label, dan rincian kontribusi mapel (bar horizontal).
-- Animasi masuk kartu (stagger Motion) dan bar mengisi dari 0.
-- Rekomendasi bersifat saran. Siswa bebas memilih.
-
-| Field | Aturan |
-|---|---|
-| jurusan_1 | required, exists, jurusan aktif |
-| jurusan_2 | nullable, exists, different:jurusan_1 |
-
-Bila jurusan pilihan kuotanya sudah penuh, tampilkan info (tidak memblokir, keputusan akhir di panitia).
-
-**Langkah 5 · Data murid (Bagian A)** · **Langkah 6 · Data orang tua (A14-15)** · **Langkah 7 · Bagian B, C, D**
-
-Field dan aturan sama dengan PRD v2 Bagian 9.4 (Lampiran 23.6), dengan perubahan:
-
-- Field yang sudah terisi OCR ditandai ikon kecil "dari dokumen".
-- Checkbox "No. WhatsApp sama dengan No. HP" dan "Alamat orang tua sama dengan alamat murid".
-- `email` default **opsional** **[KEPUTUSAN]**. Bila kosong, kode pendaftaran hanya tampil di halaman sukses dan PDF.
-- Nilai ujian Bagian B tetap diisi manual (bukan dari OCR rapor).
-
-**Langkah 8 · Tinjau & kirim**
-
-- Ringkasan per bagian dengan tautan "Ubah", termasuk tabel nilai rapor dan rekomendasi.
-- `konfirmasi_final` wajib.
-- Tombol kirim nonaktif saat proses + `Idempotency-Key`.
-
-### 10.5 Proses submit (backend, `SubmitPendaftaran`)
-
-Dalam satu transaksi database:
-
-1. Validasi ulang seluruh draf (aturan + form builder).
-2. Hitung ulang rekomendasi di server (jangan percaya nilai dari klien), simpan skor, rincian, dan `rekomendasi_versi`.
-3. Buat nomor pendaftaran (10.6) dan token akses acak 40 karakter (simpan hash).
-4. Simpan baris `pendaftar` (`pending`, `daring`, periode aktif), kaitkan `ocr_hasil` ke pendaftar.
-5. Tandai draf `submitted_at`.
-
-Setelah commit:
-
-6. Job `UnggahDokumenKeDrive`: unggah berkas dari disk lokal ke `SPMB/{periode}/{nomor} - {NAMA}/` di Google Drive (Bagian 7.5.1). Gagal tidak membatalkan pendaftaran; berkas tetap di disk lokal.
-7. Email kode pendaftaran (job) bila email ada.
-8. Hapus cookie draf, respons berisi token → frontend ke `/daftar/sukses/[token]`.
-
-### 10.6 Nomor pendaftaran
-
-- Format default `SPMB-{TAHUN}-{NNNN}` **[KEPUTUSAN: SPMB atau PPDB]**, `{TAHUN}` = tahun pertama `tahun_ajaran`.
-- Dibuat di dalam transaksi dengan `pg_advisory_xact_lock(hashtext('nomor_' || tahun))`, nomor = maks yang ada + 1. Unique constraint sebagai pengaman terakhir (retry sekali).
-
-### 10.7 Halaman sukses (`/daftar/sukses/[token]`)
-
-Nomor besar + tombol salin, ringkasan (nama, NISN, pilihan 1 & 2, rekomendasi), CTA grup WhatsApp bila ada, unduh PDF formulir, cetak halaman (stylesheet print), daftar berkas fisik (Lampiran 23.4). Peringatan: "Simpan nomor pendaftaran dan tautan halaman ini."
-
-### 10.8 Tanya Panitia (pencarian FAQ, bukan AI)
-
-- Widget mengambang dengan tombol cepat (Persyaratan, Jadwal, Cara Upload, Jurusan, Rekomendasi).
-- `GET /faq?q=`: lowercase, buang non-alfanumerik dan stopword (Lampiran 23.5), skor Jaccard antara kata kueri dan (keywords + kata pertanyaan). Jawab bila skor tertinggi ≥ 0,1, sertakan 2-3 pertanyaan terkait.
-- Fallback: "Maaf, jawabannya belum ada. Hubungi panitia di {kontak_panitia} atau datang ke sekolah."
-
-### 10.9 Cek status (`/cek-status`)
-
-Input nomor + tanggal lahir, throttle 10/menit per IP. Hasil: nama, jurusan 1 & 2, status (Menunggu Verifikasi biru, Diterima hijau, Perlu Revisi kuning, Ditolak merah), catatan panitia. Pesan galat sama untuk nomor salah dan tanggal salah (tidak membocorkan nomor mana yang ada).
+- Landing dirender lewat **Next.js App Router** (Server Components + `revalidate`), bukan Next.js terpisah yang fetch ke Laravel — jadi malah lebih cepat (tidak ada lagi network hop antara frontend dan backend, keduanya satu proses).
+- Revalidasi konten saat admin menyimpan: pakai `revalidatePath()`/`revalidateTag()` Next.js bawaan, bukan webhook `FRONTEND_REVALIDATE_URL` seperti v3.1.
+- Submit wizard (10.5 di v3.1): urutan transaksi tetap sama, hanya langkah "pindahkan berkas ke Drive" kini **synchronous di dalam request yang sama** (lihat 7.4), bukan job queue terpisah.
+- Semua aturan field, validasi, dan urutan langkah **identik** dengan v3.1 Bagian 10.2-10.9 dan Lampiran 23.3/23.6.
 
 ---
 
-## 11. Fitur Cerdas: OCR (KK, Akta, Rapor)
+## 11. OCR: Google Cloud Vision API
 
-OCR adalah satu-satunya fitur cerdas di v3. **Engine belum ditetapkan**, sehingga arsitektur wajib bisa menukar engine tanpa mengubah parser, backend, maupun frontend.
+### 11.1 Kenapa Vision API, bukan self-hosted
 
-### 11.1 Arsitektur
+Self-hosted (PaddleOCR/EasyOCR) butuh server Python yang nyala terus — bertentangan dengan tujuan "hampir semua gratis". Vision API dipanggil sesuai kebutuhan (pay-per-use, dengan 1.000 unit gratis/bulan), tidak perlu server idle.
+
+### 11.2 Arsitektur
 
 ```
-frontend: unggah → kompresi → POST /api/v1/draf/berkas/{jenis}
-          → POST /api/v1/draf/ocr/{jenis}
-backend:  ambil berkas dari disk lokal privat → multipart ke OCR_SERVICE_URL/ocr/{jenis}
-          (header X-OCR-Token, timeout 90 dtk) → simpan ocr_hasil → kembalikan fields + confidence
-ocr-service:
-   1. Bila PDF dengan lapisan teks (mis. ekspor e-Rapor) → pdf_text.py (tanpa OCR, akurasi ~100%)
-   2. Selain itu → preprocess (deskew, CLAHE, denoise) → ENGINE.recognize() → [kata, bbox, skor]
-   3. Parser sesuai jenis: akta.py / kk.py / rapor.py → fields + confidence HIGH/MEDIUM/LOW/NOT_FOUND
+Route Handler (src/app/api/v1/draf/ocr/[jenis])
+  → ambil berkas dari Supabase Storage draf-temp (signed URL)
+  → src/server/services/ocr/client.ts: panggil Vision API
+      - textDetection / documentTextDetection → teks + bounding box per kata/baris
+  → src/server/services/ocr/parser/{akta,kk,rapor}.ts: ubah teks+bbox jadi fields terstruktur
+  → simpan OcrHasil, kembalikan fields + confidence ke client
 ```
 
-Interface engine (Python):
+Interface parser (TypeScript, setara interface engine di v3.1 11.1):
 
-```python
-class OcrEngine(Protocol):
-    name: str
-    version: str
-    def recognize(self, image: np.ndarray) -> list[Word]: ...      # Word: text, bbox, score
-    def recognize_table(self, image: np.ndarray) -> Table | None: ...  # opsional, untuk rapor
+```ts
+interface HasilOcr {
+  fields: Record<string, { nilai: string; confidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NOT_FOUND' }>;
+  mentah: { teks: string; bbox: [number, number, number, number] }[];
+}
+function parseAkta(hasilVision: VisionResponse): HasilOcr { /* ... */ }
+function parseKk(hasilVision: VisionResponse, namaTarget: string): HasilOcr { /* ... */ }
+function parseRapor(hasilVision: VisionResponse, mapel: MataPelajaranRef[]): HasilRapor { /* ... */ }
 ```
 
-Engine dipilih lewat env `OCR_ENGINE` (dan `OCR_ENGINE_RAPOR` bila rapor memakai engine berbeda).
+### 11.3 Aturan bisnis — identik dengan v3.1 Bagian 11.3
 
-### 11.2 Endpoint ocr-service
+Pencocokan nama Akta/KK, pemilihan NIK siswa dari anggota KK yang namanya paling mirip, deteksi semester dan nilai dari rapor, penanganan PAI vs mapel madrasah — **semua aturan ini tidak berubah**, hanya diimplementasikan di atas hasil Vision API, bukan hasil PaddleOCR/EasyOCR.
 
-| Endpoint | Input | Output |
-|---|---|---|
-| `POST /ocr/akta` | file | fields (nama, tempat_lahir, tanggal_lahir, jenis_kelamin, nama_ayah, nama_ibu) + confidence |
-| `POST /ocr/kk` | file, `nama_target` | fields (no_kk, alamat terurai, nama & pekerjaan ayah/ibu) + members + matched_nik |
-| `POST /ocr/rapor` | file[] , `mapel` (kode + alias dari backend), `semester` | `{mapel: {kode: {semester: nilai, conf}}, tidak_dikenali: [...], meta: {nama_siswa, nisn, sekolah}}` |
-| `GET /health` | | `{status, engine, version}` |
+### 11.4 Parsing tabel rapor dari Vision API — catatan penting
 
-### 11.3 Aturan bisnis
+Vision API `documentTextDetection` memberi teks per kata beserta koordinat kotaknya, **bukan** struktur tabel siap pakai (beda dengan produk khusus seperti Document AI Form Parser yang berbayar). Jadi tabel semester × mapel disusun ulang sendiri dari koordinat:
 
-**Akta & KK** (dipertahankan dari v1):
+1. Kelompokkan kata berdasarkan posisi Y (baris) dengan toleransi ±10px → jadi baris.
+2. Dalam satu baris, urutkan berdasarkan posisi X → jadi kolom (nama mapel di kolom pertama, nilai per semester di kolom berikutnya).
+3. Cocokkan teks di kolom pertama ke `MataPelajaran.alias` (fuzzy match, ambang sama seperti v3.1: ≥0,85 HIGH, 0,7-0,85 MEDIUM).
 
-- Nama & TTL siswa hanya dari Akta. NIK siswa dari baris anggota KK yang namanya paling mirip nama siswa, bukan NIK pertama.
-- Nomor KK dan NIK dibedakan dari label dan posisi header. Tanggal lahir dipilih dari konteks ("lahir", tahun wajar).
-- Tidak menebak. Field ragu = MEDIUM/LOW.
+**Konsekuensi jujur:** cara ini kurang andal dibanding produk ekstraksi tabel khusus, terutama untuk rapor hasil foto yang miring atau tabelnya tidak rapi. Karena itu:
 
-**Rapor** (baru v3):
-
-- Pencocokan nama mapel: normalisasi (lowercase, buang tanda baca & kata "dan budi pekerti" dsb.), cocokkan ke `alias` dengan fuzzy match (rasio ≥ 0,85 = HIGH, 0,7-0,85 = MEDIUM).
-- Nilai: angka 0-100 di kolom "Nilai Akhir" / "Nilai" / "Pengetahuan". Bila rapor K13 punya kolom Pengetahuan & Keterampilan, ambil Pengetahuan **[KEPUTUSAN]**. Abaikan kolom predikat (A/B/C) dan deskripsi.
-- Semester dideteksi dari teks header ("Semester 1 / Ganjil", "Kelas VII"). Bila gagal, siswa memilih semester per berkas di UI.
-- Validasi silang: bila NISN/nama di rapor terbaca dan berbeda dengan Langkah 1, tampilkan peringatan (tidak memblokir).
-- Hasil selalu dikonfirmasi siswa dan diverifikasi panitia (Bagian 13.4). OCR rapor tidak pernah langsung dianggap final.
-
-### 11.4 Kandidat engine & spike pemilihan **[KEPUTUSAN]**
-
-| Engine | Jenis | Kekuatan | Kelemahan | Privasi data |
-|---|---|---|---|---|
-| PaddleOCR 3.x (PP-OCRv5, PP-StructureV3 untuk tabel) | Self-hosted, gratis | Akurasi teks Latin baik, ada pengenalan tabel (cocok rapor) | Lebih berat, setup lebih rumit | Data tetap di server sekolah |
-| EasyOCR (dipakai v1) | Self-hosted, gratis | Parser KK/Akta v1 sudah ada, setup mudah | Tidak ada pengenalan tabel, lambat di CPU | Tetap di server |
-| Tesseract 5 | Self-hosted, gratis | Ringan | Lemah untuk foto HP miring/buram | Tetap di server |
-| Google Cloud Vision / Document AI | Cloud, berbayar per halaman | Akurasi tinggi, cepat | Biaya, data KK dikirim ke pihak ketiga | Perlu dasar hukum & persetujuan (UU PDP) |
-| Azure AI Document Intelligence (Layout) | Cloud, berbayar | Ekstraksi tabel sangat baik | Biaya, data ke pihak ketiga | Sama |
-| Model vision LLM (Claude, Gemini, dll.) dengan output JSON | Cloud, berbayar per token | Paling tahan terhadap format rapor yang beragam | Biaya, perlu pembatasan prompt, data ke pihak ketiga | Sama |
-
-Rekomendasi awal: **PaddleOCR self-hosted** sebagai kandidat utama (gratis, data tidak keluar, punya pengenalan tabel), **EasyOCR** sebagai baseline karena parser v1 sudah ada, dan **satu engine cloud** sebagai pembanding. Keputusan final dari hasil spike.
-
-**Spike M5a (3-5 hari):**
-
-1. Kumpulkan dataset uji anonim dengan izin: 20 Akta, 20 KK, 20 rapor (campuran PDF digital e-Rapor, scan, foto HP). Dataset tidak masuk repo.
-2. Buat ground truth manual (`benchmark/truth/*.json`).
-3. Jalankan `benchmark/run.py --engine <nama>` untuk tiap kandidat.
-4. Ukur: akurasi per field, akurasi nilai rapor per sel, persentase HIGH yang benar (presisi), durasi p50/p95 di VPS target, RAM, biaya per 1.000 dokumen.
-5. Kriteria lolos: presisi HIGH ≥ 95%, akurasi nilai rapor foto ≥ 75%, p95 ≤ 20 dtk per dokumen di CPU, biaya sesuai anggaran sekolah.
-6. Tulis `docs/adr/0002-engine-ocr.md` berisi hasil dan keputusan.
+- Tabel hasil OCR di wizard **selalu ditampilkan sebagai tabel yang bisa diedit penuh** (sudah dirancang begitu sejak v3.1), bukan diam-diam dipakai apa adanya.
+- Nilai akurasi rapor di KPI (Bagian 3) tetap ditarget 90%/75%, tapi diuji ulang nyata setelah fitur ini jalan — kalau meleset jauh, opsi upgrade ke Document AI (berbayar kecil, lihat 22 D6) dipertimbangkan khusus untuk rapor saja (Akta/KK tetap Vision API biasa karena sudah berupa dokumen terstruktur sederhana).
 
 ### 11.5 Ketentuan umum
 
-- URL & token dari env (`OCR_SERVICE_URL`, `OCR_SERVICE_TOKEN`). ocr-service tidak terbuka ke internet (jaringan internal Docker).
-- Gambar diproses di memori, tidak disimpan oleh ocr-service.
-- Engine cloud (bila dipilih) hanya dipanggil dari ocr-service, kunci API hanya di server, dan teks persetujuan Langkah 1 menyebut pemrosesan oleh pihak ketiga.
-- Frontend memanggil `/ocr/health` saat membuka Langkah 2-3. Bila mati: sembunyikan tombol OCR, tampilkan isian manual.
+- Kunci API Google Cloud hanya di env server (`GOOGLE_CLOUD_VISION_API_KEY` atau service account JSON), tidak pernah dikirim ke browser.
+- Setiap pemanggilan dicatat di `OcrHasil` untuk memantau biaya dan akurasi (Bagian 13.11).
+- Bila Vision API gagal/limit terlampaui: pesan ramah, siswa lanjut isi manual — sama seperti v3.1.
 
 ---
 
 ## 12. Rekomendasi Jurusan dari Nilai Rapor
 
-Rekomendasi **hanya memakai nilai rapor** yang telah dikonfirmasi siswa. Metode: **pembobotan rata-rata tertimbang (weighted scoring)** per jurusan. Sederhana, bisa dijelaskan ke orang tua dan guru BK, dan bobotnya bisa diubah admin. Ini bukan machine learning; bila kelak diganti metode lain (mis. SAW/TOPSIS), cukup mengganti `RekomendasiService`.
-
-### 12.1 Rumus
-
-```
-n_k   = rata-rata nilai mapel k dari semester yang dipakai (abaikan semester kosong)
-w_jk  = bobot mapel k untuk jurusan j (bobot_jurusan)
-K_j   = mapel berbobot untuk jurusan j yang nilainya tersedia
-
-skor_j     = Σ_{k∈K_j} (w_jk × n_k) / Σ_{k∈K_j} w_jk          → rentang 0-100
-kontribusi_jk = (w_jk / Σ_{k∈K_j} w_jk) × n_k                  → untuk bar rincian
-```
-
-- Bila mapel berbobot tidak ada di rapor (mis. Informatika tidak diajarkan), bobotnya **dibagi ulang secara proporsional** ke mapel lain (sudah tercakup oleh pembagi di atas). Bila lebih dari 50% total bobot jurusan hilang, tandai "Data kurang".
-- Pembulatan 1 desimal saat tampil, simpan 2 desimal.
-
-### 12.2 Peringkat & label
-
-Skor absolut cenderung mirip antarjurusan untuk siswa bernilai rata, jadi label memakai **posisi relatif**:
-
-| Kondisi | Label | Warna |
-|---|---|---|
-| Skor tertinggi | Paling Sesuai | hijau |
-| Selisih ≤ 3 poin dari tertinggi | Juga Sesuai | hijau muda |
-| Lainnya | Alternatif | abu-abu |
-| > 50% bobot tanpa data | Data Kurang | kuning |
-
-Seri skor: urutkan berdasarkan nilai mapel berbobot terbesar jurusan tersebut, lalu urutan jurusan.
-
-Selain label, UI menampilkan kalimat penjelas otomatis, mis. "Nilai Matematika (88) dan IPS (85) kamu paling mendukung AKL."
-
-### 12.3 Bobot default (usulan, wajib disetujui guru BK) **[KEPUTUSAN]**
-
-| Jurusan | Bobot mapel |
-|---|---|
-| AKL | matematika 0,40 · ips 0,25 · b_indonesia 0,15 · informatika 0,10 · b_inggris 0,10 |
-| MPLB | b_indonesia 0,30 · ips 0,25 · b_inggris 0,20 · informatika 0,15 · matematika 0,10 |
-| FKK | ipa 0,45 · matematika 0,20 · b_indonesia 0,15 · b_inggris 0,10 · pai 0,10 |
-| TKR | ipa 0,35 · matematika 0,30 · prakarya 0,20 · informatika 0,15 |
-
-Admin superadmin dapat mengubah bobot di panel (Bagian 13.9). Setiap perubahan menaikkan `rekomendasi_versi`; skor pendaftar lama tidak berubah.
-
-### 12.4 Kriteria terima
-
-- Matematika 90, IPS 86, B. Indonesia 80, IPA 70, lainnya 75 → AKL "Paling Sesuai".
-- IPA 92, Matematika 85, lainnya 75 → FKK atau TKR di peringkat 1-2, AKL bukan peringkat 1.
-- Rapor tanpa Informatika → skor tetap dihitung dengan bobot dibagi ulang, tidak error.
-- Skor yang dihitung backend saat submit sama dengan yang tampil di Langkah 4 untuk data yang sama.
-- Perubahan bobot tidak mengubah `rekomendasi_skor` pendaftar yang sudah submit.
+**Tidak berubah sama sekali dari v3.1 Bagian 12** — rumus pembobotan rata-rata tertimbang, label relatif (Paling Sesuai/Juga Sesuai/Alternatif/Data Kurang), bobot default per jurusan, dan kriteria terima semuanya tetap. Ini murni logic, tidak bergantung arsitektur.
 
 ---
 
 ## 13. Panel Admin
 
-Frontend: `/admin/*` (Next.js, client). Layout: sidebar desktop / drawer mobile, header nama admin + keluar. Kepadatan tinggi, angka `tabular-nums`, animasi minimal.
+**Tidak berubah secara fungsional dari v3.1 Bagian 13** (dashboard, data peserta, verifikasi, detail & edit, kuota, input manual, konten, jurusan & bobot, pengaturan, statistik OCR). Penyesuaian teknis:
 
-| Grup | Menu |
-|---|---|
-| Utama | Dashboard, Data Peserta, Verifikasi |
-| Aksi | Ekspor XLSX, Kuota, Input Manual |
-| Konten | Berita, Agenda, Galeri, Testimoni, FAQ |
-| Sistem | Jurusan & Bobot, Mata Pelajaran, Isian Formulir, Pengaturan, Statistik OCR, Akun Admin, Audit Log |
-
-### 13.1 Login
-
-Username + password, throttle 5/menit, "Ingat saya", wajib ganti password saat `must_change_password`. Audit `login`.
-
-### 13.2 Dashboard
-
-Kartu: Total, Menunggu, Diterima, Revisi/Ditolak, **Nilai belum dicek**. Banner peringatan bila Google Drive terputus, kuota ≥ 80%, atau ada berkas `gagal` sinkron. Distribusi kuota per jurusan (progress bar). Grafik pendaftar per hari (periode aktif), per status, per jurusan pilihan 1, **sebaran jurusan rekomendasi vs pilihan siswa**. Tabel 8 pendaftar terbaru. Data contoh hanya di `APP_ENV=local`.
-
-### 13.3 Data Peserta
-
-Cari (nama, NISN, nomor, asal sekolah, NIK via hash, no HP), filter (status, status nilai, jurusan, sumber, periode, tanggal, kelengkapan berkas), sort kolom, paginasi 20, ekspor hasil filter (XLSX/PDF). NIK & HP dimasking di tabel.
-
-### 13.4 Verifikasi
-
-Satu halaman per pendaftar dengan dua panel:
-
-- **Kiri**: penampil dokumen (Akta, KK, tiap halaman rapor, berkas kustom) yang di-stream lewat backend dari Google Drive. Gambar: zoom, rotasi, layar penuh. PDF: penampil PDF bawaan browser. Tombol unduh per berkas. Bila berkas belum tersinkron, ditampilkan dari disk lokal dengan label "Menunggu unggah ke Drive".
-- **Kanan**: data hasil isian; untuk rapor, tabel nilai dengan penanda sel hasil OCR, sel dikoreksi siswa (nilai OCR vs final), dan sel ber-confidence rendah.
-- Aksi nilai: "Nilai sesuai" (`status_nilai = sesuai`) atau koreksi sel → rekomendasi dihitung ulang, `status_nilai = dikoreksi`, audit log.
-- Aksi pendaftar: Setujui, Perlu Revisi (catatan wajib), Tolak (alasan). Catat `diverifikasi_oleh/at`. Email status opsional **[KEPUTUSAN]**.
-- Navigasi "Berikutnya" ke pendaftar `pending` selanjutnya.
-
-### 13.5 Detail & edit pendaftar
-
-Panel: Kontak (tautan `wa.me`, nomor `08xx` → `62xx`, WA fallback ke HP), Identitas, Orang Tua, Bagian B-D, Nilai Rapor & Rekomendasi (rincian kontribusi), Pilihan Jurusan, Berkas, Field Kustom, Status, Riwayat (audit). Edit semua kolom teks + ganti berkas, audit data lama/baru. ID tidak ada → 404.
-
-### 13.6 Kuota
-
-Tabel jurusan (kuota input 0-1000, terdaftar, sisa, persen), simpan massal dalam transaksi.
-
-### 13.7 Input manual (luring)
-
-Satu form (Bagian A-D + tabel nilai rapor + unggah berkas opsional), `sumber = luring`, status default `approved`, nomor dari generator yang sama, rekomendasi dihitung bila nilai diisi.
-
-### 13.8 Konten
-
-CRUD berita (editor teks kaya, HTML disanitasi), agenda, galeri, testimoni, FAQ (keywords dipisah koma). Gambar ke bucket publik, gambar lama dihapus saat diganti/dihapus. Simpan konten memicu revalidasi landing.
-
-### 13.9 Jurusan, mapel & bobot (baru v3, superadmin)
-
-- CRUD jurusan (nama, deskripsi, prospek, keunggulan, kuota, foto, urutan, aktif).
-- CRUD mata pelajaran + alias (satu baris satu alias).
-- Editor bobot per jurusan: slider/angka per mapel, total ditampilkan, tombol "Normalisasi ke 1". **Pratinjau**: masukkan contoh nilai, lihat skor 4 jurusan sebelum menyimpan.
-
-### 13.10 Pengaturan
-
-Tahun ajaran (`^\d{4}/\d{4}$`), jadwal gelombang (buka/tutup), tanggal verifikasi berkas fisik, semester rapor yang dipakai, kontak panitia, teks persyaratan & persetujuan, gambar hero/galeri kegiatan/kepala sekolah, tautan grup WA, **Google Drive** (tombol Hubungkan/Putuskan, email akun terhubung, pemakaian kuota, uji koneksi, jumlah berkas menunggu/gagal + tombol Sinkron ulang).
-
-### 13.11 Statistik OCR (baru v3)
-
-Dari `ocr_hasil`: jumlah per jenis & engine, tingkat sukses, durasi p50/p95, persentase sel rapor yang dikoreksi siswa/panitia (indikator akurasi nyata).
+- 13.4 Verifikasi: penampil dokumen sekarang melalui route handler yang mengambil file dari Google Drive API (Node) — perilakunya sama seperti v3.1.
+- 13.10 Pengaturan: tombol "Hubungkan Google Drive" memakai alur OAuth Next.js (7.3).
+- 13.11 Statistik OCR: kolom `provider` di `OcrHasil` sekarang hampir selalu `google_vision` (bukan lagi perbandingan antar-engine self-hosted), tapi tetap berguna untuk memantau biaya bulanan (jumlah unit terpakai vs kuota gratis 1.000).
 
 ---
 
 ## 14. Form Builder Dinamis
 
-Sama seperti PRD v2 Bagian 13, disesuaikan ke arsitektur API:
-
-- Backend menyajikan `GET /form-schema` (cache, dibersihkan saat admin menyimpan): langkah → field (kunci, label, tipe, opsi, wajib, tampil, urutan, teks bantuan, placeholder, default).
-- Frontend merender field secara dinamis dan membangun skema Zod dari form schema. Backend tetap memvalidasi dengan `FormFieldConfig::sesuaikanAturan()` + `aturanKustom()`.
-- Field bawaan: kunci terkunci, tidak bisa dihapus, hanya disembunyikan/diwajibkan/dilabel ulang. Opsi berkode (penghasilan 01-05) hanya bisa diganti label.
-- Field kustom: kunci `kustom_{slug}`, tipe text/number/tel/email/date/textarea/select/radio/checkbox/file. Berkas kustom ikut dipindah saat submit. Jawaban masuk `data_kustom`, detail pendaftar, dan ekspor XLSX.
-- Field `rapor` dan tabel nilai **tidak bisa dimatikan** selama rekomendasi aktif (dikunci di form builder dengan keterangan).
-- Seed field bawaan: Lampiran 23.3.
+**Tidak berubah dari v3.1 Bagian 14** secara fungsional. `GET /api/v1/form-schema` tetap ada, field bawaan terkunci, field kustom bisa ditambah lewat admin. Skema Zod untuk validasi kustom dibangun dinamis di `src/server/validasi/formKustom.ts` dari konfigurasi field, menggantikan `FormFieldConfig::aturanKustom()` Laravel.
 
 ---
 
 ## 15. Dokumen Keluaran
 
-### 15.1 PDF formulir (`/formulir/{token}`, backend DomPDF)
+### 15.1 PDF formulir — **[BLOKIR] menunggu template**
 
-Kertas F4 portrait (210 × 330 mm). Meniru formulir kertas resmi: kop, judul + tahun pelajaran, No. Pendaftaran + barcode Code 39, Bagian A 1-17, B (termasuk nilai ujian angka & terbilang), C, D, blok tanda tangan + kotak foto 3×4, dua lembar **Tanda Terima Berkas** (8 berkas, tanggal datang dari pengaturan, "PANITIA SPMB"). Nama berkas `formulir-pendaftaran-{nomor}.pdf`.
+Ini perubahan paling penting di v4. PRD v3.1 meminta PDF yang "meniru" formulir kertas. **Permintaan baru: PDF yang dihasilkan sistem harus sama persis (100%) — desain, tata letak, dan isi — dengan template resmi** yang akan Anda taruh di:
+
+- `docs/template-formulir.docx`
+- `docs/template-formulir.md`
+
+**Sampai kedua file itu ada di repo, bagian ini terkunci.** Claude Code (atau agen mana pun) tidak boleh menebak-nebak desain formulir; kerjakan bagian PRD lain dulu (Bagian 10-14, 16) sambil menunggu.
+
+**Metode yang dipakai begitu template tersedia** (dipilih khusus supaya hasilnya bisa dijamin identik, bukan "mirip"):
+
+1. **Buat PDF dasar sekali** dari template (`template-formulir.docx` dikonversi ke PDF statis — kop surat, garis, label, semua elemen tetap — lewat LibreOffice/skrip konversi, dicek manual sekali agar persis). PDF dasar ini disimpan di `src/server/services/pdf/template-dasar.pdf` dan **tidak pernah diubah oleh kode**.
+2. **`pdf-lib` menimpa teks dinamis** (nama, NISN, nilai, alamat, dst — posisinya dipetakan satu per satu ke koordinat `x,y` di atas PDF dasar itu) dan menempelkan gambar barcode (`bwip-js`, Code 39) serta kotak foto.
+3. Karena lapisan tetap (kop, garis, label) berasal dari PDF dasar yang sama persis dengan template, bukan digambar ulang oleh kode, hasilnya **dijamin identik** pada bagian yang tidak berubah — satu-satunya pekerjaan teknis adalah memetakan koordinat tiap field dinamis dengan tepat.
+
+**Yang perlu disiapkan begitu template tiba:**
+
+- Pemetaan tiap field dinamis (semua kolom Bagian A-D, nilai ujian, nomor pendaftaran, barcode, kotak foto) ke koordinat `x,y` dan ukuran font di atas PDF dasar — dikerjakan sambil membandingkan render hasil dengan template asli, halaman demi halaman, sampai posisinya pas.
+- Dua lembar "Tanda Terima Berkas" di template (bila ada) dipetakan dengan cara yang sama.
+- Hasil akhir diverifikasi dengan overlay visual (PDF hasil ditumpuk transparan di atas scan/export PDF template asli) untuk memastikan 0 pergeseran.
+
+**Setelah template tiba, update bagian ini** dengan daftar field-ke-koordinat yang sudah dipetakan, supaya PRD tetap jadi acuan tunggal.
 
 ### 15.2 Ekspor XLSX
 
-Sheet "Data Pendaftar", header hijau `#057A3C` teks putih tebal, auto-size. Semua kolom Bagian A-D, alamat terurai, nilai rapor rata-rata per mapel, sumber nilai, status nilai, skor & jurusan rekomendasi, pilihan 1 & 2, status, sumber, tanggal, kolom kustom. NIK/NISN/HP format teks.
+Sama seperti v3.1 Bagian 15.2, dibuat dengan `exceljs` menggantikan `maatwebsite/excel`. Isi kolom dan format (header hijau, nilai rapor rata-rata, dst) tidak berubah.
 
 ### 15.3 Rekap PDF
 
-A4 landscape, kop, judul + periode + filter, tabel, nomor halaman, tanda tangan panitia.
+Sama seperti v3.1 Bagian 15.3, dibuat dengan `pdf-lib` langsung (bukan menimpa template, karena ini laporan internal, bukan dokumen resmi — tidak terikat 15.1).
 
 ### 15.4 Email kode pendaftaran
 
-Subjek "Kode Pendaftaran SPMB Anda: {nomor}". Nomor menonjol, ringkasan, tautan halaman sukses bertoken, Cek Status, grup WA, instruksi berkas fisik. Queue, sekali kirim (`notifikasi_email_at`), template responsif sesuai desain.
+Sama seperti v3.1 Bagian 15.4 secara isi, dikirim lewat **Resend** (`resend.emails.send(...)`) menggantikan SMTP+queue Laravel. Karena tidak ada queue, pengiriman dilakukan langsung di akhir route handler submit (dibungkus try/catch — kegagalan kirim email tidak menggagalkan pendaftaran, dicoba ulang oleh cron harian bila gagal).
 
 ---
 
 ## 16. Arahan Desain & Motion
 
-### 16.1 Pembacaan brief
-
-Situs penerimaan murid **SMK berbasis NU** untuk **siswa SMP/MTs dan orang tua di Banyumas** yang mayoritas memakai **HP Android dengan sinyal tidak selalu stabil**. Karakter visual: **hangat, terpercaya, modern, berani tapi tidak kekanak-kanakan**. Keterbacaan dan kejelasan mengalahkan efek.
-
-### 16.2 Arah visual: "Editorial Hijau Pesantren Modern"
-
-| Elemen | Ketentuan |
-|---|---|
-| Warna utama | Hijau NU `#057A3C` (primary), hijau tua `#03452A` (ink/heading di atas terang), hijau sangat tua `#0E1F17` (latar gelap) |
-| Netral | Kertas hangat `#F6F3EC` (latar), `#E9E4D8` (garis/permukaan), teks `#16201A` |
-| Aksen | Emas kunyit `#D9A21B`, **hanya** untuk satu elemen penting per layar (CTA utama atau sorotan) |
-| Status | Hijau, biru, kuning, merah dengan kontras AA di atas latar kertas |
-| Tipografi display | **Bricolage Grotesque** (karakter kuat, cocok untuk angka & kode jurusan besar) |
-| Tipografi isi | **Plus Jakarta Sans** (dirancang desainer Indonesia, terbaca di layar kecil) |
-| Angka | `font-variant-numeric: tabular-nums` di tabel, skor, statistik |
-| Radius | Satu sistem: 6 px (input, badge), 14 px (kartu), penuh untuk pil |
-| Ikon | Phosphor, bobot "regular" untuk UI, "duotone" hanya di ilustrasi section |
-| Fotografi | Foto asli sekolah (`campus-front`, `gerbang-depan`, `kegiatan-siswa`, `lab-praktik`) dengan perlakuan duotone hijau-kertas yang konsisten. Tanpa foto stok |
-| Tekstur | Ornamen geometris halus terinspirasi pola anyaman/mozaik, opasitas rendah, hanya di hero dan footer |
-| Mode gelap | Token disiapkan untuk situs publik (latar `#0E1F17`). Wizard & admin terang dulu, gelap opsional. PDF & email selalu terang |
-
-Font di-self-host (`next/font/local` atau `next/font/google` yang otomatis self-host) dengan `font-display: swap`.
-
-### 16.3 Komposisi halaman
-
-- **Hero**: grid asimetris. Kiri: judul besar dua baris ("Belajar terampil, tumbuh berakhlak." atau sejenis, final dari sekolah), subjudul, dua CTA, info gelombang aktif. Kanan: foto kampus duotone dalam bingkai tidak simetris, dengan stiker kecil "Akreditasi A" (hanya angka/fakta nyata). `min-h-[100dvh]` di mobile tanpa memotong CTA.
-- **Program keahlian**: kode jurusan (AKL, MPLB, FKK, TKR) tampil sebagai tipografi raksasa yang jadi elemen visual utama; detail muncul saat hover/tap.
-- **Alur daftar**: garis waktu horizontal di desktop, vertikal di mobile, digambar saat scroll.
-- **Testimoni**: kutipan besar bergaya editorial, satu per satu, bukan grid kartu identik.
-- Ritme section bervariasi (lebar penuh, dua kolom, offset) agar tidak terasa seperti template.
-
-### 16.4 Anti AI slop: larangan wajib
-
-- Gradien ungu/biru/pink, latar mesh blob, glassmorphism di mana-mana.
-- Hero tengah dengan judul + dua tombol + mockup mengambang (pola template).
-- Grid 3 kartu identik ikon-judul-teks untuk semua konten.
-- Emoji sebagai ikon, ✨ atau 🚀 di teks.
-- Font Inter/Roboto sebagai default tanpa alasan, campuran lebih dari 2 keluarga font.
-- Label meta palsu ("SECTION 01", "/// FEATURES"), em-dash dekoratif, angka statistik palsu ("10.000+ siswa" tanpa data).
-- Kalimat generik ("Wujudkan masa depan cemerlangmu bersama kami!"). Copy harus spesifik tentang sekolah ini.
-- Tampilan default shadcn/ui tanpa kustomisasi token.
-- Shadow berat bertumpuk, border radius campur aduk.
-- Animasi yang memperlambat tugas (wizard, admin).
-
-### 16.5 Pembagian peran Motion & GSAP
-
-| Kebutuhan | Library | Contoh |
-|---|---|---|
-| Scroll storytelling landing | GSAP + ScrollTrigger | Garis alur daftar tergambar, parallax ringan foto hero, pin section program keahlian |
-| Animasi teks judul | GSAP SplitText | Judul hero muncul per baris (sekali, ≤ 800 ms) |
-| Transisi halaman & langkah wizard | Motion `AnimatePresence` | Geser + fade antar langkah |
-| Layout animation | Motion `layout` | Kartu rekomendasi mengurut ulang, akordeon FAQ, tabel nilai menambah baris |
-| Micro-interaction | Motion | Tombol tekan, lencana confidence muncul, toast |
-| Bar skor & angka berjalan | Motion `animate` / `useSpring` | Bar kontribusi mapel, skor jurusan |
-
-Aturan:
-
-- GSAP hanya di route publik, dimuat dinamis (`next/dynamic` / `useGSAP` dalam client component). Jangan muat GSAP di wizard & admin.
-- Semua animasi menghormati `prefers-reduced-motion` (Motion `useReducedMotion`, `gsap.matchMedia()`), runtuh ke statis.
-- Durasi: micro 150-200 ms, transisi 250-350 ms, scroll reveal ≤ 800 ms. Hanya animasikan `transform` dan `opacity`.
-- Dial intensitas: Landing 6/10, Detail & berita 4/10, Wizard 2/10, Admin 1/10.
-
-### 16.6 Aturan UX wajib
-
-- Mobile-first, diuji di 360, 768, 1024, 1440 px. Tanpa gulir horizontal.
-- Target sentuh ≥ 44 px, fokus terlihat, kontras WCAG AA.
-- Label di atas input, teks bantuan di bawah, galat dekat field (`aria-describedby`), ringkasan galat di atas form yang bisa diklik.
-- Tombol utama penuh lebar di mobile. Keyboard numerik untuk NIK, NISN, HP, nilai (`inputMode="numeric"`).
-- Status OCR berupa skeleton + teks, bukan spinner kosong.
-- Empty state untuk semua daftar.
-- Gambar WebP/AVIF via `next/image`, lazy-load, tanpa video hero.
-- Lighthouse mobile: Performance ≥ 85, Accessibility ≥ 95, Best Practices ≥ 95, SEO ≥ 95.
-
-### 16.7 Pemakaian skill di Claude Code
-
-| Tahap | Skill | Keluaran |
-|---|---|---|
-| M1 design system | `frontend-design` (plugin resmi Anthropic) sebagai skill utama. Bila terpasang, `ui-ux-pro-max` untuk menghasilkan `docs/design/DESIGN.md` | Token `@theme`, komponen `ui/*`, halaman katalog komponen `/admin/_katalog` (hanya local) |
-| Landing, jurusan, berita | `frontend-design` + arahan 16.2-16.5. Skill taste komunitas (`design-taste-frontend`, `gpt-taste`) boleh dipakai bila terpasang, tetapi intensitas motion mengikuti dial 16.5 | |
-| Wizard & admin | `frontend-design` dengan fokus kejelasan form dan kepadatan data | |
-| Sebelum rilis | `design:accessibility-review`, `design:design-critique` | Laporan audit + perbaikan |
-
-Bila arahan skill bertentangan dengan PRD, **PRD yang menang**.
+**Tidak berubah dari v3.1 Bagian 16 — dan sudah selesai dikerjakan di M1.** Token warna (hijau NU, kertas hangat, emas kunyit), tipografi (Bricolage Grotesque + Plus Jakarta Sans), komposisi halaman, daftar larangan anti AI slop, pembagian peran Motion vs GSAP, dan aturan UX wajib semuanya tetap berlaku persis seperti sebelumnya. Tidak perlu dikerjakan ulang — lanjutkan dari komponen dan token yang sudah ada.
 
 ---
 
 ## 17. Keamanan & Privasi
 
-| Aspek | Ketentuan |
+Sama seperti v3.1 Bagian 17, dengan penyesuaian mekanisme:
+
+| Aspek | v4 |
 |---|---|
-| Auth admin | Tabel `users`, bcrypt, Sanctum SPA, regenerate session, throttle login, Policy per peran |
-| Siswa tanpa login | Draf: token acak 40 karakter di cookie httpOnly + Secure + SameSite=Lax, disimpan sebagai hash. Sukses/formulir: token acak (hash di DB). Cek status: nomor + tanggal lahir |
-| Dokumen | Google Drive tanpa berbagi (scope `drive.file`), dilihat hanya lewat endpoint admin yang mencatat audit; disk lokal privat di luar `public/`; refresh token terenkripsi |
-| Data sensitif | NIK, no KK, nomor HP dienkripsi (`encrypted` cast) **[KEPUTUSAN]**, data draf terenkripsi, masking di tabel admin |
-| CSRF | Sanctum CSRF cookie untuk admin; endpoint draf memakai cookie SameSite + cek header `Origin` |
-| XSS | React escaping default; HTML berita disanitasi di backend (HTMLPurifier) dan dirender hanya dari field tersanitasi |
-| Upload | Validasi MIME asli + ekstensi + ukuran, nama diacak, tidak pernah dieksekusi. PDF diproses di ocr-service terisolasi |
-| Rate limit | Lihat tabel 9.1 + login 5/mnt |
-| OCR service | Jaringan internal saja, token internal, tanpa CORS publik |
-| Header | HTTPS, HSTS, CSP (izinkan domain Supabase publik untuk gambar), `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` (mencegah token di URL bocor lewat referer) |
-| Supabase | RLS aktif tanpa policy anon, kunci rahasia hanya di backend |
-| Audit | Login, verifikasi, edit, koreksi nilai, lihat dokumen, ekspor, ubah pengaturan/bobot |
-| Retensi | `php artisan spmb:arsip {periode}` dan `spmb:hapus-draf` (draf kedaluwarsa + berkas temp > 24 jam) **[KEPUTUSAN: lama retensi]** |
-| UU PDP | Teks persetujuan Langkah 1: tujuan, jenis data, lama penyimpanan, pihak pemroses (termasuk engine OCR cloud bila dipakai), kontak sekolah |
+| Auth admin | JWT di cookie httpOnly (7.5), bukan Sanctum. Password `bcryptjs`, throttle login via tabel percobaan login sederhana (karena tidak ada middleware throttle Laravel bawaan — implementasi manual: hitung percobaan gagal per username per 15 menit) |
+| Siswa tanpa login | Sama persis: token draf dan token akses hash SHA-256 di cookie httpOnly |
+| Dokumen | Google Drive privat, dilihat lewat route admin yang mencatat audit — sama seperti v3.1 |
+| Data sensitif | NIK, no KK, no HP dienkripsi eksplisit (`src/server/services/kripto.ts`, AES-256-GCM) sebelum disimpan Prisma |
+| CSRF | Karena auth berbasis cookie httpOnly + fetch dari origin yang sama, proteksi CSRF memakai pengecekan header `Origin`/`Sec-Fetch-Site` di route handler admin yang mengubah data (POST/PUT/DELETE) |
+| XSS | React escaping default; HTML berita disanitasi server-side (`isomorphic-dompurify` atau `sanitize-html`) sebelum disimpan |
+| Rate limit | Karena tidak ada middleware throttle bawaan, dipakai Upstash Redis (free tier) atau penghitungan sederhana di tabel untuk endpoint publik sensitif (submit, OCR, cek status, login) |
+| Header keamanan | Diset lewat `next.config.ts` (`headers()`): HSTS, CSP, `X-Frame-Options: DENY`, `Referrer-Policy: strict-origin-when-cross-origin` |
+| Audit | Sama seperti v3.1: login, verifikasi, edit, koreksi nilai, lihat dokumen, ekspor, ubah pengaturan/bobot |
 
 ---
 
-## 18. Bug v1 & Temuan Audit PRD v2
+## 18. Bug v1 & Temuan Audit
 
-### 18.1 Bug v1 (dari PRD v2, tetap wajib diperbaiki)
+Semua temuan dari v3.1 Bagian 18 (bug v1 dan audit PRD v2) **tetap berlaku dan tetap wajib diperbaiki** — tidak diulang di sini, rujuk v3.1 untuk daftar lengkapnya. Temuan baru khusus transisi ke v4:
 
-| # | Temuan v1 | Perbaikan v3 |
-|---|---|---|
-| 1 | Rute admin tanpa middleware auth | Sanctum + Policy, test semua endpoint admin |
-| 2 | Dokumen di disk publik | Google Drive privat + proxy admin, temp di disk privat |
-| 3 | Sukses/PDF dibuka dengan nomor berurutan | Token acak (hash) |
-| 4 | Kredensial admin di `pengaturans`, default `admin123` | Tabel `users`, seed dari env, wajib ganti |
-| 5 | Nilai rapor Langkah 3 tidak tersimpan | Nilai rapor jadi inti rekomendasi, disimpan di draf & `pendaftar` |
-| 6 | "Kriteria sekolah 10%" di FAQ tidak ada di kode | Rumus baru Bagian 12, FAQ diperbarui |
-| 7 | Status `revisi` vs `revision` | PHP Enum `StatusVerifikasi` |
-| 8 | Nomor pakai `date('Y')`, tanpa lock | Tahun ajaran + advisory lock |
-| 9-10 | `SUBSTR`, `like` tidak cocok Postgres | `EXTRACT`, `ilike` |
-| 11 | URL OCR hardcode, CORS `*` | Env + token + jaringan internal |
-| 12 | Kontak chatbot hardcode | Pengaturan `kontak_panitia` |
-| 13 | Data demo di produksi | Hanya `local` |
-| 14 | Berkas kustom tertinggal di temp | Dipindah saat submit |
-| 15 | Pengaturan query per panggilan | Cache |
-| 16 | Gerbang `step6Post` salah | Gerbang di backend per langkah + test |
-| 17 | `step3Lewati` via GET | Tidak ada lagi (rapor wajib) |
-| 18 | Paket & berkas mati | Tidak dibawa ke v3 |
-| 19-20 | Design system tidak sinkron, CSS 1.258 baris | Token Tailwind v4 + komponen React |
-| 21 | Migrasi bertahap berantakan | Satu migrasi bersih per tabel |
-| 22 | `file_exists(public_path())` | Cek path terisi / `Storage::exists` dengan cache |
-
-### 18.2 Temuan audit PRD v2
-
-| # | Temuan | Dampak | Perbaikan v3 |
+| # | Temuan | Dampak | Perbaikan |
 |---|---|---|---|
-| A1 | Kunci mapel `ipa_biologi/fisika/kimia`, `ips_ekonomi` tidak ada di rapor SMP/MTs Kurikulum Merdeka (IPA & IPS terpadu) | Rekomendasi tidak bisa dihitung dari rapor asli, OCR tidak bisa memetakan | Tabel `mata_pelajaran` + alias, bobot baru (12.3) |
-| A2 | Blade + Alpine tidak mendukung Framer Motion dan tidak memisahkan frontend/backend | Tidak memenuhi arahan | Monorepo Laravel API + Next.js (6.1) |
-| A3 | Session server + autosave `localStorage` berisi data pribadi | Data NIK/alamat tertinggal di HP bersama/warnet | Draf di server terenkripsi, `localStorage` tanpa PII |
-| A4 | Rapor opsional & bisa dilewati, padahal jadi dasar rekomendasi | Rekomendasi kosong | Rapor wajib, input manual sebagai fallback |
-| A5 | Tidak ada verifikasi nilai oleh panitia, siswa bisa menaikkan nilai | Rekomendasi & seleksi bisa dimanipulasi | `status_nilai`, penanda koreksi, layar verifikasi berdampingan (13.4) |
-| A6 | Label skor absolut (≥60 Sangat Cocok) membuat siswa bernilai tinggi "Sangat Cocok" di semua jurusan | Rekomendasi tidak membedakan | Label relatif + rincian kontribusi (12.2) |
-| A7 | Bobot hanya bisa diubah lewat seeder (v1) dan perubahan bobot tidak di-snapshot | Histori skor berubah diam-diam | Editor bobot + `rekomendasi_versi` |
-| A8 | Engine OCR ditetapkan EasyOCR tanpa uji, padahal lemah untuk tabel rapor | Akurasi rapor rendah | Driver engine + spike benchmark (11.4) |
-| A9 | PDF e-Rapor digital tetap di-OCR | Lambat & kurang akurat | Ekstraksi lapisan teks lebih dulu |
-| A10 | Email wajib di Langkah 5 | Banyak siswa SMP belum punya email | Default opsional |
-| A11 | Teks mentah OCR berpotensi disimpan/log | Kebocoran data pribadi | Tidak disimpan permanen, log tanpa PII |
-| A12 | Chatbot disebut fitur cerdas padahal pencarian kata kunci | Ekspektasi salah | Diberi nama "Tanya Panitia", dinyatakan bukan AI |
-| A13 | Campur istilah PPDB/SPMB | Tidak konsisten | SPMB di UI, format nomor jadi keputusan |
-| A14 | Host pooler Supabase ditulis tetap (`aws-0-...`) | Bisa salah untuk proyek baru | Salin dari dashboard |
-| A15 | Token di URL bisa bocor lewat header Referer | Akses data pendaftar | `Referrer-Policy` ketat, token di-hash di DB |
-| A16 | Tidak ada kontrak API tertulis | Frontend & backend mudah tidak sinkron | `openapi.yaml` + tipe hasil generate |
+| B1 | Disk lokal untuk berkas sementara wizard (asumsi v3.1) tidak berfungsi di Vercel serverless (tidak persisten antar request) | Berkas wizard hilang di tengah jalan | Dipindah ke Supabase Storage bucket `draf-temp` (Bagian 7.4) |
+| B2 | Queue/job Laravel (`php artisan queue:work`) tidak ada padanannya di serverless | Upload Drive & email tidak bisa "di-queue" seperti rencana lama | Dilakukan synchronous di dalam request (Hobby kini mengizinkan hingga 300 dtk), kegagalan ditangani oleh cron harian, bukan queue real-time |
+| B3 | Rate limiting dan throttle login bergantung middleware bawaan Laravel | Tidak ada middleware setara di Next.js | Diimplementasikan manual atau pakai Upstash Redis (17) |
+| B4 | PDF formulir sebelumnya "meniru", sekarang wajib identik | Pendekatan generate-dari-nol tidak menjamin kecocokan piksel | Pakai PDF template terkunci + `pdf-lib` menimpa teks (15.1) |
 
 ---
 
 ## 19. Strategi Testing
 
-**Backend (PHPUnit/Pest, Postgres lokal via Docker, bukan SQLite)**
+**Backend/service (`src/server/*`) — Vitest**
 
-- Port test v1: ekspor, kuota, input manual, konten CRUD + gambar, detail pendaftar, WA link, validasi Bagian A-D, email sekali kirim, Drive mati tetap jalan.
-- Keamanan: loop semua route `admin/*` → 401 tanpa login; peran `konten` ditolak di endpoint pendaftar; dokumen privat tanpa URL publik; sukses/formulir dengan nomor → 404; cek status tanggal salah → pesan sama.
-- Draf: tanpa cookie → 401/404; langkah melompat ditolak; draf kedaluwarsa ditolak; submit ganda dengan Idempotency-Key yang sama → satu baris.
-- Nomor: submit paralel (dua proses) → nomor berbeda.
-- Rekomendasi: kasus 12.4, bobot hilang dibagi ulang, snapshot versi.
-- Form builder: field disembunyikan tidak wajib, field kustom wajib divalidasi, rapor tidak bisa dimatikan.
-- Throttle semua endpoint publik sensitif.
-- Google Drive: driver `lokal` di test; unit test `GoogleDriveDokumen` dengan klien Google di-mock; test job gagal → berkas lokal tidak terhapus & `berkas_sinkron = gagal`; token dicabut → antrean tertahan tanpa error ke siswa.
-- Pakai `Storage::fake('supabase_public')`, `Storage::fake('dokumen_temp')`, `Mail::fake`, `Queue::fake`, `Http::fake` (OCR).
+- Semua aturan dari v3.1 Bagian 19 tetap berlaku (keamanan endpoint admin, draf, nomor pendaftaran, rekomendasi, form builder), ditulis sebagai test Vitest yang memanggil fungsi `src/server/actions/*` langsung (tanpa perlu server HTTP berjalan) ditambah beberapa test route handler dengan `next/server` testing utilities.
+- Mock Prisma dengan database test terpisah (Postgres lokal via Docker — sama seperti dipakai Fase A), bukan mock total, supaya constraint & transaksi ikut teruji.
+- Mock Vision API, Google Drive API, dan Resend dengan `vi.mock` / MSW (Mock Service Worker) agar test tidak memanggil layanan asli dan tidak kena biaya.
 
-**OCR (pytest)**
+**Komponen (Testing Library)** — sama seperti v3.1 Bagian 19: form error, tabel nilai, reduced motion.
 
-- Parser akta/kk/rapor dengan fixture hasil engine (JSON kata + bbox), tidak bergantung engine.
-- Pencocokan alias mapel, deteksi semester, pengabaian kolom predikat.
-- `pdf_text` untuk PDF digital.
-- Benchmark terpisah (`benchmark/`), tidak jalan di CI.
+**E2E (Playwright)** — sama seperti v3.1: alur daftar lengkap (OCR di-mock), alur admin, audit aksesibilitas otomatis.
 
-**Frontend (Vitest + Testing Library)**
-
-- Komponen form: galat tampil, ringkasan galat, `aria-describedby`.
-- Tabel nilai: rata-rata otomatis, penanda sel diubah.
-- Reduced motion: animasi nonaktif.
-
-**E2E (Playwright, viewport 360 & 1440)**
-
-- Alur daftar lengkap dengan OCR di-mock → sukses → unduh PDF → cek status.
-- Alur admin: login → verifikasi nilai → setujui → ekspor.
-- Audit aksesibilitas otomatis (axe) di halaman utama.
+**PDF (khusus, baru)** — setelah 15.1 tidak lagi [BLOKIR]: test otomatis yang merender PDF dengan data contoh, lalu membandingkan posisi teks hasil terhadap koordinat yang dipetakan (bukan perbandingan gambar piksel di CI, karena rapuh — verifikasi visual piksel dilakukan manual sekali saat pemetaan awal, test CI memverifikasi field terisi di koordinat yang benar).
 
 ---
 
-## 20. Milestone
+## 20. Roadmap Dua Fase
+
+Sesuai arahan: **semua tampilan dan fitur selesai dulu (Fase A, pakai layanan lokal/murah), baru penyiapan layanan produksi (Fase B)**, supaya tim bisa melihat dan mencoba sebelum akun-akun resmi sekolah disiapkan.
+
+### 20.1 Fase A — Fungsional Lengkap (lokal)
 
 | # | Milestone | Isi | Selesai bila |
 |---|---|---|---|
-| M0 | Fondasi monorepo | Struktur folder 6.4, Laravel API, Next.js, ocr-service kosong, Docker Compose dev, Supabase (DB, bucket publik, RLS), OAuth Google Drive + driver `PenyimpananDokumen`, CI (lint + test ketiga proyek), `CLAUDE.md` | Migrasi ke Supabase sukses, unggah-lihat-hapus file uji di Google Drive berhasil, CI hijau |
-| M1 | Design system | Token `@theme`, font, komponen `ui/*`, wrapper motion, layout publik/wizard/admin, katalog komponen | Katalog tampil benar di 360 & 1440 px, lolos axe |
-| M2 | Data, auth, API dasar | Semua migrasi, seeder (jurusan, mapel, bobot, FAQ, form field, superadmin), Sanctum + peran + audit, `openapi.yaml` awal | Test akses admin hijau |
-| M3 | Konten & landing | CRUD konten & jurusan, pengaturan, landing + GSAP, detail jurusan, berita, revalidasi | Test aktif/nonaktif & empty state, Lighthouse ≥ target |
-| M4 | Wizard tanpa OCR | Draf, langkah 1-8 dengan isian manual, form schema dinamis, tabel nilai manual, rekomendasi, submit, nomor, sukses, cek status | E2E alur manual hijau |
-| M5a | Spike engine OCR | Benchmark 11.4, ADR keputusan engine | ADR disetujui |
-| M5b | OCR terintegrasi | Driver engine terpilih, parser akta/kk/rapor, `pdf_text`, endpoint backend, UI Langkah 2-3, fallback | Akurasi memenuhi KPI 2-3, fallback saat service mati |
-| M6 | Admin operasional | Dashboard, data peserta, verifikasi berdampingan + koreksi nilai, detail, edit, kuota, input manual, editor bobot + pratinjau, statistik OCR | Test verifikasi & koreksi tercatat audit |
-| M7 | Keluaran | PDF F4 + barcode, rekap PDF, XLSX lengkap, email queue | PDF dibandingkan visual dengan formulir kertas |
-| M8 | Tanya Panitia | Widget FAQ + saran | Test pencarian & throttle |
-| M9 | Hardening & rilis | Checklist 16.6 & 17, audit a11y & desain, backup, jadwal pembersihan, dokumentasi operator, UAT panitia | Semua checklist lolos |
+| A0 | **Fondasi v4** (transisi arsitektur) | Arsip kerja Laravel lama (Bagian 24), struktur folder baru (6.4), Prisma + Postgres lokal, auth admin dasar, `src/server/services/penyimpanan` dengan driver Google Drive (akun dev) + Supabase Storage dev, CI satu-proyek | `next dev` jalan, login admin bisa, 1 file uji berhasil diunggah-dilihat-dihapus dari Drive, test Vitest dasar hijau |
+| A1 | Design system | **Sudah selesai**, lanjutkan dari M1 lama (6.4 sudah dipindah) | — (tidak perlu dikerjakan ulang) |
+| A2 | Data & auth | Semua model Prisma (Bagian 8), migrasi ke Postgres lokal, seeder (jurusan, mapel, bobot, FAQ, form field, superadmin), proteksi route admin + peran, `openapi.yaml` awal | Test akses admin hijau, data seed tampil di katalog admin |
+| A3 | Konten & landing | CRUD konten & jurusan, pengaturan, landing + GSAP, detail jurusan, berita | Test aktif/nonaktif & empty state, Lighthouse ≥ target (lokal) |
+| A4 | Wizard tanpa OCR | Draf (di Postgres lokal + Supabase Storage dev), langkah 1-8 isian manual, form schema dinamis, tabel nilai manual, rekomendasi, submit, nomor, halaman sukses, cek status | E2E alur manual hijau |
+| A5 | OCR terintegrasi | Vision API (API key dev), parser akta/kk/rapor (11.2-11.4), UI Langkah 2-3, fallback saat gagal | Akurasi diuji dengan dataset sampel, fallback manual berfungsi |
+| A6 | Panel admin operasional | Dashboard, data peserta, verifikasi + koreksi nilai, detail, edit, kuota, input manual, editor bobot + pratinjau, statistik OCR | Test verifikasi & koreksi tercatat audit |
+| A7 | Dokumen keluaran | XLSX, rekap PDF, email (Resend) — **PDF formulir (15.1) dikerjakan terpisah begitu template tiba, tidak memblokir sisanya** | Ekspor & email teruji; placeholder PDF formulir dipakai sementara jika template belum ada |
+| A8 | Tanya Panitia | Widget FAQ + pencarian Jaccard | Test pencarian & throttle |
 
----
+**Keluaran Fase A:** aplikasi berjalan penuh di `localhost`, memakai Postgres lokal + akun dev Google Drive/Supabase/Vision — **bisa ditunjukkan dan dicoba tim** (`npm run dev`, atau di-deploy preview Vercel dengan env dev agar tim bisa coba dari browser tanpa setup lokal masing-masing — ini opsi bagus karena preview deployment Vercel juga gratis).
 
-## 21. Deployment & Operasional
+### 20.2 Fase B — Go-Live (produksi)
 
-### 21.1 Hosting
+| # | Milestone | Isi | Selesai bila |
+|---|---|---|---|
+| B0 | Migrasi Supabase produksi | Buat project Supabase resmi, jalankan migrasi Prisma ke sana, pindahkan seed data final, aktifkan RLS | Aplikasi jalan dengan `DATABASE_URL` produksi, data konsisten |
+| B1 | Google Drive & Vision API produksi | Hubungkan akun Google final (lihat 22 D4), OAuth app ke status "In production", pastikan kuota Vision API sesuai proyeksi volume, folder Drive produksi dibuat bersih | Uji unggah-lihat-hapus dengan akun final berhasil |
+| B2 | Deploy Vercel & domain | Deploy ke Vercel, sambungkan domain `spmb.smkmanu1wangon.sch.id`, isi semua env produksi, verifikasi domain pengirim Resend, pasang Vercel Cron (20.3) | Situs bisa diakses dari domain asli, email terkirim dari domain resmi |
+| B3 | Hardening & serah terima | Audit aksesibilitas (`design:accessibility-review`) dan desain (`design:design-critique`), uji keamanan (checklist 17 & 18), PDF formulir final diverifikasi 100% identik dengan template, dokumentasi operator untuk panitia, UAT bersama panitia | Semua checklist lolos, panitia bisa mengoperasikan tanpa developer |
 
-- **VPS** (min. 2 vCPU, 4 GB RAM; 4 vCPU / 8 GB bila engine OCR self-hosted berat seperti PaddleOCR) di Jakarta/Singapura.
-- `docker compose` service: `nginx`, `backend` (PHP-FPM), `frontend` (Next.js standalone), `ocr`, `queue` (`php artisan queue:work`), `scheduler` (`php artisan schedule:work`).
-- Hanya `nginx` yang membuka port 80/443. HTTPS Let's Encrypt.
-- Frontend memanggil backend dari server component lewat URL internal (`BACKEND_INTERNAL_URL=http://backend`), dari browser lewat `/api` (domain sama).
-
-### 21.2 Jadwal
+### 20.3 Jadwal (Vercel Cron, maksimal 1x/hari di paket gratis)
 
 | Jadwal | Tugas |
 |---|---|
-| Tiap jam | Hapus draf kedaluwarsa + berkas temp-nya |
-| Tiap 15 menit | Ulang unggah berkas `berkas_sinkron = menunggu/gagal` yang sudah lewat backoff |
-| Harian 02:00 | Hapus berkas di disk lokal `draf/` > 24 jam tanpa draf aktif (berkas pendaftar yang belum tersinkron tidak dihapus) |
-| Harian 06:00 | Cek kuota & status token Google Drive, kirim email peringatan ke superadmin bila ≥ 80% atau terputus |
-| Harian 03:00 | Backup `pg_dump` (bila tidak pakai backup Pro) |
-| Mingguan | Ringkasan pendaftar ke email panitia (opsional) |
+| Harian 02:00 | Hapus draf kedaluwarsa (`expiresAt` lewat) beserta berkas `draf-temp` terkait |
+| Harian 02:15 | Retry berkas `berkasSinkron = gagal` ke Google Drive |
+| Harian 06:00 | Cek kuota Google Drive & Vision API, kirim email peringatan ke superadmin bila mendekati batas |
+| Mingguan (dipicu dari cron harian, cek hari Senin) | Ringkasan pendaftar ke email panitia (opsional, sesuai pengaturan) |
 
-### 21.3 Perintah setup awal
-
-```bash
-mkdir spmb-v3 && cd spmb-v3 && git init
-# backend
-composer create-project laravel/laravel backend
-cd backend && php artisan install:api
-composer require barryvdh/laravel-dompdf maatwebsite/excel league/flysystem-aws-s3-v3 google/apiclient mews/purifier
-composer require --dev laravel/pint larastan/larastan
-cd ..
-# frontend
-npx create-next-app@latest frontend --ts --tailwind --app --src-dir --eslint
-cd frontend
-npm install motion gsap @gsap/react @radix-ui/react-dialog @radix-ui/react-select \
-  react-hook-form zod @hookform/resolvers @tanstack/react-query @phosphor-icons/react
-npm install -D openapi-typescript vitest @testing-library/react @playwright/test
-cd ..
-# ocr-service
-mkdir -p ocr-service/app/{engines,parsers} ocr-service/{benchmark,tests}
+```json
+// vercel.json
+{
+  "crons": [
+    { "path": "/api/v1/cron/bersih-draf", "schedule": "0 2 * * *" },
+    { "path": "/api/v1/cron/retry-drive", "schedule": "15 2 * * *" },
+    { "path": "/api/v1/cron/cek-kuota", "schedule": "0 6 * * *" }
+  ]
+}
 ```
 
-### 21.4 Variabel lingkungan
+---
 
-Lampiran 23.7.
+## 21. Deployment (Vercel)
+
+### 21.1 Fase A — preview
+
+Selama Fase A, tim bisa mencoba lewat **Vercel Preview Deployment**: setiap push ke branch kerja otomatis dapat URL preview gratis (`spmb-v4-git-<branch>.vercel.app`), memakai env Fase A (database/Drive/Supabase dev). Tidak perlu domain atau akun produksi untuk ini.
+
+### 21.2 Fase B — produksi
+
+1. Hubungkan repo GitHub ke project Vercel (sekali, lewat dashboard Vercel).
+2. Isi **Environment Variables** di dashboard Vercel (bukan file `.env` yang di-commit): `DATABASE_URL`, `DIRECT_URL`, `GOOGLE_DRIVE_*`, `GOOGLE_CLOUD_VISION_*`, `RESEND_API_KEY`, `JWT_SECRET`, `CRON_SECRET`, `ENCRYPTION_KEY`, dst.
+3. Push ke branch `main` → Vercel otomatis build & deploy ke produksi.
+4. Tambahkan domain `spmb.smkmanu1wangon.sch.id` di pengaturan domain Vercel, ikuti instruksi DNS (CNAME/A record) yang diberikan Vercel ke pengelola DNS sekolah.
+5. Jalankan `prisma migrate deploy` terhadap database produksi (sekali, lewat GitHub Action atau manual).
+6. Verifikasi domain pengirim di Resend (tambah record DNS yang diminta) supaya email tidak masuk spam.
+
+**Tidak ada lagi VPS, Docker Compose produksi, atau Nginx untuk dikelola** — ini penyederhanaan besar dibanding v3.1 Bagian 21.
+
+### 21.3 Perintah setup awal (Fase A)
+
+```bash
+mkdir spmb-v4 && cd spmb-v4 && git init
+npx create-next-app@latest . --ts --tailwind --app --src-dir --eslint
+npm install prisma @prisma/client zod react-hook-form @hookform/resolvers \
+  motion gsap @gsap/react @radix-ui/react-dialog @radix-ui/react-select \
+  @tanstack/react-query @phosphor-icons/react jose bcryptjs \
+  googleapis @supabase/supabase-js @google-cloud/vision resend pdf-lib bwip-js exceljs recharts
+npm install -D vitest @testing-library/react @playwright/test prisma
+
+npx prisma init
+# arahkan DATABASE_URL ke Postgres lokal (docker compose dev yang sudah ada)
+npx prisma migrate dev --name init
+```
 
 ---
 
@@ -1340,228 +827,117 @@ Lampiran 23.7.
 
 | # | Keputusan | Default sementara |
 |---|---|---|
-| D1 | Engine OCR | Ditentukan spike M5a (11.4) |
-| D2 | Enkripsi NIK/HP vs kemudahan pencarian | Enkripsi + hash pencarian |
-| D3 | Library grafik admin (Recharts / Chart.js) | Recharts |
-| D4 | Akun Google Drive: pribadi sekarang, pindah ke akun khusus SPMB / akun sekolah kapan? | Akun pribadi untuk pengembangan & periode pertama |
+| D1 | Enkripsi NIK/HP vs kemudahan pencarian | Enkripsi + hash pencarian (sama seperti v3.1) |
+| D2 | Library grafik admin | Recharts |
+| D3 | Rate limiting: Upstash Redis vs tabel manual | Mulai dari tabel manual (lebih sederhana, tanpa akun tambahan), pindah ke Upstash bila perlu lebih presisi |
+| D5 | **Cadangan bila Vercel Hobby/Supabase Free ternyata tidak cukup saat trafik tinggi** | Upgrade bertahap: Vercel Pro ($20/bln) dulu (paling murah & langsung), baru Supabase Pro bila 500 MB kelewat |
+| D6 | **Upgrade OCR rapor ke Document AI bila akurasi Vision API biasa kurang baik untuk tabel** | Coba Vision API dulu (11.4), evaluasi akurasi nyata sebelum memutuskan upgrade |
 
-**Untuk pihak sekolah**
+**Untuk pemilik proyek / pihak sekolah**
+
+Sama seperti v3.1 Bagian 22 (S1-S14: nama FKK, format nomor, semester rapor, dst — tidak berubah), ditambah:
 
 | # | Pertanyaan | Dampak |
 |---|---|---|
-| S1 | Nama resmi FKK | Label, PDF |
-| S2 | Format nomor `SPMB-` atau `PPDB-` | Generator nomor |
-| S3 | Semester rapor yang dipakai (1-5? 1-6?) dan kolom nilai yang dipakai untuk rapor K13 | OCR & rekomendasi |
-| S4 | Persetujuan guru BK atas bobot mapel per jurusan | Bagian 12.3 |
-| S5 | Akta & KK wajib atau opsional saat daftar daring | Form builder |
-| S6 | Email siswa wajib atau opsional | Langkah 5 |
-| S7 | Boleh memakai OCR cloud (data dikirim ke pihak ketiga) atau harus self-hosted | Pilihan engine |
-| S8 | Jadwal gelombang & tanggal verifikasi berkas fisik | Pengaturan, tanda terima |
-| S9 | Lama retensi data setelah periode selesai | Perintah arsip |
-| S10 | Daftar akun admin dan perannya | Seeder |
-| S11 | Kontak panitia resmi | Footer, Tanya Panitia |
-| S12 | Notifikasi email saat status berubah | Fitur 13.4 |
-| S13 | Paket Supabase Free atau Pro, anggaran VPS | Operasional |
-| S15 | Siapa yang memegang akun Google Drive penyimpanan dokumen setelah proyek diserahkan | Kelanjutan akses data |
-| S14 | Copy hero & sambutan kepala sekolah | Landing |
+| S15 | *(dari v3.1)* Siapa pemegang akun Google Drive penyimpanan dokumen setelah proyek selesai | Kelanjutan akses data |
+| S16 | **Kapan `docs/template-formulir.docx` dan `.md` bisa diberikan?** | Memblokir Bagian 15.1 — bagian lain tetap bisa jalan tanpa ini |
+| S17 | Boleh pakai akun Google Cloud pribadi developer untuk Vision API & Drive selama Fase A, atau sekolah ingin segera menyiapkan akun resmi dari awal? | Menentukan kapan Fase B bisa mulai |
 
 ---
 
 ## 23. Lampiran
 
-### 23.1 Seed jurusan
+Lampiran berikut **tidak berubah dari v3.1** — rujuk dokumen itu untuk isi lengkapnya, karena semuanya murni data/aturan bisnis yang tidak bergantung arsitektur:
 
-| Kode | Deskripsi | Prospek karier | Keunggulan |
-|---|---|---|---|
-| AKL | Akuntansi, pembukuan, perpajakan, perbankan, dan pengelolaan keuangan lembaga | Staf Akuntansi, Kasir Bank, Staf Pajak, Wirausaha | Praktik aplikasi akuntansi, kunjungan industri perbankan |
-| MPLB | Manajemen perkantoran modern, layanan bisnis, komunikasi profesional, administrasi | Sekretaris, Admin Perkantoran, Customer Service, Resepsionis | Praktik kantor, kearsipan digital |
-| FKK | Ilmu farmasi, pengelolaan obat, pelayanan kesehatan di apotek, klinik, rumah sakit | Asisten Tenaga Kefarmasian, Staf Apotek/Klinik, Wirausaha Apotek | Laboratorium farmasi |
-| TKR | Perawatan & perbaikan kendaraan ringan, sistem mesin, kelistrikan | Mekanik, Teknisi, Staf Bengkel Resmi, Wirausaha Bengkel | Bengkel praktik |
+- **23.1** Seed jurusan (deskripsi, prospek karier, keunggulan per AKL/MPLB/FKK/TKR)
+- **23.2** Seed mata pelajaran (SMP/MTs Kurikulum Merdeka + K13, termasuk alias dan aturan PAI vs mapel madrasah)
+- **23.3** Seed field formulir bawaan per langkah wizard
+- **23.4** Daftar berkas fisik (tanda terima)
+- **23.5** Opsi dropdown & daftar stopword pencarian FAQ
+- **23.6** Kolom lengkap Bagian A-D tabel pendaftar beserta aturan validasi
 
-(Teks keunggulan adalah contoh, final dari sekolah.)
-
-### 23.2 Seed mata pelajaran (SMP/MTs Kurikulum Merdeka + K13)
-
-| Kode | Nama | Alias (contoh) | Kelompok |
-|---|---|---|---|
-| pai | Pendidikan Agama Islam dan Budi Pekerti | pendidikan agama islam, pai, pendidikan agama, agama | umum |
-| ppkn | Pendidikan Pancasila | pendidikan pancasila, pendidikan pancasila dan kewarganegaraan, ppkn, pkn | umum |
-| b_indonesia | Bahasa Indonesia | bahasa indonesia, b. indonesia, b indonesia | umum |
-| matematika | Matematika | matematika, mtk | umum |
-| ipa | Ilmu Pengetahuan Alam | ilmu pengetahuan alam, ipa | umum |
-| ips | Ilmu Pengetahuan Sosial | ilmu pengetahuan sosial, ips | umum |
-| b_inggris | Bahasa Inggris | bahasa inggris, b. inggris | umum |
-| pjok | PJOK | pendidikan jasmani olahraga dan kesehatan, pjok, penjasorkes | umum |
-| informatika | Informatika | informatika, tik | umum |
-| seni | Seni Budaya | seni budaya, seni musik, seni rupa, seni tari, seni teater | umum |
-| prakarya | Prakarya | prakarya, seni dan prakarya, prakarya dan kewirausahaan | umum |
-| b_jawa | Bahasa Jawa | bahasa jawa, basa jawa, b. jawa | mulok |
-| quran_hadis | Al-Qur'an Hadis | al-qur'an hadis, quran hadits | madrasah |
-| akidah_akhlak | Akidah Akhlak | akidah akhlak, aqidah akhlak | madrasah |
-| fikih | Fikih | fikih, fiqih, fiqh | madrasah |
-| ski | Sejarah Kebudayaan Islam | sejarah kebudayaan islam, ski | madrasah |
-| b_arab | Bahasa Arab | bahasa arab | madrasah |
-
-Catatan: rapor MTs memecah PAI menjadi mapel madrasah. Bila `pai` tidak ditemukan tetapi mapel madrasah ada, `pai` = rata-rata mapel madrasah (aturan di `RekomendasiService`).
-
-### 23.3 Seed field formulir bawaan
-
-| Langkah | Kunci (urutan, catatan) |
-|---|---|
-| step1 | nama_lengkap 10, nisn 20, tanggal_lahir 25, setuju 30 (checkbox, wajib) |
-| step2 | akta 10 (file), kk 20 (file) |
-| step3 | rapor 10 (file, wajib, terkunci), nilai_rapor 20 (tabel, wajib, terkunci) |
-| step4 | jurusan_1 10 (wajib), jurusan_2 20 (opsional) |
-| step5 | tempat_lahir 20, jenis_kelamin 50, nik 40, no_kk 41, agama 60, anak_ke 70, jumlah_saudara 71, asal_sekolah 90, tamat_tahun 100, no_ijazah 101 (opsional), no_hp 110, no_wa 111 (opsional), email 120 (opsional), rt 130, rw 131, desa 132, kecamatan 133, kabupaten 134, propinsi 135, penghasilan 140 (radio), referensi_pendaftar 150 (opsional) |
-| step6 | nama_ayah 10, ayah_ttl 11, ayah_pendidikan 12, pekerjaan_ayah 13, nama_ibu 20, ibu_ttl 21, ibu_pendidikan 22, pekerjaan_ibu 23, no_hp_ortu 30, ortu_rt 31, ortu_rw 32, ortu_desa 33, ortu_kecamatan 34, ortu_kabupaten 35, ortu_propinsi 36 |
-| step7 | smp_kecamatan 1, smp_kabupaten 2, smp_propinsi 3, ijazah_nomor_tahun 4 (opsional), lama_belajar 5, nilai_ujian 6, golongan_darah 10, tinggi_badan 11, berat_badan 12, penyakit_pernah_diderita 13 (opsional), hobi_* 14-18 (opsional), ukuran_seragam 20 |
-| step8 | konfirmasi_final 10 (checkbox, wajib) |
-
-### 23.4 Berkas fisik (tanda terima)
-
-1. Akta asli / Ijazah SD/MI (1)
-2. Fotokopi Akta Kelahiran (1)
-3. Fotokopi Kartu Keluarga (1)
-4. Fotokopi KIP/KIS/PKH (1)
-5. Fotokopi KTP orang tua (2)
-6. Pas foto 3×4 (2)
-7. Surat Keterangan Lulus (1)
-8. Fotokopi Ijazah SMP/MTs (1)
-9. **Baru v3**: Fotokopi rapor semester yang diunggah (1 set), untuk verifikasi nilai
-
-### 23.5 Opsi dropdown & stopword
-
-| Field | Opsi |
-|---|---|
-| jenis_kelamin | L: Laki-laki, P: Perempuan |
-| agama | Islam, Kristen, Katolik, Hindu, Buddha, Konghucu |
-| penghasilan | 01: < Rp 500.000 · 02: Rp 500.000-999.999 · 03: Rp 1.000.000-1.999.999 · 04: Rp 2.000.000-4.999.999 · 05: ≥ Rp 5.000.000 |
-| pendidikan ortu | SD, SMP, SMA/SMK, Diploma, Sarjana, Pascasarjana |
-| pekerjaan_ayah | Petani, Buruh, Wiraswasta, PNS, TNI/Polri, Guru, Karyawan Swasta, Lainnya |
-| pekerjaan_ibu | Ibu Rumah Tangga, Petani, Buruh, Wiraswasta, PNS, Guru, Karyawan Swasta, Lainnya |
-| golongan_darah | A, B, AB, O, Tidak Tahu |
-| ukuran_seragam | M, L, XL, XXL, XXXL, Jumbo |
-| nilai ujian (Bagian B) | b_indonesia, b_inggris, matematika, ipa |
-| status_verifikasi | pending, approved, revision, rejected |
-| status_nilai | belum_dicek, sesuai, dikoreksi |
-| sumber | daring, luring |
-
-Stopword FAQ: apa, bagaimana, cara, di, ke, dari, yang, untuk, dengan, dan, atau, ini, itu, saya, ada, bisa, apakah, berapa, kapan, dimana.
-
-### 23.6 Kolom Bagian A-D tabel `pendaftar`
-
-- **A**: nama_lengkap, tempat_lahir, tanggal_lahir, nisn, nik (+ nik_hash), no_kk, jenis_kelamin, agama, anak_ke, jumlah_saudara, asal_sekolah, tamat_tahun, no_ijazah, no_hp, no_wa, email, alamat, rt, rw, desa, kecamatan, kabupaten, propinsi, nama_ayah, ayah_ttl, ayah_pendidikan, pekerjaan_ayah, nama_ibu, ibu_ttl, ibu_pendidikan, pekerjaan_ibu, alamat_ortu, ortu_rt, ortu_rw, ortu_desa, ortu_kecamatan, ortu_kabupaten, ortu_propinsi, no_hp_ortu, penghasilan, referensi_pendaftar
-- **B**: smp_kecamatan, smp_kabupaten, smp_propinsi, ijazah_nomor_tahun, lama_belajar, nilai_ujian (jsonb)
-- **C**: golongan_darah, tinggi_badan, berat_badan, penyakit_pernah_diderita
-- **D**: hobi_olahraga, hobi_kesenian, hobi_organisasi, hobi_prestasi, hobi_lain, ukuran_seragam
-
-Aturan validasi tiap field sama dengan PRD v2 Bagian 9.4 Langkah 5-7, kecuali `email` (opsional) dan NISN/nama/tanggal lahir yang dikunci dari Langkah 1.
-
-### 23.7 Template `.env`
-
-**backend/.env**
+### 23.7 Template `.env` (v4)
 
 ```env
-APP_NAME="SPMB SMK Ma'arif NU 1 Wangon"
-APP_ENV=production
-APP_KEY=
-APP_DEBUG=false
-APP_URL=https://spmb.smkmanu1wangon.sch.id
-FRONTEND_URL=https://spmb.smkmanu1wangon.sch.id
+# App
+NEXT_PUBLIC_SITE_URL=https://spmb.smkmanu1wangon.sch.id
 APP_LOCALE=id
 APP_TIMEZONE=Asia/Jakarta
 
-DB_CONNECTION=pgsql
-DB_HOST=
-DB_PORT=5432
-DB_DATABASE=postgres
-DB_USERNAME=postgres.<PROJECT_REF>
-DB_PASSWORD=
-DB_SSLMODE=require
+# Database (Fase A: Postgres lokal Docker; Fase B: Supabase)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/spmb_dev"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5432/spmb_dev"
 
-SESSION_DRIVER=database
-SESSION_DOMAIN=spmb.smkmanu1wangon.sch.id
-SESSION_SECURE_COOKIE=true
-SANCTUM_STATEFUL_DOMAINS=spmb.smkmanu1wangon.sch.id
-CACHE_STORE=database
-QUEUE_CONNECTION=database
-FILESYSTEM_DISK=local
-
-# Konten publik (Supabase Storage)
-SUPABASE_S3_ENDPOINT=https://<PROJECT_REF>.supabase.co/storage/v1/s3
-SUPABASE_S3_REGION=ap-southeast-1
-SUPABASE_S3_KEY=
-SUPABASE_S3_SECRET=
-SUPABASE_BUCKET_PUBLIC=konten-publik
-SUPABASE_PUBLIC_URL=https://<PROJECT_REF>.supabase.co/storage/v1/object/public/konten-publik
-
-# Dokumen pendaftar (Google Drive, OAuth)
-DOKUMEN_DRIVER=google_drive          # google_drive | lokal
-GOOGLE_DRIVE_CLIENT_ID=
-GOOGLE_DRIVE_CLIENT_SECRET=
-GOOGLE_DRIVE_REDIRECT_URI=https://spmb.smkmanu1wangon.sch.id/api/v1/admin/google-drive/callback
-GOOGLE_DRIVE_ROOT_FOLDER_NAME=SPMB
-# Refresh token TIDAK ditaruh di .env: disimpan terenkripsi di tabel pengaturans setelah tombol Hubungkan
-
-MAIL_MAILER=smtp
-MAIL_HOST=
-MAIL_PORT=587
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_FROM_ADDRESS="spmb@smkmanu1wangon.sch.id"
-MAIL_FROM_NAME="${APP_NAME}"
-
-OCR_SERVICE_URL=http://ocr:8001
-OCR_SERVICE_TOKEN=
-OCR_TIMEOUT=90
-
-DRAFT_TTL_DAYS=7
-FRONTEND_REVALIDATE_URL=http://frontend:3000/api/revalidate
-FRONTEND_REVALIDATE_SECRET=
-
+# Auth
+JWT_SECRET=
+ENCRYPTION_KEY=                     # 32 byte, untuk AES-256-GCM data sensitif
 ADMIN_SEED_USERNAME=superadmin
 ADMIN_SEED_PASSWORD=
+
+# Google Drive (dokumen pendaftar)
+GOOGLE_DRIVE_CLIENT_ID=
+GOOGLE_DRIVE_CLIENT_SECRET=
+GOOGLE_DRIVE_REDIRECT_URI=http://localhost:3000/api/v1/admin/google-drive/callback
+GOOGLE_DRIVE_ROOT_FOLDER_NAME=SPMB
+# refresh token disimpan di DB (tabel Pengaturan), bukan di env
+
+# Google Cloud Vision (OCR)
+GOOGLE_CLOUD_VISION_API_KEY=        # atau GOOGLE_APPLICATION_CREDENTIALS (service account JSON)
+
+# Supabase Storage (konten publik + draf-temp)
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+SUPABASE_SERVICE_ROLE_KEY=
+SUPABASE_BUCKET_PUBLIC=konten-publik
+SUPABASE_BUCKET_DRAFT=draf-temp
+
+# Email
+RESEND_API_KEY=
+RESEND_FROM="SPMB SMK Ma'arif NU 1 Wangon <spmb@smkmanu1wangon.sch.id>"
+
+# Cron
+CRON_SECRET=                        # header rahasia, dicek di setiap /api/v1/cron/*
 
 WA_GROUP_URL=
 ```
 
-**frontend/.env**
+### 23.8 Status migrasi kode dari arsitektur lama
 
-```env
-NEXT_PUBLIC_SITE_URL=https://spmb.smkmanu1wangon.sch.id
-NEXT_PUBLIC_API_BASE=/api/v1
-BACKEND_INTERNAL_URL=http://backend
-REVALIDATE_SECRET=
-NEXT_PUBLIC_SUPABASE_PUBLIC_URL=https://<PROJECT_REF>.supabase.co/storage/v1/object/public/konten-publik
-```
-
-**ocr-service/.env**
-
-```env
-OCR_SERVICE_TOKEN=
-OCR_ENGINE=paddleocr        # kandidat: paddleocr | easyocr | tesseract | google_vision | azure_di | vision_llm
-OCR_ENGINE_RAPOR=
-OCR_LANGS=id,en
-OCR_MAX_PAGES=10
-# Kunci engine cloud (hanya bila dipilih)
-GOOGLE_APPLICATION_CREDENTIALS=
-AZURE_DI_ENDPOINT=
-AZURE_DI_KEY=
-```
-
-### 23.8 Aset v1 yang dibawa
-
-| Berkas v1 | Tujuan di v3 |
+| Berkas/kerja lama (Laravel) | Status di v4 |
 |---|---|
-| `paddle_ocr_server.py` | `ocr-service/app/parsers/akta.py`, `kk.py` (parser dipisah dari engine), engine EasyOCR jadi `engines/easyocr.py` |
-| `public/js/ocr-engine.js` | `frontend/src/features/ocr/` (`nameSimilarity`, `preprocessImage`, logika isi otomatis) dalam TypeScript |
-| `app/Support/FormFieldConfig.php` | `backend/app/Services/FormSchema/` + endpoint form schema |
-| `app/Support/PenyimpananDokumen.php` | `backend/app/Services/Penyimpanan/` menjadi interface + driver Google Drive & lokal |
-| `app/Support/Code39Barcode.php` | `backend/app/Services/Pdf/` |
-| `app/Support/GoogleDrive.php` | Dasar `GoogleDriveDokumen` (wajib, diubah dari service account ke OAuth) |
-| `app/Exports/ParticipantsExport.php` | Diperluas |
-| `resources/views/ppdb/formulir-pdf.blade.php` | `backend/resources/views/pdf/formulir.blade.php` |
-| `database/seeders/*` | Diperbarui (mapel, bobot baru) |
-| `tests/Feature/*` | Diport ke API |
-| `public/images/*` | `frontend/public/images/` (dikonversi WebP/AVIF) |
-| Formulir kertas `.docx/.md` | `docs/referensi/` |
+| `PenyimpananDokumen.php` (driver lokal & Google Drive) | Diarsipkan ke `_archive/backend-laravel/`. Logic/alurnya dipakai sebagai acuan menulis `src/server/services/penyimpanan/` versi TypeScript (Bagian 24) |
+| OAuth Google Drive (PHP) | Sama — acuan alur, ditulis ulang pakai `googleapis` |
+| Tabel `pengaturans` + migrasi | Acuan skema, ditulis ulang sebagai model Prisma `Pengaturan` |
+| Command `spmb:drive-*` | Ditulis ulang sebagai fungsi di `src/server/services/penyimpanan/`, dipanggil dari route cron, bukan command Artisan |
+| `ocr-service/` (FastAPI kosong) | Diarsipkan, tidak dilanjutkan — OCR pindah ke Vision API langsung (Bagian 11) |
+| Docker Compose dev | **Bagian Postgres-nya tetap dipakai** untuk database lokal Fase A. Bagian Nginx/prod diarsipkan (tidak relevan untuk Vercel) |
+| CI GitHub Actions (3 proyek) | Ditulis ulang untuk satu proyek Next.js |
+| Design system M1 (token, komponen `ui/*`, motion, katalog) | **Dipakai penuh**, dipindah ke struktur folder baru tanpa diubah isinya |
+
+---
+
+## 24. Instruksi Transisi untuk Claude Code
+
+Bagian ini ditulis khusus untuk agen coding (Claude Code atau lainnya) yang melanjutkan proyek ini setelah revisi v4. Baca ini SEBELUM menyentuh kode bila repo masih berisi struktur lama (`backend/`, `ocr-service/`, `frontend/`).
+
+### 24.1 Urutan kerja transisi
+
+1. **Jangan hapus kerja lama.** Pindahkan `backend/` dan `ocr-service/` ke `_archive/backend-laravel/` dan `_archive/ocr-service-python/` (git mv, supaya histori tetap ada). Ini referensi, bukan kode aktif.
+2. **Pindahkan isi `frontend/` ke root sebagai aplikasi utama.** Sesuaikan ke struktur folder baru di Bagian 6.4 — pisahkan `src/app/` (tampilan + route API) dari `src/server/` (logic backend baru, ditulis dari nol mengikuti Bagian 6-19 PRD ini).
+3. **Jangan tulis ulang design system (M1).** Token, komponen `ui/*`, wrapper motion, dan katalog `/admin/_katalog` yang sudah ada di `frontend/` sudah selesai dan benar — pindahkan apa adanya ke struktur baru, cukup sesuaikan path import bila perlu.
+4. Update `CLAUDE.md` di root sesuai Bagian 1 dan 6 PRD ini (hapus referensi ke `backend/CLAUDE.md` dan `ocr-service/CLAUDE.md` yang sudah tidak ada; satu `CLAUDE.md` di root sudah cukup untuk satu aplikasi).
+5. Setup Prisma + Postgres lokal (pakai service Postgres dari `docker-compose.dev.yml` lama yang masih relevan — jalankan hanya service database-nya, abaikan service lain di file itu).
+6. Mulai Milestone **A0** (Bagian 20.1), lalu lanjut A2 sampai A8 berurutan. **A1 sudah selesai (M1 lama), lewati.**
+7. Komit tiap milestone selesai. Dua komit lama yang belum ter-push (`6ebd5ed`, `115f16b`) boleh di-push apa adanya sebagai bagian dari histori sebelum arsip — tidak perlu di-squash atau dihapus.
+
+### 24.2 Yang harus ditanyakan ke pemilik proyek sebelum lanjut, bukan ditebak
+
+- Kredensial OAuth Google (Client ID/Secret) untuk Drive dan key Google Cloud Vision — bisa pakai akun pribadi developer untuk Fase A (lihat 7.1), tapi tetap perlu dibuatkan sendiri lewat Google Cloud Console (langkah ada di v3.1 Bagian 7.5.2, path OAuth-nya tinggal disesuaikan ke endpoint Next.js).
+- `docs/template-formulir.docx` dan `.md` — **Bagian 15.1 terkunci sampai ini ada.** Jangan membangun layout PDF formulir berdasarkan tebakan atau berdasarkan rancangan lama di v3.1 Bagian 15.1 (yang sudah tidak berlaku).
+
+### 24.3 Konteks penting lain
+
+Pemilik proyek mungkin berpindah sesi atau berpindah ke agen AI lain di tengah jalan (bila kuota Claude Code habis). Karena itu:
+
+- **Jangan simpan keputusan penting hanya di percakapan** — semua keputusan arsitektur harus tercermin di `docs/PRD.md` ini. Kalau ada keputusan baru yang dibuat bersama pemilik proyek di luar PRD, update PRD-nya dulu di commit yang sama.
+- Tulis pesan commit yang jelas (apa yang dikerjakan, milestone mana) supaya agen lain yang melanjutkan — siapa pun itu — bisa paham konteks hanya dari `git log` dan PRD ini, tanpa riwayat percakapan.

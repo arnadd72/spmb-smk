@@ -47,6 +47,33 @@ return [
             'report' => false,
         ],
 
+        'supabase_public' => [
+            'driver' => 's3',
+            'key' => env('SUPABASE_S3_KEY'),
+            'secret' => env('SUPABASE_S3_SECRET'),
+            'region' => env('SUPABASE_S3_REGION', 'ap-southeast-1'),
+            'bucket' => env('SUPABASE_BUCKET_PUBLIC', 'konten-publik'),
+            'endpoint' => env('SUPABASE_S3_ENDPOINT'),
+            'url' => env('SUPABASE_PUBLIC_URL'),
+            'use_path_style_endpoint' => true,
+            'visibility' => 'public',
+            'throw' => true,
+        ],
+
+        'dokumen_temp' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/draf'),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
+        'dokumen_lokal' => [
+            'driver' => 'local',
+            'root' => storage_path('app/private/dokumen'),
+            'visibility' => 'private',
+            'throw' => true,
+        ],
+
         's3' => [
             'driver' => 's3',
             'key' => env('AWS_ACCESS_KEY_ID'),

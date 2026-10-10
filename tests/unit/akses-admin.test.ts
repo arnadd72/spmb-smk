@@ -1,4 +1,5 @@
 // @vitest-environment node
+import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buatToken, type PeranAdmin } from "@/server/auth/sesi";
 
@@ -8,7 +9,9 @@ vi.mock("next/headers", () => ({
   cookies: async () => ({ get: (n: string) => (n === "spmb_admin" && cookieAdmin ? { value: cookieAdmin } : undefined) }),
 }));
 
-type Handler = (req: Request) => Promise<Response>;
+type Handler = (req: Request, ctx?: { params: Promise<Record<string, string>> }) => Promise<Response>;
+// Next selalu mengirim konteks params ke rute dinamis; di test kita kirim nilai apa saja.
+const konteks = { params: Promise.resolve({ id: "1", kode: "AKL", slug: "x" }) };
 const rute = import.meta.glob<Record<string, Handler | undefined>>("/src/app/api/v1/admin/**/route.ts");
 
 // Rute admin yang sengaja boleh diakses tanpa sesi.
@@ -16,7 +19,7 @@ const PUBLIK = ["/login/route.ts", "/logout/route.ts"];
 const METODE = ["GET", "POST", "PUT", "PATCH", "DELETE"];
 
 // Handler hasil tangani() bertipe sesuai argumennya; di test semuanya dipanggil dengan satu Request.
-const panggil = (h: unknown, r: Request) => (h as Handler)(r);
+const panggil = (h: unknown, r: Request) => (h as Handler)(r, konteks);
 
 const req = (metode: string) =>
   new Request("http://localhost:3000/api/v1/admin/x", { method: metode, headers: { "sec-fetch-site": "same-origin" } });
@@ -31,7 +34,7 @@ beforeEach(() => {
 
 describe("akses rute admin", () => {
   it("menemukan semua rute admin (penjaga agar pemindaian tidak diam-diam kosong)", () => {
-    expect(Object.keys(rute).length).toBeGreaterThanOrEqual(9);
+    expect(Object.keys(rute).length).toBeGreaterThanOrEqual(20);
   });
 
   it("SEMUA rute admin menjawab 401 tanpa sesi, kecuali login dan logout", async () => {
@@ -43,13 +46,13 @@ describe("akses rute admin", () => {
       for (const metode of METODE) {
         const handler = modul[metode];
         if (!handler) continue;
-        const res = await handler(req(metode));
+        const res = await handler(req(metode), konteks);
         expect(res.status, `${metode} ${path} harus 401 tanpa sesi`).toBe(401);
         dicek.push(`${metode} ${path}`);
       }
     }
 
-    expect(dicek.length).toBeGreaterThanOrEqual(7);
+    expect(dicek.length).toBeGreaterThanOrEqual(25);
   });
 
   it("token sampah diperlakukan sama seperti tanpa sesi", async () => {
@@ -105,5 +108,28 @@ describe("akses rute admin", () => {
     const res = await panggil(POST, new Request("http://localhost:3000/x", { method: "POST", headers: { "sec-fetch-site": "cross-site" } }));
 
     expect(res.status).toBe(403);
+  });
+
+  it("konten: operator konten dan superadmin boleh, panitia ditolak (403)", async () => {
+    const { GET } = await import("@/app/api/v1/admin/berita/route");
+
+    await sesiSebagai("panitia");
+    expect((await panggil(GET, new NextRequest("http://localhost:3000/api/v1/admin/berita?per=5"))).status).toBe(403);
+
+    await sesiSebagai("konten");
+    expect((await panggil(GET, new NextRequest("http://localhost:3000/api/v1/admin/berita?per=5"))).status).toBe(200);
+
+    await sesiSebagai("superadmin");
+    expect((await panggil(GET, new NextRequest("http://localhost:3000/api/v1/admin/berita?per=5"))).status).toBe(200);
+  });
+
+  it("pengaturan dan ubah jurusan hanya superadmin", async () => {
+    const pengaturan = await import("@/app/api/v1/admin/pengaturan/route");
+    for (const peran of ["panitia", "konten"] as const) {
+      await sesiSebagai(peran);
+      expect((await panggil(pengaturan.GET, req("GET"))).status, `pengaturan untuk ${peran}`).toBe(403);
+    }
+    await sesiSebagai("superadmin");
+    expect((await panggil(pengaturan.GET, req("GET"))).status).toBe(200);
   });
 });

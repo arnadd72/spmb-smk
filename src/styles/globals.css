@@ -235,3 +235,40 @@
   padding-left: 1em;
   font-style: italic;
 }
+
+/*
+ * Lebar konten situs publik. Satu aturan untuk semua bagian supaya margin kiri-kanan seragam dan lega:
+ * konten maksimal 84 rem, bantalan 1,25 rem (HP), 2 rem (tablet), 3,5 rem (laptop ke atas).
+ * Ditulis sebagai kelas CSS biasa (bukan @utility) agar pasti terkompilasi di Tailwind v4 + Turbopack.
+ */
+@layer components {
+  .wadah {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 84rem;
+    padding-inline: 1.25rem;
+  }
+
+  /* Jarak tepi layar ke tepi konten .wadah, untuk elemen yang harus sejajar dengannya tetapi berada di luarnya. */
+  .sejajar-wadah {
+    padding-inline: max(1.25rem, calc((100vw - 84rem) / 2 + 1.25rem));
+  }
+
+  @media (min-width: 40rem) {
+    .wadah {
+      padding-inline: 2rem;
+    }
+    .sejajar-wadah {
+      padding-inline: max(2rem, calc((100vw - 84rem) / 2 + 2rem));
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .wadah {
+      padding-inline: 3.5rem;
+    }
+    .sejajar-wadah {
+      padding-inline: max(3.5rem, calc((100vw - 84rem) / 2 + 3.5rem));
+    }
+  }
+}

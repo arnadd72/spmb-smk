@@ -141,7 +141,7 @@ export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
       aria-labelledby="judul-jurusan"
       className="overflow-hidden bg-latar py-16 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:justify-center lg:py-0"
     >
-      <div className="mx-auto w-full max-w-[100rem] px-4 sm:px-6 lg:px-10">
+      <div className="wadah w-full">
         <h2
           id="judul-jurusan"
           className="max-w-[18ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.98] tracking-[-0.015em] text-ink"
@@ -150,14 +150,16 @@ export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
         </h2>
       </div>
 
-      <div data-jalur className="mt-8 flex flex-col gap-5 px-4 sm:px-6 lg:mt-10 lg:w-max lg:flex-row lg:gap-8 lg:px-10">
+      <div data-jalur className="sejajar-wadah mt-8 flex flex-col gap-5 lg:mt-10 lg:w-max lg:flex-row lg:gap-8">
         {jurusan.map((j) => (
           <Panel key={j.kode} j={j} />
         ))}
       </div>
 
-      <div aria-hidden className="mx-4 mt-8 hidden h-1 overflow-hidden rounded-full bg-ink/10 sm:mx-6 lg:mx-10 lg:block">
-        <div data-progres className="h-full origin-left scale-x-0 bg-ink" />
+      <div aria-hidden className="wadah mt-8 hidden lg:block">
+        <div className="h-1 overflow-hidden rounded-full bg-ink/10">
+          <div data-progres className="h-full origin-left scale-x-0 bg-ink" />
+        </div>
       </div>
     </section>
   );

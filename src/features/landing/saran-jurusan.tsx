@@ -61,7 +61,7 @@ export function SaranJurusan() {
 
   return (
     <section ref={akar} aria-labelledby="judul-saran" className="bg-mint py-16 text-ink lg:py-24">
-      <div className="mx-auto grid max-w-[100rem] items-center gap-12 px-4 sm:px-6 lg:grid-cols-[1.05fr_1fr] lg:gap-24 lg:px-10">
+      <div className="wadah grid items-center gap-12 lg:grid-cols-[1.05fr_1fr] lg:gap-24">
         <div>
           <h2
             id="judul-saran"

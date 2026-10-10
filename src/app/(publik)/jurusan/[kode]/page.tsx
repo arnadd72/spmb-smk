@@ -37,7 +37,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
   return (
     <article>
       <header className={cn("py-12 lg:py-20", t.latar, t.teks)}>
-        <div className="mx-auto grid max-w-[100rem] items-end gap-8 px-4 sm:px-6 lg:grid-cols-[1.2fr_1fr] lg:gap-16 lg:px-10">
+        <div className="wadah grid items-end gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
           <div>
             <Link href="/jurusan" className="inline-flex min-h-11 items-center text-sm font-bold underline underline-offset-4">
               Semua program keahlian
@@ -56,7 +56,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-[100rem] gap-12 px-4 py-12 sm:px-6 lg:grid-cols-3 lg:gap-16 lg:px-10 lg:py-20">
+      <div className="wadah grid gap-12 py-12 lg:grid-cols-3 lg:gap-16 lg:py-20">
         <Reveal className="rounded-kartu border border-garis bg-permukaan p-6 lg:p-8">
           <h2 className="text-2xl font-bold text-ink">Daya tampung</h2>
           <dl className="mt-5 grid grid-cols-3 gap-3 text-center">
@@ -119,7 +119,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
         </Reveal>
       </div>
 
-      <div className="mx-auto max-w-[100rem] px-4 pb-16 sm:px-6 lg:px-10 lg:pb-24">
+      <div className="wadah pb-16 lg:pb-24">
         <div className="flex flex-col items-start justify-between gap-6 rounded-kartu bg-ink p-7 text-kertas sm:p-10 lg:flex-row lg:items-center">
           <p className="max-w-[28ch] font-display text-3xl font-bold leading-tight lg:text-4xl">
             Tertarik dengan {j.kode}? Daftar dan lihat kecocokan nilai rapor Anda.

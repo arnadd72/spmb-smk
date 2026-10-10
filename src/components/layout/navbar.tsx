@@ -27,7 +27,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-30 border-b border-garis bg-latar/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-[100rem] items-center justify-between gap-4 px-4 sm:px-6 lg:px-10">
+      <div className="wadah flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3 font-display text-lg font-extrabold leading-none text-primer-tua">
           <Image src="/images/sekolah/lambang.png" alt="" width={40} height={40} className="size-10 object-contain" priority />
           <span>

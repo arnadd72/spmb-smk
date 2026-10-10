@@ -48,7 +48,7 @@ export function Penutup() {
         aria-hidden
         className="pointer-events-none absolute -right-40 top-1/2 size-[34rem] -translate-y-1/2 object-contain opacity-[0.09]"
       />
-      <div className="relative mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
+      <div className="wadah relative">
         <h2
           id="judul-penutup"
           data-judul-penutup

@@ -28,7 +28,7 @@ export function Pernyataan() {
 
   return (
     <section ref={akar} aria-label="Tentang sekolah" className="bg-ink py-20 text-kertas lg:py-28">
-      <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
+      <div className="wadah ">
         <p
           data-kalimat
           className="max-w-[26ch] font-display text-[clamp(1.5rem,3.2vw,2.9rem)] font-semibold leading-[1.08] tracking-[-0.012em] sm:max-w-[30ch] lg:max-w-[34ch]"

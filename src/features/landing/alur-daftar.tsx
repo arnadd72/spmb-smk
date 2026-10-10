@@ -68,7 +68,7 @@ export function AlurDaftar() {
 
   return (
     <section ref={akar} id="alur-daftar" aria-labelledby="judul-alur" className="bg-latar pb-20 pt-16 lg:pb-28 lg:pt-24">
-      <div className="mx-auto max-w-[100rem] px-4 sm:px-6 lg:px-10">
+      <div className="wadah ">
         <h2
           id="judul-alur"
           data-judul-alur

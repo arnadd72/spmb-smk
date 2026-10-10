@@ -25,7 +25,7 @@ export default async function HalamanBerita() {
   const { berita, agenda } = await muat();
 
   return (
-    <div className="mx-auto max-w-[100rem] px-4 py-12 sm:px-6 lg:px-10 lg:py-20">
+    <div className="wadah py-12 lg:py-20">
       <h1 className="max-w-[16ch] text-[clamp(2.25rem,5vw,3.75rem)] font-semibold leading-[1] tracking-[-0.02em] text-ink">
         Berita dan agenda
       </h1>

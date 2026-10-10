@@ -42,7 +42,7 @@ export function FaqLanding({ faq }: { faq: FaqData[] }) {
 
   return (
     <section ref={akar} id="faq" aria-labelledby="judul-faq" className="bg-latar py-16 lg:py-24">
-      <div className="mx-auto grid max-w-[100rem] gap-12 px-4 sm:px-6 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24 lg:px-10">
+      <div className="wadah grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:gap-24">
         <h2
           id="judul-faq"
           data-judul-faq

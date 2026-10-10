@@ -53,12 +53,22 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
         return `inset(${atas}px ${samping}px ${besar ? 40 : 24}px ${samping}px round ${besar ? 22 : 18}px)`;
       };
 
-      // Gulir: foto mengembang dari banner menjadi layar penuh, teks terangkat dan memudar.
+      // Akhir gulir: foto membesar ke tengah area layar tetapi tetap memakai margin samping yang sama
+      // dengan teks (tidak sampai tepi layar). Atas dan bawah sama besar supaya tepat di tengah.
+      const akhir = () => {
+        const besar = window.innerWidth >= 1024;
+        const blok = el.querySelector<HTMLElement>("[data-teks]");
+        const samping = blok ? blok.getBoundingClientRect().left + parseFloat(getComputedStyle(blok).paddingLeft) : 20;
+        const tepi = besar ? 28 : 16;
+        return `inset(${tepi}px ${samping}px ${tepi}px ${samping}px round ${besar ? 22 : 18}px)`;
+      };
+
+      // Gulir: foto mengembang dari banner ke tengah layar, teks terangkat dan memudar.
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: { trigger: el, start: "top 64px", end: "+=110%", pin: true, scrub: 0.6, invalidateOnRefresh: true },
       });
-      tl.fromTo(foto, { clipPath: awal }, { clipPath: "inset(0px 0px 0px 0px round 0px)", duration: 1 }, 0)
+      tl.fromTo(foto, { clipPath: awal }, { clipPath: akhir, duration: 1 }, 0)
         .fromTo(gambar, { scale: 1.18 }, { scale: 1, duration: 1 }, 0)
         .to(teks, { yPercent: -14, opacity: 0, duration: 0.2, ease: "power1.in" }, 0);
 
@@ -74,7 +84,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
       {/* Foto sekolah warna asli. Dipotong jadi banner di bawah, mengembang saat digulir. */}
       <div
         data-foto-layer
-        className="absolute inset-0 [--m:1.25rem] [clip-path:inset(calc(var(--teks,20rem)+2rem)_var(--m)_1.5rem_var(--m)_round_18px)] sm:[--m:2rem] lg:[--m:max(3.5rem,calc((100vw-84rem)/2+3.5rem))] lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_2.5rem_var(--m)_round_22px)]"
+        className="absolute inset-0 [--m:max(var(--pad),calc((100vw-84rem)/2+var(--pad)))] [clip-path:inset(calc(var(--teks,20rem)+2rem)_var(--m)_1.5rem_var(--m)_round_18px)] lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_2.5rem_var(--m)_round_22px)]"
       >
         <div data-foto-gambar className="absolute inset-0 will-change-transform">
           <Image
@@ -126,7 +136,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
         )}
       </div>
 
-      <div className="pointer-events-none absolute bottom-[3.5rem] right-[max(4.5rem,calc((100vw-84rem)/2+4.5rem))] z-10 hidden items-center gap-3 rounded-kartu bg-permukaan/95 px-3 py-2.5 shadow-kartu lg:flex">
+      <div className="pointer-events-none absolute bottom-[3.25rem] right-[calc(max(var(--pad),calc((100vw-84rem)/2+var(--pad)))+1rem)] z-10 hidden items-center gap-3 rounded-kartu bg-permukaan/95 px-3 py-2.5 shadow-kartu lg:flex">
         <Image src="/images/sekolah/lambang.png" alt="" width={40} height={40} className="size-10 object-contain" />
         <p className="text-sm font-bold leading-tight text-ink">
           SMK Pusat

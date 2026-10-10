@@ -42,35 +42,35 @@ function Panel({ j }: { j: JurusanLanding }) {
     <article
       data-panel
       className={cn(
-        "relative flex shrink-0 flex-col gap-6 overflow-hidden rounded-kartu p-6 sm:p-8 lg:h-[min(32rem,68dvh)] lg:w-[min(60rem,72vw)] lg:flex-row lg:gap-8 lg:p-9",
+        "relative flex shrink-0 flex-col gap-5 overflow-hidden rounded-kartu p-5 sm:p-7 lg:h-[min(25rem,58dvh)] lg:w-[min(48rem,58vw)] lg:flex-row lg:gap-6 lg:p-7",
         t.warna,
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col">
         <p
-          className={cn("font-display text-[clamp(4rem,8.5vw,7.5rem)] font-bold leading-[0.8] tracking-[-0.03em]", t.kode)}
+          className={cn("font-display text-[clamp(3.5rem,6vw,5rem)] font-bold leading-[0.8] tracking-[-0.03em]", t.kode)}
         >
           {j.kode}
         </p>
-        <h3 className="mt-5 max-w-[22ch] text-xl font-bold leading-tight sm:text-2xl lg:text-3xl">{j.nama}</h3>
-        <p className="mt-3 max-w-[48ch]">{j.deskripsi}</p>
+        <h3 className="mt-4 max-w-[24ch] text-lg font-bold leading-tight sm:text-xl lg:text-2xl">{j.nama}</h3>
+        <p className="mt-2 max-w-[48ch] text-sm lg:text-[0.9375rem]">{j.deskripsi}</p>
         {j.mapelUtama.length > 0 && (
-          <p className="mt-3 max-w-[48ch] text-sm">
+          <p className="mt-2 max-w-[48ch] text-[0.8125rem]">
             <span className="font-bold">Nilai rapor yang paling berpengaruh:</span> {j.mapelUtama.join(", ")}.
           </p>
         )}
-        <ul className="mt-4 flex flex-wrap gap-2">
+        <ul className="mt-3 flex flex-wrap gap-1.5">
           {j.prospekKarir.map((k) => (
-            <li key={k} className="rounded-full border border-current/40 px-3 py-1 text-sm font-semibold">
+            <li key={k} className="rounded-full border border-current/40 px-2.5 py-0.5 text-xs font-semibold">
               {k}
             </li>
           ))}
         </ul>
-        <div className="mt-auto flex flex-wrap items-center gap-x-6 gap-y-2 pt-6">
-          <p className="angka text-sm font-bold">Daya tampung {j.kuota} murid</p>
+        <div className="mt-auto flex flex-wrap items-center gap-x-5 gap-y-1 pt-4">
+          <p className="angka text-[0.8125rem] font-bold">Daya tampung {j.kuota} murid</p>
           <Link
             href={`/jurusan/${j.kode.toLowerCase()}`}
-            className="inline-flex min-h-11 items-center gap-2 font-bold underline decoration-2 underline-offset-4"
+            className="inline-flex min-h-11 items-center gap-2 text-sm font-bold underline decoration-2 underline-offset-4"
           >
             Lihat jurusan {j.kode}
             <ArrowRightIcon aria-hidden weight="bold" className="size-4" />
@@ -78,7 +78,7 @@ function Panel({ j }: { j: JurusanLanding }) {
         </div>
       </div>
 
-      <div className="relative min-h-52 flex-1 overflow-hidden rounded-kartu lg:min-h-0 lg:max-w-[42%]">
+      <div className="relative min-h-44 flex-1 overflow-hidden rounded-kartu lg:min-h-0 lg:max-w-[38%]">
         {t.foto ? (
           <div data-foto-panel className="absolute inset-[-8%] will-change-transform">
             <Image src={t.foto.src} alt={t.foto.alt} fill sizes="(min-width: 1024px) 30vw, 100vw" className="object-cover" />
@@ -150,7 +150,7 @@ export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
         </h2>
       </div>
 
-      <div data-jalur className="sejajar-wadah mt-8 flex flex-col gap-5 lg:mt-10 lg:w-max lg:flex-row lg:gap-8">
+      <div data-jalur className="sejajar-wadah mt-7 flex flex-col gap-5 lg:mt-8 lg:w-max lg:flex-row lg:gap-6">
         {jurusan.map((j) => (
           <Panel key={j.kode} j={j} />
         ))}

@@ -77,27 +77,27 @@ export function AlurDaftar() {
           Daftar dari HP, selesai dalam satu sore.
         </h2>
 
-        <ol className="mt-10 lg:mt-14">
+        <ol className="mt-8 lg:mt-10">
           {TAHAP.map((t, i) => (
             <li
               key={t.judul}
               data-kartu
-              style={{ top: `calc(4.75rem + ${i} * 0.9rem)` }}
+              style={{ top: `calc(4.75rem + ${i} * 0.7rem)` }}
               className={cn(
-                "sticky mb-6 grid min-h-[16rem] origin-top gap-6 overflow-hidden rounded-kartu p-6 will-change-transform sm:p-10 lg:mb-10 lg:min-h-[20rem] lg:grid-cols-[1fr_auto] lg:items-end lg:p-10",
+                "sticky mb-4 grid min-h-[11rem] origin-top gap-4 overflow-hidden rounded-kartu p-5 will-change-transform sm:p-7 lg:mb-6 lg:min-h-[13.5rem] lg:grid-cols-[1fr_auto] lg:items-end lg:p-8",
                 t.warna,
               )}
             >
               <div className="flex h-full flex-col justify-between gap-6">
-                <p data-angka-besar className="angka font-display text-[clamp(3.5rem,8vw,7rem)] font-bold leading-[0.8] tracking-[-0.03em]">
+                <p data-angka-besar className="angka font-display text-[clamp(2.5rem,5vw,4.25rem)] font-bold leading-[0.8] tracking-[-0.03em]">
                   {i + 1}
                 </p>
                 <div>
-                  <h3 className="text-[clamp(1.5rem,2.8vw,2.5rem)] font-bold leading-[1.02] tracking-[-0.02em]">{t.judul}</h3>
-                  <p className="mt-3 max-w-[44ch] text-base font-medium lg:text-lg">{t.isi}</p>
+                  <h3 className="text-[clamp(1.25rem,2.1vw,1.75rem)] font-bold leading-[1.05] tracking-[-0.02em]">{t.judul}</h3>
+                  <p className="mt-2 max-w-[46ch] text-sm font-medium lg:text-base">{t.isi}</p>
                 </div>
               </div>
-              <t.Ikon aria-hidden weight="duotone" className="hidden size-28 opacity-90 lg:block xl:size-36" />
+              <t.Ikon aria-hidden weight="duotone" className="hidden size-20 opacity-90 lg:block xl:size-24" />
             </li>
           ))}
         </ol>

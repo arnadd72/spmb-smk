@@ -36,7 +36,7 @@ for (const lebar of [360, 1440]) {
 
     test("tangkapan layar", async ({ page }) => {
       await gulirSampaiBawah(page);
-      await page.screenshot({ path: `../docs/design/katalog-${lebar}.png`, fullPage: true });
+      await page.screenshot({ path: `docs/design/katalog-${lebar}.png`, fullPage: true });
     });
   });
 }

@@ -1,5 +1,6 @@
-// Klien API tipis. Browser memanggil /api/v1 (domain sama), server component memakai
-// BACKEND_INTERNAL_URL (PRD 21.1). Tipe respons berasal dari docs/api/openapi.yaml.
+// Klien API untuk KOMPONEN KLIEN. Tampilan dan API satu origin, jadi cukup path relatif /api/v1
+// (PRD v4 6.2). Server Component TIDAK boleh memakai ini: panggil fungsi di src/server langsung
+// lewat route handler atau server action.
 
 export class ApiError extends Error {
   constructor(
@@ -12,15 +13,13 @@ export class ApiError extends Error {
   }
 }
 
-function baseUrl(): string {
-  if (typeof window === "undefined") {
-    return `${process.env.BACKEND_INTERNAL_URL ?? "http://localhost:8000"}/api/v1`;
-  }
-  return process.env.NEXT_PUBLIC_API_BASE ?? "/api/v1";
-}
-
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${baseUrl()}${path}`, {
+  if (typeof window === "undefined") {
+    throw new Error("apiFetch hanya untuk komponen klien. Di server, panggil src/server langsung.");
+  }
+
+  const base = process.env.NEXT_PUBLIC_API_BASE ?? "/api/v1";
+  const res = await fetch(`${base}${path}`, {
     ...init,
     credentials: "include",
     headers: { Accept: "application/json", ...init.headers },

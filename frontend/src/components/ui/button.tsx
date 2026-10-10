@@ -1,0 +1,61 @@
+import type { ButtonHTMLAttributes } from "react";
+import { SpinnerGapIcon } from "@phosphor-icons/react/dist/ssr";
+import { cn } from "@/lib/cn";
+
+type Varian = "utama" | "aksen" | "sekunder" | "hantu" | "bahaya";
+type Ukuran = "md" | "lg";
+
+const varian: Record<Varian, string> = {
+  utama: "bg-primer text-primer-tinta hover:bg-primer-tua",
+  // Emas: hanya satu per layar (PRD 16.2), untuk CTA utama atau sorotan.
+  aksen: "bg-aksen text-aksen-tinta hover:brightness-95",
+  sekunder: "border border-primer text-primer-tua bg-transparent hover:bg-permukaan-alt",
+  hantu: "text-primer-tua bg-transparent hover:bg-permukaan-alt",
+  bahaya: "bg-bahaya text-white hover:brightness-90",
+};
+
+const ukuran: Record<Ukuran, string> = {
+  md: "min-h-11 px-4 text-sm",
+  lg: "min-h-12 px-6 text-base",
+};
+
+export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  varian?: Varian;
+  ukuran?: Ukuran;
+  memuat?: boolean;
+  /** Penuh lebar di mobile (PRD 16.6). */
+  penuhMobile?: boolean;
+};
+
+export function Button({
+  varian: v = "utama",
+  ukuran: u = "md",
+  memuat = false,
+  penuhMobile = false,
+  className,
+  disabled,
+  children,
+  type = "button",
+  ...sisa
+}: ButtonProps) {
+  return (
+    <button
+      type={type}
+      disabled={disabled || memuat}
+      aria-busy={memuat || undefined}
+      className={cn(
+        "inline-flex items-center justify-center gap-2 rounded-kontrol font-semibold whitespace-nowrap",
+        "transition-[background-color,transform,filter] duration-150 ease-keluar",
+        "active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
+        varian[v],
+        ukuran[u],
+        penuhMobile && "w-full sm:w-auto",
+        className,
+      )}
+      {...sisa}
+    >
+      {memuat && <SpinnerGapIcon aria-hidden className="size-4 animate-spin" />}
+      {children}
+    </button>
+  );
+}

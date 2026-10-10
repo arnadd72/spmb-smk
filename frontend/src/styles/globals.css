@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+/*
+ * Token desain SPMB (PRD 16.2, "Editorial Hijau Pesantren Modern").
+ * Lapisan 1: nilai mentah. Lapisan 2: token semantik yang bisa diganti tema.
+ * Lapisan 3: @theme inline memetakan token semantik ke utilitas Tailwind.
+ * Komponen hanya boleh memakai utilitas semantik (bg-latar, text-tinta, ...), bukan hex.
+ */
+
+:root {
+  /* Mentah */
+  --hijau-nu: #057a3c;
+  --hijau-tua: #03452a;
+  --hijau-gelap: #0e1f17;
+  --kertas: #f6f3ec;
+  --kertas-garis: #e9e4d8;
+  --tinta: #16201a;
+  --emas: #d9a21b;
+
+  /* Semantik: tema terang (wizard, admin, PDF, email selalu terang) */
+  --latar: var(--kertas);
+  --permukaan: #fffdf8;
+  --permukaan-alt: var(--kertas-garis);
+  --garis: #d8d1bf;
+  --tinta-utama: var(--tinta);
+  --tinta-redup: #4a5a50;
+  --primer: var(--hijau-nu);
+  --primer-tinta: #ffffff;
+  --primer-tua: var(--hijau-tua);
+  --aksen: var(--emas);
+  --aksen-tinta: #16201a;
+  --fokus: #0b5fb3;
+
+  /* Status: kontras AA di atas latar kertas */
+  --sukses: #046a33;
+  --sukses-latar: #dff1e5;
+  --info: #1a4f8b;
+  --info-latar: #dce9f8;
+  --peringatan: #6e4a00;
+  --peringatan-latar: #fbefc6;
+  --bahaya: #a3261f;
+  --bahaya-latar: #fbe0dd;
+}
+
+/* Tema gelap disiapkan untuk situs publik saja (PRD 16.2). Aktifkan dengan data-tema="gelap". */
+[data-tema="gelap"] {
+  --latar: var(--hijau-gelap);
+  --permukaan: #15291f;
+  --permukaan-alt: #1d3629;
+  --garis: #2f4a3b;
+  --tinta-utama: #f1ede2;
+  --tinta-redup: #b3c0b6;
+  --primer: #35b56d;
+  --primer-tinta: #0e1f17;
+  --primer-tua: #7ad9a1;
+  --sukses: #7ad9a1;
+  --sukses-latar: #123b27;
+  --info: #9cc4f2;
+  --info-latar: #16304f;
+  --peringatan: #f2d27a;
+  --peringatan-latar: #3f3000;
+  --bahaya: #f3a39c;
+  --bahaya-latar: #4a1a16;
+}
+
+@theme inline {
+  --color-latar: var(--latar);
+  --color-permukaan: var(--permukaan);
+  --color-permukaan-alt: var(--permukaan-alt);
+  --color-garis: var(--garis);
+  --color-tinta: var(--tinta-utama);
+  --color-tinta-redup: var(--tinta-redup);
+  --color-primer: var(--primer);
+  --color-primer-tinta: var(--primer-tinta);
+  --color-primer-tua: var(--primer-tua);
+  --color-aksen: var(--aksen);
+  --color-aksen-tinta: var(--aksen-tinta);
+  --color-fokus: var(--fokus);
+  --color-hijau-gelap: var(--hijau-gelap);
+  --color-hijau-tua: var(--hijau-tua);
+  --color-kertas: var(--kertas);
+  --color-sukses: var(--sukses);
+  --color-sukses-latar: var(--sukses-latar);
+  --color-info: var(--info);
+  --color-info-latar: var(--info-latar);
+  --color-peringatan: var(--peringatan);
+  --color-peringatan-latar: var(--peringatan-latar);
+  --color-bahaya: var(--bahaya);
+  --color-bahaya-latar: var(--bahaya-latar);
+
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
+
+  /* Satu sistem radius: 6 px kontrol, 14 px kartu, penuh untuk pil */
+  --radius-kontrol: 6px;
+  --radius-kartu: 14px;
+
+  /* Satu bayangan tipis, bukan tumpukan (PRD 16.4) */
+  --shadow-kartu: 0 1px 2px rgb(22 32 26 / 0.08);
+
+  --ease-keluar: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  html {
+    background: var(--latar);
+    color: var(--tinta-utama);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    min-height: 100dvh;
+    overflow-x: hidden;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    line-height: 1.1;
+    letter-spacing: -0.015em;
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--fokus);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--aksen);
+    color: var(--aksen-tinta);
+  }
+
+  /* Angka tabel, skor, statistik rata (PRD 16.2) */
+  table,
+  .angka {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Hormati preferensi gerak: animasi CSS runtuh ke statis */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}

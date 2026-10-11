@@ -74,4 +74,18 @@ test.describe("login admin", () => {
     await expect(menu.getByRole("link", { name: "Pengaturan" })).toHaveCount(0);
     await expect(menu.getByRole("link", { name: "Jurusan & Bobot" })).toHaveCount(0);
   });
+
+  test("header admin punya tombol Lihat situs yang membuka landing di tab baru", async ({ page, context }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    const akun = await buatAkunUji("konten");
+    await page.request.post("/api/v1/admin/login", { data: akun });
+    await page.goto("/admin");
+    const tombol = page.getByRole("link", { name: /Lihat situs/ });
+    await expect(tombol).toHaveAttribute("href", "/");
+    await expect(tombol).toHaveAttribute("target", "_blank");
+    const [tab] = await Promise.all([context.waitForEvent("page"), tombol.click()]);
+    await expect(tab).toHaveURL(/\/$/);
+    await expect(tab.getByRole("heading", { level: 1 })).toContainText("Belajar terampil");
+    await expect(page).toHaveURL(/\/admin$/);
+  });
 });

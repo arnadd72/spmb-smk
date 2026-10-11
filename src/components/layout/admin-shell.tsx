@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { KeyIcon, ListIcon, SignOutIcon, XIcon } from "@phosphor-icons/react";
+import { ArrowSquareOutIcon, KeyIcon, ListIcon, SignOutIcon, XIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
 import { LABEL_PERAN, menuUntuk, type PeranMenu } from "./menu-admin";
 
@@ -104,6 +104,16 @@ export function AdminShell({
           <p className="ml-auto min-w-0 truncate text-sm font-semibold text-tinta">
             {nama} <span className="font-medium text-tinta-redup">· {LABEL_PERAN[peran]}</span>
           </p>
+          <a
+            href="/"
+            target="_blank"
+            rel="noopener"
+            className="flex min-h-11 items-center gap-2 rounded-kontrol px-3 text-sm font-semibold text-tinta hover:bg-permukaan-alt"
+          >
+            <ArrowSquareOutIcon aria-hidden className="size-5" />
+            <span className="hidden sm:inline">Lihat situs</span>
+            <span className="sr-only sm:hidden">Lihat situs (tab baru)</span>
+          </a>
           <Link
             href="/admin/ganti-password"
             className="flex min-h-11 items-center gap-2 rounded-kontrol px-3 text-sm font-semibold text-tinta hover:bg-permukaan-alt"

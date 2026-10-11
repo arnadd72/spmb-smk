@@ -7,6 +7,7 @@ const nextConfig: NextConfig = {
   // PDF template formulir dibaca lewat fs saat runtime: pastikan ikut terbawa ke fungsi serverless Vercel.
   outputFileTracingIncludes: {
     "/api/v1/pendaftar/[token]/formulir": ["./src/server/services/pdf/template-dasar.pdf"],
+    "/api/v1/admin/peserta/[id]/formulir": ["./src/server/services/pdf/template-dasar.pdf"],
   },
   // Hanya berlaku di `next dev`: izinkan akses lewat terowongan ngrok untuk uji bersama teman. Tanpa ini
   // aset dev (/_next/...) diblokir dari origin selain localhost, sehingga JS klien (GSAP, Lenis) tidak jalan.

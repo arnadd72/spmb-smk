@@ -21,7 +21,7 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
     nama: "Utama",
     item: [
       { label: "Dashboard", href: "/admin", peran: SEMUA, siap: true },
-      { label: "Data Peserta", href: "/admin/peserta", peran: PENDAFTAR, siap: false },
+      { label: "Data Peserta", href: "/admin/peserta", peran: PENDAFTAR, siap: true },
       { label: "Verifikasi", href: "/admin/verifikasi", peran: PENDAFTAR, siap: false },
     ],
   },

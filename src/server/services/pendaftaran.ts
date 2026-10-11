@@ -17,7 +17,8 @@ import {
   type Berkas,
   type BerkasDraf,
 } from "@/server/services/draf";
-import { buatTokenAcak, dekripsi, enkripsi, hashPencarian, hashToken } from "@/server/services/kripto";
+import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
+import { susunKolom } from "@/server/services/pendaftarKolom";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatBobotJurusan } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
@@ -25,23 +26,6 @@ import { GalatApi } from "@/server/types/galat";
 // Submit pendaftaran (PRD v3.1 10.5-10.7), halaman sukses, dan cek status (10.9).
 
 const AWALAN_NOMOR = "SPMB";
-
-/** Kolom Pendaftar yang boleh diisi dari field formulir. Kunci lain (kustom_*) masuk dataKustom. */
-const KOLOM_DIKENAL = new Set([
-  "nama_lengkap", "tempat_lahir", "tanggal_lahir", "nisn", "nik", "no_kk", "jenis_kelamin", "agama", "anak_ke",
-  "jumlah_saudara", "asal_sekolah", "tamat_tahun", "no_ijazah", "no_hp", "no_wa", "email", "alamat", "rt", "rw",
-  "desa", "kecamatan", "kabupaten", "propinsi", "nama_ayah", "ayah_ttl", "ayah_pendidikan", "pekerjaan_ayah",
-  "nama_ibu", "ibu_ttl", "ibu_pendidikan", "pekerjaan_ibu", "alamat_ortu", "ortu_rt", "ortu_rw", "ortu_desa",
-  "ortu_kecamatan", "ortu_kabupaten", "ortu_propinsi", "no_hp_ortu", "penghasilan", "referensi_pendaftar",
-  "smp_kecamatan", "smp_kabupaten", "smp_propinsi", "ijazah_nomor_tahun", "lama_belajar", "nilai_ujian",
-  "golongan_darah", "tinggi_badan", "berat_badan", "penyakit_pernah_diderita", "hobi_olahraga", "hobi_kesenian",
-  "hobi_organisasi", "hobi_prestasi", "hobi_lain", "ukuran_seragam",
-]);
-const KOLOM_TERENKRIPSI = new Set(["nik", "no_kk", "no_hp", "no_wa", "no_hp_ortu"]);
-/** Field yang tidak masuk kolom: ditangani terpisah. */
-const KUNCI_DILEWATI = new Set(["setuju", "konfirmasi_final", "jurusan_1", "jurusan_2", "nilai_rapor"]);
-
-const camel = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
 export type HasilKirim = { nomor: string; aksesToken: string };
 
@@ -80,20 +64,8 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
   const jurusan2 = semua.jurusan_2 ? idJurusan(semua.jurusan_2) : undefined;
   const terbaik = rekom.peringkat.find((p) => p.label === "Paling Sesuai");
 
-  // 3. Susun kolom.
-  const kolom: Record<string, unknown> = {};
-  const kustom: Record<string, unknown> = {};
-  for (const [k, v] of Object.entries(semua)) {
-    if (KUNCI_DILEWATI.has(k) || v === undefined) continue;
-    if (!KOLOM_DIKENAL.has(k)) {
-      kustom[k] = v;
-      continue;
-    }
-    if (k === "tanggal_lahir") kolom[camel(k)] = new Date(`${v}T00:00:00Z`);
-    else if (KOLOM_TERENKRIPSI.has(k)) kolom[camel(k)] = enkripsi(String(v));
-    else kolom[camel(k)] = typeof v === "number" || typeof v === "object" ? v : String(v);
-  }
-  if (typeof semua.nik === "string") kolom.nikHash = hashPencarian(semua.nik);
+  // 3. Susun kolom (dipakai juga oleh edit admin dan input manual).
+  const { kolom, kustom } = susunKolom(semua);
 
   const tahun = konfig.tahunAjaran.split("/")[0];
   const aksesToken = buatTokenAcak(40);

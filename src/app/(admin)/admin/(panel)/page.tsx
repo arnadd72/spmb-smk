@@ -191,7 +191,7 @@ async function RingkasanPendaftar() {
             <EmptyState judul="Belum ada pendaftar" deskripsi="Pendaftar yang mengirim formulir akan muncul di sini." />
           </div>
         ) : (
-          <div className="mt-3 overflow-x-auto rounded-kartu border border-garis bg-permukaan">
+          <div className="relative mt-3 overflow-x-auto rounded-kartu border border-garis bg-permukaan">
             <table className="w-full min-w-[34rem] text-left text-sm">
               <caption className="sr-only">Delapan pendaftar terbaru</caption>
               <thead className="border-b border-garis bg-permukaan-alt text-tinta-redup">

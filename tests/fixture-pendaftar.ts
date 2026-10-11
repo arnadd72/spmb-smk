@@ -1,6 +1,7 @@
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/server/db/client";
 import { enkripsi, hashPencarian, hashToken } from "@/server/services/kripto";
+import { normalisasiHp } from "@/server/services/pendaftarKolom";
 
 /** Buat pendaftar langsung di database untuk test admin (tanpa lewat wizard). */
 export async function buatPendaftarUji(
@@ -31,6 +32,7 @@ export async function buatPendaftarUji(
       nik: o.nik ? enkripsi(o.nik) : undefined,
       nikHash: o.nik ? hashPencarian(o.nik) : undefined,
       noHp: o.noHp ? enkripsi(o.noHp) : undefined,
+      noHpHash: o.noHp ? hashPencarian(normalisasiHp(o.noHp)) : undefined,
       asalSekolah: o.asalSekolah,
       sumber: o.sumber,
       statusVerifikasi: o.status ?? "pending",

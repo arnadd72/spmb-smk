@@ -182,8 +182,9 @@ model Pendaftar {
   asalSekolah     String?
   tamatTahun      String?
   noIjazah        String?
-  /// Terenkripsi.
+  /// Terenkripsi. Pencarian lewat noHpHash.
   noHp            String?
+  noHpHash        String?
   /// Terenkripsi.
   noWa            String?
   email           String?
@@ -276,6 +277,7 @@ model Pendaftar {
   @@index([createdAt])
   @@index([nisn])
   @@index([nikHash])
+  @@index([noHpHash])
   @@index([namaLengkap])
 }
 

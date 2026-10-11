@@ -42,10 +42,17 @@ export async function ulangiSinkronDrive() {
   return sinkronSemuaTertunda(undefined, 50);
 }
 
+/** Catatan batas laju (login, cek status, tanya panitia) hanya berguna beberapa menit; buang yang lebih dari dua hari. */
+export async function bersihkanCatatanLaju() {
+  const hapus = await prisma.percobaanLogin.deleteMany({ where: { createdAt: { lt: new Date(Date.now() - 2 * 86_400_000) } } });
+  return { dihapus: hapus.count };
+}
+
 export async function jalankanHarian() {
   const hasil: Record<string, unknown> = {};
   for (const [nama, tugas] of [
     ["bersihDraf", bersihkanDraf],
+    ["catatanLaju", bersihkanCatatanLaju],
     ["sinkronDrive", ulangiSinkronDrive],
     ["emailTertunda", () => kirimUlangEmailTertunda()],
   ] as const) {

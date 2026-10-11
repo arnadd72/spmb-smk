@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TanyaPanitia } from "@/features/tanya/tanya-panitia";
 
 // Layout wizard: ringan, tanpa navigasi situs (fokus mengisi). GSAP tidak dimuat di sini (PRD 16.5).
 export default function LayoutDaftar({ children }: LayoutProps<"/">) {
@@ -17,9 +18,10 @@ export default function LayoutDaftar({ children }: LayoutProps<"/">) {
           </Link>
         </div>
       </header>
-      <main id="konten" className="mx-auto w-full max-w-2xl flex-1">
+      <main id="konten" className="mx-auto w-full max-w-2xl flex-1 pb-24">
         {children}
       </main>
+      <TanyaPanitia />
     </div>
   );
 }

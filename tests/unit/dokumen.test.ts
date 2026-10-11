@@ -295,7 +295,7 @@ describe("tugas terjadwal", () => {
   it("harian menjalankan semua tugas; satu tugas bermasalah tidak menghentikan yang lain", async () => {
     process.env.RESEND_API_KEY = "re_uji";
     const h = (await jalankanHarian()) as Record<string, Record<string, unknown>>;
-    expect(Object.keys(h).sort()).toEqual(["bersihDraf", "emailTertunda", "sinkronDrive"]);
+    expect(Object.keys(h).sort()).toEqual(["bersihDraf", "catatanLaju", "emailTertunda", "sinkronDrive"]);
     expect(h.sinkronDrive.dilewati).toMatch(/belum terhubung/);
     expect(h.bersihDraf.drafDihapus).toBe(0);
   });

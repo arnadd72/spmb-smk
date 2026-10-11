@@ -18,6 +18,7 @@ export default async function hapusDataUji() {
     await db.query(`DELETE FROM "AuditLog" WHERE "userId" IN (SELECT id FROM "User" WHERE username LIKE 'e2e-%' OR username LIKE 'uji-e2e-%')`);
     await db.query(`DELETE FROM "AuditLog" WHERE "entitasTipe" = 'user' AND "entitasId" IN (SELECT id::text FROM "User" WHERE username LIKE 'uji-e2e-%')`);
     await db.query(`DELETE FROM "User" WHERE username LIKE 'e2e-%' OR username LIKE 'uji-e2e-%'`);
+    await db.query(`DELETE FROM "PercobaanLogin" WHERE username LIKE 'tanya:%' OR username LIKE 'tanyaai:%' OR username LIKE 'cek:%'`);
   } finally {
     await db.end();
     rmSync(path.join(process.cwd(), ".local", "draf-temp", "e2e"), { recursive: true, force: true });

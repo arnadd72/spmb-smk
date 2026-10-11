@@ -1,4 +1,5 @@
 import { Footer } from "@/components/layout/footer";
+import { TanyaPanitia } from "@/features/tanya/tanya-panitia";
 import { Navbar } from "@/components/layout/navbar";
 import { Pembuka } from "@/features/landing/pembuka";
 import { SmoothScroll } from "@/features/landing/smooth-scroll";
@@ -19,6 +20,7 @@ export default function LayoutPublik({ children }: LayoutProps<"/">) {
         {children}
       </main>
       <Footer />
+      <TanyaPanitia />
     </div>
   );
 }

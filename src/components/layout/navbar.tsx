@@ -49,7 +49,7 @@ export function Navbar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link href="/daftar/langkah/1" className="hidden sm:block">
+          <Link href="/daftar" className="hidden sm:block">
             <Button>Daftar Sekarang</Button>
           </Link>
           <button
@@ -82,7 +82,7 @@ export function Navbar() {
               </Link>
             ))}
           </nav>
-          <Link href="/daftar/langkah/1" onClick={() => setBuka(false)} className="mt-6 block">
+          <Link href="/daftar" onClick={() => setBuka(false)} className="mt-6 block">
             <Button ukuran="lg" className="w-full">
               Daftar Sekarang
             </Button>

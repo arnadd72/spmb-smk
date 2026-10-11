@@ -78,7 +78,7 @@ function nilaiValid(f: DefinisiField): unknown {
   }
 }
 
-async function isiLengkap(token: string) {
+async function isiLengkap(token: string, tanpaJurusan2 = false) {
   const fields = await muatDefinisiField();
   const bobot = await muatBobotJurusan();
   const mapel = [...new Set(bobot.flatMap((j) => j.bobot.map((m) => m.kode)))];
@@ -88,6 +88,7 @@ async function isiLengkap(token: string) {
     const isi: Record<string, unknown> = {};
     for (const f of fields.filter((x) => x.langkah === n && x.tipe !== "file" && x.tipe !== "tabel")) isi[f.kunci] = nilaiValid(f);
     if (n === 3) isi.nilai_rapor = { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80, "2": 82 }])) };
+    if (n === 4 && tanpaJurusan2) delete isi.jurusan_2;
     if (n === 7) isi.nilai_ujian = { b_indonesia: 80, b_inggris: 75, matematika: 90, ipa: 70 };
     await simpanLangkah(token, n, isi);
   }
@@ -239,6 +240,14 @@ describe("submit pendaftaran", () => {
     const b = (await buatDraf()).token;
     await isiLengkap(b);
     expect((await kirimPendaftaran(b, true)).nomor).toBe("SPMB-2027-0002");
+  });
+
+  it("pilihan jurusan 2 boleh tidak dikirim sama sekali", async () => {
+    const { token } = await buatDraf();
+    await isiLengkap(token, true);
+    await kirimPendaftaran(token, true);
+    const p = await prisma.pendaftar.findFirstOrThrow();
+    expect(p.jurusan2Id).toBeNull();
   });
 
   it("nomor tidak bentrok saat dua pengiriman berjalan bersamaan", async () => {

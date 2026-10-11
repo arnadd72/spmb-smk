@@ -1,0 +1,68 @@
+import { cookies } from "next/headers";
+import { CheckCircleIcon, ClockIcon } from "@phosphor-icons/react/dist/ssr";
+import { TombolMulaiDaftar } from "@/features/wizard/mulai-daftar";
+import { formatTanggal } from "@/lib/format";
+import { NAMA_COOKIE_DRAF, ambilDraf, ambilKonfigWizard } from "@/server/services/draf";
+
+export const metadata = {
+  title: "Daftar SPMB",
+  description: "Mulai pendaftaran peserta didik baru SMK Ma'arif NU 1 Wangon.",
+};
+
+const SIAPKAN = [
+  "Akta kelahiran dan kartu keluarga (foto atau pindaian, opsional namun disarankan)",
+  "Rapor SMP/MTs, semester 1 sampai 5",
+  "NISN dan NIK, nomor HP atau WhatsApp yang aktif",
+  "Data orang tua: nama, pekerjaan, penghasilan, dan alamat",
+];
+
+export default async function HalamanDaftar() {
+  const konfig = await ambilKonfigWizard();
+  const draf = await ambilDraf((await cookies()).get(NAMA_COOKIE_DRAF)?.value);
+  const lanjut = Boolean(draf && !draf.sudahKirim);
+
+  return (
+    <div className="px-4 py-10 sm:py-14">
+      <h1 className="max-w-[18ch] font-display text-[clamp(2rem,6vw,3rem)] font-semibold leading-[1.02] text-ink">
+        Pendaftaran peserta didik baru
+      </h1>
+      <p className="mt-3 text-tinta-redup">Tahun ajaran {konfig.tahunAjaran}. Sekitar 10 sampai 15 menit, tanpa membuat akun.</p>
+
+      {konfig.status !== "buka" ? (
+        <p role="status" className="mt-8 flex items-start gap-3 rounded-kartu bg-peringatan-latar p-4 font-medium text-peringatan">
+          <ClockIcon aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0" />
+          {konfig.status === "belum" && konfig.buka
+            ? `Pendaftaran dibuka pada ${formatTanggal(konfig.buka)}. Silakan kembali pada tanggal tersebut.`
+            : "Pendaftaran sudah ditutup."}
+          {konfig.kontak ? ` Hubungi panitia: ${konfig.kontak}` : ""}
+        </p>
+      ) : (
+        <>
+          <section aria-labelledby="siapkan" className="mt-8">
+            <h2 id="siapkan" className="text-lg font-bold text-ink">
+              Siapkan ini dulu
+            </h2>
+            <ul className="mt-3 flex flex-col gap-2.5">
+              {SIAPKAN.map((s) => (
+                <li key={s} className="flex items-start gap-3">
+                  <CheckCircleIcon aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0 text-primer" />
+                  <span className="text-tinta">{s}</span>
+                </li>
+              ))}
+            </ul>
+            {konfig.tutup && (
+              <p className="mt-4 text-sm text-tinta-redup">
+                Pendaftaran ditutup <span className="angka">{formatTanggal(konfig.tutup)}</span>.
+              </p>
+            )}
+          </section>
+
+          <div className="mt-8 max-w-sm">
+            <TombolMulaiDaftar lanjut={lanjut} />
+            {lanjut && <p className="mt-2 text-sm text-tinta-redup">Draf Anda tersimpan di perangkat ini selama 7 hari.</p>}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}

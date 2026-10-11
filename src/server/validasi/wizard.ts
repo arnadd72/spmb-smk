@@ -106,7 +106,7 @@ function skemaPerTipe(f: DefinisiField): z.ZodType {
 /** Skema satu field. Field opsional menerima string kosong (dianggap tidak diisi). */
 export function skemaField(f: DefinisiField): z.ZodType {
   const dasar = skemaPerKunci(f.kunci) ?? skemaPerTipe(f);
-  return z.any().transform((v, ctx) => {
+  const dasarField = z.any().transform((v, ctx) => {
     const kosong = v === undefined || v === null || (typeof v === "string" && v.trim() === "");
     if (kosong && f.tipe !== "checkbox") {
       if (f.wajib) ctx.addIssue({ code: "custom", message: `${f.label} wajib diisi.` });
@@ -118,6 +118,8 @@ export function skemaField(f: DefinisiField): z.ZodType {
     for (const isu of hasil.error.issues) ctx.addIssue({ code: "custom", message: isu.message });
     return z.NEVER;
   });
+  // Field opsional boleh tidak dikirim sama sekali (kunci hilang dari JSON), field wajib tetap diperiksa.
+  return f.wajib ? dasarField : dasarField.optional();
 }
 
 /** Field yang diisi lewat input biasa; file dan tabel ditangani terpisah. */

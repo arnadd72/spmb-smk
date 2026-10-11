@@ -114,7 +114,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
           </p>
           <div data-masuk className="flex flex-col gap-3 sm:flex-row">
             <Magnetik className="sm:inline-block">
-              <Link href="/daftar/langkah/1" className="block">
+              <Link href="/daftar" className="block">
                 <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
                   Daftar Sekarang
                 </Button>

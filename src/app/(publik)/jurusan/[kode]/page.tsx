@@ -124,7 +124,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
           <p className="max-w-[28ch] font-display text-3xl font-bold leading-tight lg:text-4xl">
             Tertarik dengan {j.kode}? Daftar dan lihat kecocokan nilai rapor Anda.
           </p>
-          <Link href="/daftar/langkah/1" className="w-full sm:w-auto">
+          <Link href="/daftar" className="w-full sm:w-auto">
             <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
               Daftar Sekarang
             </Button>

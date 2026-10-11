@@ -61,7 +61,7 @@ export function Penutup() {
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Magnetik className="sm:inline-block" kekuatan={0.4}>
-            <Link data-aksi href="/daftar/langkah/1" className="block">
+            <Link data-aksi href="/daftar" className="block">
               <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
                 Daftar Sekarang
               </Button>

@@ -100,7 +100,8 @@ Bagian ini adalah catatan hidup untuk agen yang melanjutkan. Perbarui di commit 
 | A3 Konten & landing | Hampir selesai | **Selesai:** landing, `/jurusan`, `/jurusan/[kode]`, `/berita`, `/berita/[slug]`, CRUD admin berita/agenda/galeri/testimoni/FAQ, ubah jurusan, pengaturan (termasuk blok Google Drive), revalidasi halaman publik saat konten disimpan. **Belum:** unggah gambar langsung ke Supabase Storage (sementara alamat gambar diisi manual), landing menampilkan berita/agenda/galeri/testimoni dari database, editor bobot (A6), dan endpoint publik JSON `/api/v1/landing`, `/jurusan`, `/berita`, `/faq` (ditambah saat dibutuhkan klien: wizard A4, Tanya Panitia A8) |
 | A4 Wizard tanpa OCR | Selesai | Draf bertoken, 8 langkah isian manual dari form builder, tabel nilai rapor manual, rekomendasi bobot, submit + nomor, halaman sukses, cek status. Berkas unggahan memakai driver disk lokal (butir 24). E2E hijau |
 | 15.1 PDF formulir | Selesai | Template Word diekspor ke PDF dasar, isian ditimpa `pdf-lib` di koordinat terpetakan. Detail di 15.1 dan butir 28 |
-| A5 sampai A8 | Belum | Urut sesuai 20.1. OCR (A5) menunggu API key Google Vision, pemilik proyek meminta A6 lebih dulu |
+| A6 Panel admin | Berjalan | Tahap 1 selesai: ganti password wajib (mustChangePassword), menu per peran, dashboard. Berikutnya: data peserta, verifikasi, kuota, input manual, bobot/mapel, form builder, akun, audit |
+| A5 dan A7 sampai A8 | Belum | Urut sesuai 20.1. OCR (A5) menunggu API key Google Vision, pemilik proyek meminta A6 lebih dulu |
 
 Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 
@@ -138,6 +139,7 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 26. **Pengaturan baru dibaca wizard:** `gelombang_buka`, `gelombang_tutup` (YYYY-MM-DD, kosong = selalu buka) dan `semester_rapor` (bawaan `1,2,3,4,5`). Formulir pengaturan admin belum memuatnya (ditambah di A6); sementara bisa diisi lewat tabel `Pengaturan`. `tahun_ajaran` kosong memakai bawaan (mulai Oktober = tahun ajaran berikutnya).
 27. **Aturan wizard yang dipilih:** tabel nilai rapor hanya menampilkan mapel yang punya bobot di jurusan aktif, dan semuanya wajib terisi minimal satu semester (PRD v3.1 10.4). Pilihan jurusan 1 terisi awal dengan saran teratas. `Kembali` tidak menyimpan isian langkah yang sedang dibuka (hanya langkah yang sudah disimpan yang tersimpan). Jenis berkas dideteksi dari isi (magic bytes), bukan dari nama atau MIME klien. Cek status dibatasi 10 per menit per IP memakai tabel `PercobaanLogin` (penanda `cek:{ip}`).
 28. **PDF formulir (15.1) dikerjakan atas permintaan pemilik proyek, 11 Okt 2026**, mendahului A6. Pas photo, Petugas, dan Tanda Tangan dibiarkan kosong. Kunci pengaturan baru dibaca: `tanggal_verifikasi` (YYYY-MM-DD, opsional).
+29. **A6 tahap 1 (admin):** `mustChangePassword` ditegakkan di server lewat klaim `mcp` di JWT. Selama `mcp`, `wajibSesiAdmin` menjawab 403 `PASSWORD_CHANGE_REQUIRED` dan `wajibPeranHalaman` mengalihkan ke `/admin/ganti-password` (di luar grup `(panel)`); hanya `POST /api/v1/admin/ganti-password` yang lolos. Ganti password menerbitkan token baru tanpa `mcp`. Kebijakan password: min 10 karakter, ada huruf dan angka, beda dari lama. Menu sidebar dari `menu-admin.ts` per peran dan menyembunyikan item yang halamannya belum siap. e2e memakai akun uji `e2e-*` (password acak) yang dihapus `global-teardown.ts`, bukan akun superadmin asli. Dashboard memakai periode dari `tahun_ajaran`; grafik murni CSS.
 
 ---
 

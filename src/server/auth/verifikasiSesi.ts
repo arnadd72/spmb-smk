@@ -16,6 +16,7 @@ export async function ambilSesiAdmin(): Promise<IsiSesi | null> {
 export async function wajibSesiAdmin(...peranBoleh: PeranAdmin[]): Promise<IsiSesi> {
   const sesi = await ambilSesiAdmin();
   if (!sesi) throw GalatApi.tidakTerautentikasi();
+  if (sesi.mcp) throw new GalatApi(403, "PASSWORD_CHANGE_REQUIRED", "Anda wajib mengganti password terlebih dahulu.");
   if (peranBoleh.length > 0 && !peranBoleh.includes(sesi.peran)) throw GalatApi.dilarang();
   return sesi;
 }
@@ -27,6 +28,7 @@ export async function wajibSesiAdmin(...peranBoleh: PeranAdmin[]): Promise<IsiSe
 export async function wajibPeranHalaman(...peranBoleh: PeranAdmin[]): Promise<IsiSesi> {
   const sesi = await ambilSesiAdmin();
   if (!sesi) redirect("/admin/login");
+  if (sesi.mcp) redirect("/admin/ganti-password");
   if (peranBoleh.length > 0 && !peranBoleh.includes(sesi.peran)) redirect("/admin?akses=ditolak");
   return sesi;
 }

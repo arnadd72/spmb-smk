@@ -1,57 +1,34 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
-import { ListIcon, SignOutIcon, XIcon } from "@phosphor-icons/react";
+import { KeyIcon, ListIcon, SignOutIcon, XIcon } from "@phosphor-icons/react";
 import { cn } from "@/lib/cn";
+import { LABEL_PERAN, menuUntuk, type PeranMenu } from "./menu-admin";
 
-// Menu admin sesuai PRD 13. Pembatasan per peran dikerjakan di M2/M6.
-const grup = [
-  { nama: "Utama", item: ["Dashboard", "Data Peserta", "Verifikasi"] },
-  { nama: "Aksi", item: ["Ekspor XLSX", "Kuota", "Input Manual"] },
-  { nama: "Konten", item: ["Berita", "Agenda", "Galeri", "Testimoni", "FAQ"] },
-  {
-    nama: "Sistem",
-    item: [
-      "Jurusan & Bobot",
-      "Mata Pelajaran",
-      "Isian Formulir",
-      "Pengaturan",
-      "Statistik OCR",
-      "Akun Admin",
-      "Audit Log",
-    ],
-  },
-];
+function Menu({ peran, saatKlik }: { peran: PeranMenu; saatKlik?: () => void }) {
+  const path = usePathname();
+  const aktif = (href: string) => (href === "/admin" ? path === "/admin" : path === href || path.startsWith(`${href}/`));
 
-function slug(s: string) {
-  return s
-    .toLowerCase()
-    .replace(/&/g, "dan")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/(^-|-$)/g, "");
-}
-
-function Menu({ aktif, saatKlik }: { aktif?: string; saatKlik?: () => void }) {
   return (
     <nav aria-label="Menu admin" className="flex flex-col gap-5 p-4">
-      {grup.map((g) => (
+      {menuUntuk(peran).map((g) => (
         <div key={g.nama}>
           <p className="px-3 text-xs font-bold uppercase tracking-wide text-tinta-redup">{g.nama}</p>
           <ul className="mt-1">
             {g.item.map((i) => (
-              <li key={i}>
+              <li key={i.href}>
                 <Link
-                  href={`/admin/${slug(i)}`}
+                  href={i.href}
                   onClick={saatKlik}
-                  aria-current={aktif === i ? "page" : undefined}
+                  aria-current={aktif(i.href) ? "page" : undefined}
                   className={cn(
                     "flex min-h-11 items-center rounded-kontrol px-3 text-sm font-semibold text-tinta hover:bg-permukaan-alt",
-                    aktif === i && "bg-sukses-latar text-primer-tua",
+                    aktif(i.href) && "bg-sukses-latar text-primer-tua",
                   )}
                 >
-                  {i}
+                  {i.label}
                 </Link>
               </li>
             ))}
@@ -64,12 +41,12 @@ function Menu({ aktif, saatKlik }: { aktif?: string; saatKlik?: () => void }) {
 
 export function AdminShell({
   children,
-  aktif,
   nama = "Panitia SPMB",
+  peran = "panitia",
 }: {
   children: ReactNode;
-  aktif?: string;
   nama?: string;
+  peran?: PeranMenu;
 }) {
   const [buka, setBuka] = useState(false);
   const router = useRouter();
@@ -86,7 +63,7 @@ export function AdminShell({
         <p className="border-b border-garis p-4 font-display text-lg font-extrabold text-primer-tua">
           SPMB Admin
         </p>
-        <Menu aktif={aktif} />
+        <Menu peran={peran} />
       </aside>
 
       {buka && (
@@ -109,7 +86,7 @@ export function AdminShell({
                 <XIcon aria-hidden className="size-5" />
               </button>
             </div>
-            <Menu aktif={aktif} saatKlik={() => setBuka(false)} />
+            <Menu peran={peran} saatKlik={() => setBuka(false)} />
           </div>
         </div>
       )}
@@ -124,7 +101,17 @@ export function AdminShell({
           >
             <ListIcon aria-hidden className="size-6" />
           </button>
-          <p className="ml-auto text-sm font-semibold text-tinta">{nama}</p>
+          <p className="ml-auto min-w-0 truncate text-sm font-semibold text-tinta">
+            {nama} <span className="font-medium text-tinta-redup">· {LABEL_PERAN[peran]}</span>
+          </p>
+          <Link
+            href="/admin/ganti-password"
+            className="flex min-h-11 items-center gap-2 rounded-kontrol px-3 text-sm font-semibold text-tinta hover:bg-permukaan-alt"
+          >
+            <KeyIcon aria-hidden className="size-5" />
+            <span className="hidden sm:inline">Ganti password</span>
+            <span className="sr-only sm:hidden">Ganti password</span>
+          </Link>
           <button
             type="button"
             onClick={keluar}

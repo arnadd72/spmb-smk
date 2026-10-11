@@ -13,6 +13,8 @@ export type IsiSesi = {
   sub: string;
   peran: PeranAdmin;
   nama: string;
+  /** Akun wajib ganti password (mustChangePassword): semua rute selain ganti password ditolak sampai diganti. */
+  mcp?: boolean;
 };
 
 const PERAN_VALID: PeranAdmin[] = ["superadmin", "panitia", "konten"];
@@ -24,7 +26,7 @@ function rahasia(): Uint8Array {
 }
 
 export async function buatToken(isi: IsiSesi): Promise<string> {
-  return new SignJWT({ peran: isi.peran, nama: isi.nama })
+  return new SignJWT({ peran: isi.peran, nama: isi.nama, ...(isi.mcp ? { mcp: true } : {}) })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(isi.sub)
     .setIssuedAt()
@@ -39,7 +41,7 @@ export async function bacaToken(token: string | undefined): Promise<IsiSesi | nu
     const { payload } = await jwtVerify(token, rahasia(), { algorithms: ["HS256"] });
     const peran = payload.peran as PeranAdmin;
     if (!payload.sub || !PERAN_VALID.includes(peran)) return null;
-    return { sub: payload.sub, peran, nama: String(payload.nama ?? "") };
+    return { sub: payload.sub, peran, nama: String(payload.nama ?? ""), mcp: payload.mcp === true };
   } catch {
     return null;
   }

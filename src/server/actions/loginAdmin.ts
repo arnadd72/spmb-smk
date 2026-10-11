@@ -42,7 +42,7 @@ export async function loginAdmin(input: InputLogin, ip?: string): Promise<HasilL
   await prisma.percobaanLogin.deleteMany({ where: { username } });
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
 
-  const token = await buatToken({ sub: user.id.toString(), peran: user.peran, nama: user.name });
+  const token = await buatToken({ sub: user.id.toString(), peran: user.peran, nama: user.name, mcp: user.mustChangePassword });
   return {
     token,
     user: {

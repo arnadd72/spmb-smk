@@ -60,8 +60,8 @@ test.describe("admin: verifikasi", () => {
     // Hasil terlihat di detail dan riwayat
     await page.goto(`/admin/peserta/${a.id}`);
     await expect(page.getByText("Diterima").first()).toBeVisible();
-    await expect(page.getByText("Disetujui")).toBeVisible();
-    await expect(page.getByText("Diminta revisi")).toBeVisible();
+    await expect(page.getByText("Pendaftar disetujui")).toBeVisible();
+    await expect(page.getByText("Diminta revisi").first()).toBeVisible();
     await expect(page.getByText("Berkas dilihat").first()).toBeVisible();
   });
 

@@ -1,0 +1,31 @@
+// Nama aksi audit yang ramah dibaca. Aksi tak terdaftar tampil apa adanya.
+export const LABEL_AKSI: Record<string, string> = {
+  login: "Masuk",
+  "password.ganti": "Password diganti",
+  "pendaftar.ubah": "Data pendaftar diubah",
+  "pendaftar.formulir": "Formulir PDF dibuka",
+  "pendaftar.setujui": "Pendaftar disetujui",
+  "pendaftar.revisi": "Diminta revisi",
+  "pendaftar.tolak": "Pendaftar ditolak",
+  "pendaftar.nilai_sesuai": "Nilai dinyatakan sesuai",
+  "pendaftar.nilai_koreksi": "Nilai dikoreksi",
+  "pendaftar.berkas_lihat": "Berkas dilihat",
+  "pendaftar.berkas_unggah": "Berkas diunggah",
+  "pendaftar.berkas_hapus": "Berkas dihapus",
+  "pendaftar.sinkron": "Berkas disinkronkan ke Drive",
+  "pendaftar.input_manual": "Pendaftar luring diinput",
+  "kuota.ubah": "Kuota diubah",
+  "bobot.ubah": "Bobot jurusan diubah",
+  "mapel.buat": "Mata pelajaran ditambah",
+  "mapel.ubah": "Mata pelajaran diubah",
+  "mapel.hapus": "Mata pelajaran dihapus",
+  "formfield.buat": "Isian formulir ditambah",
+  "formfield.ubah": "Isian formulir diubah",
+  "formfield.hapus": "Isian formulir dihapus",
+  "akun.buat": "Akun dibuat",
+  "akun.ubah": "Akun diubah",
+  "akun.reset_password": "Password akun direset",
+  "pengaturan.ubah": "Pengaturan diubah",
+};
+
+export const labelAksi = (aksi: string) => LABEL_AKSI[aksi] ?? aksi;

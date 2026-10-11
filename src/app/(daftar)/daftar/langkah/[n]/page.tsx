@@ -107,7 +107,7 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       judul: NAMA_LANGKAH[l - 1],
       langkah: l,
       baris: fields
-        .filter((f) => f.langkah === l && f.tipe !== "file" && f.tipe !== "tabel" && f.tipe !== "checkbox")
+        .filter((f) => f.langkah === l && f.tipe !== "file" && f.tipe !== "tabel" && f.kunci !== "setuju" && f.kunci !== "konfirmasi_final")
         .map((f) => ({ label: f.label, nilai: tampilNilai(f, draf.data[String(l)]?.[f.kunci]) })),
     }));
     bagian.splice(1, 0, {

@@ -188,6 +188,8 @@ export function nilaiPendaftar(p: Record<string, unknown>, jurusan: { j1?: strin
     else if (KOLOM_TERENKRIPSI.has(kunci)) hasil[kunci] = bukaAman(nilai as string | null) ?? "";
     else hasil[kunci] = nilai === null || nilai === undefined ? "" : nilai;
   }
+  // Isian kustom dari form builder tersimpan di dataKustom.
+  Object.assign(hasil, (p.dataKustom ?? {}) as Record<string, unknown>);
   hasil.jurusan_1 = jurusan.j1 ?? "";
   hasil.jurusan_2 = jurusan.j2 ?? "";
   return hasil;

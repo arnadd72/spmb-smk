@@ -47,12 +47,12 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
     nama: "Sistem",
     item: [
       { label: "Jurusan & Bobot", href: "/admin/jurusan-dan-bobot", peran: SISTEM, siap: true },
-      { label: "Mata Pelajaran", href: "/admin/mata-pelajaran", peran: SISTEM, siap: false },
-      { label: "Isian Formulir", href: "/admin/isian-formulir", peran: SISTEM, siap: false },
+      { label: "Mata Pelajaran", href: "/admin/mata-pelajaran", peran: SISTEM, siap: true },
+      { label: "Isian Formulir", href: "/admin/isian-formulir", peran: SISTEM, siap: true },
       { label: "Pengaturan", href: "/admin/pengaturan", peran: SISTEM, siap: true },
-      { label: "Statistik OCR", href: "/admin/statistik-ocr", peran: SISTEM, siap: false },
-      { label: "Akun Admin", href: "/admin/akun-admin", peran: SISTEM, siap: false },
-      { label: "Audit Log", href: "/admin/audit-log", peran: SISTEM, siap: false },
+      { label: "Statistik OCR", href: "/admin/statistik-ocr", peran: SISTEM, siap: true },
+      { label: "Akun Admin", href: "/admin/akun-admin", peran: SISTEM, siap: true },
+      { label: "Audit Log", href: "/admin/audit-log", peran: SISTEM, siap: true },
     ],
   },
 ];

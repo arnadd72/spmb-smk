@@ -165,7 +165,9 @@ async function hapusDariDrive(idBerkas: string | null | undefined) {
   }
 }
 
-function adaYangTertunda(meta: BerkasDraf, p: { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown }): boolean {
+function adaYangTertunda(meta: BerkasDraf, p: { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown; kustomFileIds?: unknown }): boolean {
+  const kustom = (p.kustomFileIds ?? {}) as Record<string, string>;
+  for (const [k, v] of Object.entries(meta)) if (v && !["akta", "kk", "rapor"].includes(k) && !kustom[k]) return true;
   const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
   if (meta.akta && !p.aktaFileId) return true;
   if (meta.kk && !p.kkFileId) return true;
@@ -250,6 +252,7 @@ export async function hapusBerkasPendaftar(id: string, kunci: string, indeks: nu
     aktaFileId: kunci === "akta" ? null : p.aktaFileId,
     kkFileId: kunci === "kk" ? null : p.kkFileId,
     raporFileIds: (data.raporFileIds as unknown) ?? p.raporFileIds,
+    kustomFileIds: p.kustomFileIds,
   };
   data.berkasMeta = JSON.parse(JSON.stringify(meta));
   data.berkasSinkron = adaYangTertunda(meta, sesudah) ? "menunggu" : "selesai";

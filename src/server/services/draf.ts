@@ -5,6 +5,7 @@ import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, mapelBerbobot, muatBobotJurusan, type HasilRekomendasi } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
+import { KUNCI_INTI } from "@/server/validasi/formField";
 import {
   KUNCI_FILE_KHUSUS,
   TOTAL_LANGKAH,
@@ -102,7 +103,10 @@ export async function pastikanPendaftaranBuka(): Promise<KonfigWizard> {
 /** Definisi field yang tampil, dengan opsi dinamis (jurusan aktif) sudah diselesaikan. */
 export async function muatDefinisiField(): Promise<DefinisiField[]> {
   const [baris, jurusan] = await Promise.all([
-    prisma.formField.findMany({ where: { tampil: true }, orderBy: [{ langkah: "asc" }, { urutan: "asc" }] }),
+    prisma.formField.findMany({
+      where: { OR: [{ tampil: true }, { kunci: { in: [...KUNCI_INTI] } }] },
+      orderBy: [{ langkah: "asc" }, { urutan: "asc" }],
+    }),
     prisma.jurusan.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } }),
   ]);
   const opsiJurusan = jurusan.map((j) => ({ nilai: j.kode, label: `${j.kode} · ${j.nama}` }));
@@ -115,7 +119,8 @@ export async function muatDefinisiField(): Promise<DefinisiField[]> {
       langkah: f.langkah,
       label: f.label,
       tipe: f.tipe as DefinisiField["tipe"],
-      wajib: f.wajib,
+      // Isian inti selalu tampil dan wajib walau tabel diubah langsung.
+      wajib: f.wajib || KUNCI_INTI.has(f.kunci),
       teksBantuan: f.teksBantuan,
       placeholder: f.placeholder,
       urutan: f.urutan,

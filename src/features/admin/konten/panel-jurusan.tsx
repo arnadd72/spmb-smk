@@ -90,7 +90,7 @@ export function PanelJurusan() {
     <div className="mx-auto max-w-5xl">
       <h1 className="text-3xl font-bold text-ink">Jurusan dan bobot</h1>
       <p className="mt-2 max-w-prose text-tinta-redup">
-        Ubah profil dan kuota jurusan. Editor bobot mata pelajaran (untuk saran jurusan) dikerjakan pada milestone A6.
+        Ubah profil dan kuota jurusan, lalu atur bobot mata pelajaran untuk saran jurusan di bagian bawah halaman.
       </p>
 
       <div className="mt-6">

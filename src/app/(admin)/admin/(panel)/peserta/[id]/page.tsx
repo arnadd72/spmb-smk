@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ChatCircleDotsIcon, FilePdfIcon, PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { labelAksi } from "@/features/admin/audit/label";
 import { BatangProgres } from "@/features/admin/dashboard/grafik";
 import { KelolaBerkas } from "@/features/admin/peserta/kelola-berkas";
 import { StatusBadge } from "@/features/admin/peserta/status-badge";
@@ -22,19 +23,10 @@ type Skor = { kode: string; nama: string; skor: number; label: string; penjelasa
 type Rapor = { semester: number[]; mapel: Record<string, Record<string, number>> };
 
 const LABEL_NILAI = { belumDicek: "Belum dicek", sesuai: "Sesuai dengan rapor", dikoreksi: "Dikoreksi panitia" } as const;
-const LABEL_AKSI: Record<string, string> = {
-  "pendaftar.ubah": "Data diubah",
-  "pendaftar.formulir": "Formulir PDF dibuka",
-  "pendaftar.setujui": "Disetujui",
-  "pendaftar.revisi": "Diminta revisi",
-  "pendaftar.tolak": "Ditolak",
-  "pendaftar.nilai_sesuai": "Nilai dinyatakan sesuai",
-  "pendaftar.nilai_koreksi": "Nilai dikoreksi",
-  "pendaftar.berkas_lihat": "Berkas dilihat",
-};
 
 function tampil(f: DefinisiField, v: unknown): string {
   if (v === undefined || v === null || v === "") return "";
+  if (f.tipe === "checkbox") return v ? "Ya" : "Tidak";
   if (f.tipe === "date" && typeof v === "string") return formatTanggal(v);
   if ((f.tipe === "select" || f.tipe === "radio") && f.opsi) return f.opsi.find((o) => o.nilai === v)?.label ?? String(v);
   if (typeof v === "object") return Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k.replace("_", " ")} ${x}`).join(", ");
@@ -64,7 +56,7 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
   const bagian = [1, 5, 6, 7].map((l) => ({
     judul: NAMA_LANGKAH[l - 1],
     baris: fields
-      .filter((f) => f.langkah === l && f.tipe !== "file" && f.tipe !== "tabel" && f.tipe !== "checkbox")
+      .filter((f) => f.langkah === l && f.tipe !== "file" && f.tipe !== "tabel" && f.kunci !== "setuju" && f.kunci !== "konfirmasi_final")
       .map((f) => ({ label: f.label, nilai: tampil(f, p.nilai[f.kunci]) })),
   }));
   bagian[3].baris.push(...Object.entries((p.nilai.nilai_ujian ?? {}) as Record<string, number>).map(([k, v]) => ({ label: `Nilai ujian ${k.replace("_", " ")}`, nilai: String(v) })));
@@ -259,7 +251,7 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
             <ol className="mt-3 flex flex-col gap-3">
               {p.riwayat.map((r) => (
                 <li key={r.id} className="border-l-2 border-garis pl-3 text-sm">
-                  <p className="font-semibold text-tinta">{LABEL_AKSI[r.aksi] ?? r.aksi}</p>
+                  <p className="font-semibold text-tinta">{labelAksi(r.aksi)}</p>
                   <p className="text-xs text-tinta-redup">
                     {r.oleh} · {formatTanggal(r.waktu)}
                   </p>

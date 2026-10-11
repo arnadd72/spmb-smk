@@ -1,12 +1,25 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { bacaToken, NAMA_COOKIE_ADMIN, type IsiSesi, type PeranAdmin } from "@/server/auth/sesi";
+import { prisma } from "@/server/db/client";
 import { GalatApi } from "@/server/types/galat";
 
-/** Sesi admin dari cookie, atau null bila tidak ada atau tidak sah. */
+/**
+ * Sesi admin dari cookie, atau null bila tidak ada, tidak sah, atau akunnya sudah dinonaktifkan atau dihapus.
+ * Peran, nama, dan status wajib ganti password dibaca dari database setiap kali (satu query per kunci utama),
+ * sehingga perubahan peran, penonaktifan, dan reset password oleh superadmin langsung berlaku tanpa menunggu token habis.
+ */
 export async function ambilSesiAdmin(): Promise<IsiSesi | null> {
   const jar = await cookies();
-  return bacaToken(jar.get(NAMA_COOKIE_ADMIN)?.value);
+  const sesi = await bacaToken(jar.get(NAMA_COOKIE_ADMIN)?.value);
+  if (!sesi || !/^\d{1,18}$/.test(sesi.sub)) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: BigInt(sesi.sub) },
+    select: { isActive: true, peran: true, name: true, mustChangePassword: true },
+  });
+  if (!user || !user.isActive) return null;
+  return { sub: sesi.sub, peran: user.peran, nama: user.name, mcp: user.mustChangePassword };
 }
 
 /**

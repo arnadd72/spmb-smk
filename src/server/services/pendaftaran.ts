@@ -148,11 +148,14 @@ export async function pindahkanKeDrive(nomor: string): Promise<void> {
 
   type Tugas = { kunci: string; i: number; b: Berkas };
   const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
+  const kustomId = { ...((p.kustomFileIds ?? {}) as Record<string, string>) };
   const tugas: Tugas[] = [];
   for (const [kunci, nilai] of Object.entries(meta)) {
     if (!nilai) continue;
     if (Array.isArray(nilai)) nilai.forEach((b, i) => !(kunci === "rapor" && rapor[i]) && tugas.push({ kunci, i, b }));
-    else if (!(kunci === "akta" && p.aktaFileId) && !(kunci === "kk" && p.kkFileId)) tugas.push({ kunci, i: 0, b: nilai });
+    else if (!(kunci === "akta" && p.aktaFileId) && !(kunci === "kk" && p.kkFileId) && !(kunci !== "akta" && kunci !== "kk" && kustomId[kunci])) {
+      tugas.push({ kunci, i: 0, b: nilai });
+    }
   }
   if (tugas.length === 0) {
     await prisma.pendaftar.update({ where: { id: p.id }, data: { berkasSinkron: "selesai" } });
@@ -175,12 +178,19 @@ export async function pindahkanKeDrive(nomor: string): Promise<void> {
     if (t.kunci === "akta") akta = id;
     else if (t.kunci === "kk") kk = id;
     else if (t.kunci === "rapor") idRapor[t.i] = id;
+    else kustomId[t.kunci] = id; // isian berkas kustom dari form builder
     terpindah.push(t.b);
   }
 
   await prisma.pendaftar.update({
     where: { id: p.id },
-    data: { aktaFileId: akta, kkFileId: kk, ...(idRapor.length > 0 ? { raporFileIds: idRapor } : {}), berkasSinkron: "selesai" },
+    data: {
+      aktaFileId: akta,
+      kkFileId: kk,
+      ...(idRapor.length > 0 ? { raporFileIds: idRapor } : {}),
+      ...(Object.keys(kustomId).length > 0 ? { kustomFileIds: kustomId } : {}),
+      berkasSinkron: "selesai",
+    },
   });
   await Promise.all(terpindah.map((b) => temp.hapus(b.ref).catch(() => undefined)));
 }

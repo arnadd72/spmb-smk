@@ -1,7 +1,8 @@
 // @vitest-environment node
 import { NextRequest } from "next/server";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { buatToken, type PeranAdmin } from "@/server/auth/sesi";
+import { prisma } from "@/server/db/client";
 
 // cookies() dari next/headers butuh konteks request; di test diganti penyimpanan sederhana.
 let cookieAdmin: string | undefined;
@@ -24,9 +25,20 @@ const panggil = (h: unknown, r: Request) => (h as Handler)(r, konteks);
 const req = (metode: string) =>
   new Request("http://localhost:3000/api/v1/admin/x", { method: metode, headers: { "sec-fetch-site": "same-origin" } });
 
+// Sesi kini diverifikasi ke database (akun harus ada, aktif, dan perannya dibaca dari sana), jadi akun uji dibuat dulu.
 async function sesiSebagai(peran: PeranAdmin) {
+  await prisma.user.upsert({
+    where: { id: BigInt(9) },
+    create: { id: BigInt(9), name: "Uji", username: "uji-akses", passwordHash: "x", peran, mustChangePassword: false },
+    update: { peran, mustChangePassword: false, isActive: true },
+  });
   cookieAdmin = await buatToken({ sub: "9", peran, nama: "Uji" });
 }
+
+afterAll(async () => {
+  await prisma.user.deleteMany({ where: { id: BigInt(9) } });
+  await prisma.$disconnect();
+});
 
 beforeEach(() => {
   cookieAdmin = undefined;

@@ -65,7 +65,7 @@ test.describe("admin: data peserta", () => {
 
     await page.getByRole("link", { name: "Kembali ke detail" }).click();
     await expect(page.getByRole("heading", { level: 1, name: `${unik} Ubah` })).toBeVisible();
-    await expect(page.getByText("Data diubah")).toBeVisible();
+    await expect(page.getByText("Data pendaftar diubah")).toBeVisible();
   });
 
   for (const lebar of [360, 1440]) {

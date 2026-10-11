@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/server/db/client";
 import { buatToken, type PeranAdmin } from "@/server/auth/sesi";
+import { catatAudit } from "@/server/services/audit";
 import { GalatApi } from "@/server/types/galat";
 import type { InputLogin } from "@/server/validasi/auth";
 
@@ -41,6 +42,7 @@ export async function loginAdmin(input: InputLogin, ip?: string): Promise<HasilL
   // Login berhasil membersihkan hitungan gagal username ini.
   await prisma.percobaanLogin.deleteMany({ where: { username } });
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+  await catatAudit({ userId: user.id.toString(), aksi: "login", entitasTipe: "user", entitasId: user.id.toString(), ip });
 
   const token = await buatToken({ sub: user.id.toString(), peran: user.peran, nama: user.name, mcp: user.mustChangePassword });
   return {

@@ -4,6 +4,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterPesertaForm } from "@/features/admin/peserta/filter-form";
 import { queryFilter } from "@/features/admin/peserta/query";
 import { StatusBadge } from "@/features/admin/peserta/status-badge";
+import { TombolSinkronSemua } from "@/features/admin/verifikasi/tombol-sinkron";
 import { cn } from "@/lib/cn";
 import { formatTanggal } from "@/lib/format";
 import { bacaFilter, daftarPeserta, type FilterPeserta } from "@/server/actions/peserta";
@@ -43,6 +44,12 @@ export default async function HalamanPeserta({ searchParams }: PageProps<"/admin
       </p>
 
       <FilterPesertaForm filter={filter} jurusan={jurusan.map((j) => j.kode)} periodeAktif={tahunAjaran} />
+
+      {(filter.sinkron === "menunggu" || filter.sinkron === "gagal") && (
+        <div className="mt-4">
+          <TombolSinkronSemua />
+        </div>
+      )}
 
       {hasil.baris.length === 0 ? (
         <div className="mt-6">

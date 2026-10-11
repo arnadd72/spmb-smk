@@ -83,6 +83,12 @@ export default async function DetailPendaftar({ params }: PageProps<"/admin/pese
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href={`/admin/verifikasi/${p.id}`}
+            className="inline-flex min-h-11 items-center gap-2 rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt"
+          >
+            Verifikasi
+          </Link>
+          <Link
             href={`/admin/peserta/${p.id}/ubah`}
             className="inline-flex min-h-11 items-center gap-2 rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt"
           >

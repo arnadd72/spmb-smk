@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { rmSync } from "node:fs";
+import path from "node:path";
 import { Client } from "pg";
 
 // Hapus akun uji dan data uji e2e setelah seluruh pengujian selesai.
@@ -15,5 +17,6 @@ export default async function hapusDataUji() {
     await db.query(`DELETE FROM "User" WHERE username LIKE 'e2e-%'`);
   } finally {
     await db.end();
+    rmSync(path.join(process.cwd(), ".local", "draf-temp", "e2e"), { recursive: true, force: true });
   }
 }

@@ -16,7 +16,6 @@ export async function seedSuperadmin(prisma: PrismaClient, username: string, pas
       username,
       passwordHash: await bcrypt.hash(password, 12),
       peran: "superadmin",
-      mustChangePassword: true,
     },
   });
   return true;

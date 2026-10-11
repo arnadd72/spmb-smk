@@ -44,7 +44,7 @@ test.describe("admin sistem: halaman dan aksesibilitas", () => {
 });
 
 test.describe("admin sistem: akun admin", () => {
-  test("buat akun, masuk dengan password sementara wajib ganti, lalu nonaktifkan dan sesinya berakhir", async ({ page, browser }) => {
+  test("buat akun, masuk dengan password sementara langsung ke panel, lalu nonaktifkan dan sesinya berakhir", async ({ page, browser }) => {
     test.setTimeout(120_000);
     await masukSebagai(page, "superadmin");
     await page.goto("/admin/akun-admin");
@@ -61,20 +61,15 @@ test.describe("admin sistem: akun admin", () => {
     const password = (await page.locator("[data-password-sementara]").innerText()).trim();
     expect(password).toHaveLength(14);
     await page.getByRole("button", { name: "Sudah saya catat" }).click();
-    await expect(page.getByRole("row", { name: new RegExp(username) })).toContainText("Belum ganti password");
+    await expect(page.getByRole("row", { name: new RegExp(username) })).toContainText("Aktif");
 
-    // Masuk di konteks lain: wajib ganti password, lalu masuk panel sebagai operator konten
+    // Masuk di konteks lain: langsung masuk panel sebagai operator konten (tanpa wajib ganti password)
     const konteks = await browser.newContext();
     const baru = await konteks.newPage();
     await baru.goto("/admin/login");
     await baru.getByLabel("Username").fill(username);
     await baru.getByLabel("Password").fill(password);
     await baru.getByRole("button", { name: "Masuk" }).click();
-    await expect(baru).toHaveURL(/\/admin\/ganti-password$/);
-    await baru.getByLabel("Password lama").fill(password);
-    await baru.getByLabel(/^Password baru/).fill("PasswordBaruE2E99");
-    await baru.getByLabel("Ulangi password baru").fill("PasswordBaruE2E99");
-    await baru.getByRole("button", { name: "Simpan password baru" }).click();
     await expect(baru).toHaveURL(/\/admin$/);
     await expect(baru.getByText("Operator konten").first()).toBeVisible();
 

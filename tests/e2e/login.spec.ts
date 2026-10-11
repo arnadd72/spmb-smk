@@ -39,20 +39,17 @@ test.describe("login admin", () => {
     await expect(page).toHaveURL(/\/admin\/login$/);
   });
 
-  test("akun wajib ganti password diarahkan ke halaman ganti password dan terkunci sampai diganti", async ({ page }) => {
-    const akun = await buatAkunUji("panitia", { wajibGanti: true });
+  test("ganti password bersifat sukarela: login langsung ke panel, ganti lewat menu tetap berjalan", async ({ page }) => {
+    const akun = await buatAkunUji("panitia");
     await page.goto("/admin/login");
     await page.getByLabel("Username").fill(akun.username);
     await page.getByLabel("Password").fill(akun.password);
     await page.getByRole("button", { name: "Masuk" }).click();
-    await expect(page).toHaveURL(/\/admin\/ganti-password$/);
+    await expect(page).toHaveURL(/\/admin$/);
+    expect((await page.request.get("/api/v1/admin/jurusan")).status()).toBe(200);
 
-    // Panel dan API terkunci selama belum diganti
-    await page.goto("/admin");
-    await expect(page).toHaveURL(/\/admin\/ganti-password$/);
-    const api = await page.request.get("/api/v1/admin/jurusan");
-    expect(api.status()).toBe(403);
-    expect((await api.json()).code).toBe("PASSWORD_CHANGE_REQUIRED");
+    await page.goto("/admin/ganti-password");
+    await expect(page.getByRole("link", { name: "Kembali ke dashboard" })).toBeVisible();
 
     // Validasi
     await page.getByLabel("Password lama").fill(akun.password);
@@ -66,7 +63,6 @@ test.describe("login admin", () => {
     await page.getByRole("button", { name: "Simpan password baru" }).click();
     await expect(page).toHaveURL(/\/admin$/);
     await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-    expect((await page.request.get("/api/v1/admin/jurusan")).status()).toBe(200);
   });
 
   test("menu sidebar mengikuti peran: operator konten tidak melihat menu pendaftar dan sistem", async ({ page }) => {

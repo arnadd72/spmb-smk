@@ -13,7 +13,7 @@ import { formatTanggal } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { skemaAkunBaru } from "@/server/validasi/akun";
 
-type Akun = { id: string; nama: string; username: string; peran: "superadmin" | "panitia" | "konten"; isActive: boolean; wajibGantiPassword: boolean; loginTerakhir: string | Date | null };
+type Akun = { id: string; nama: string; username: string; peran: "superadmin" | "panitia" | "konten"; isActive: boolean; loginTerakhir: string | Date | null };
 
 const PERAN = { superadmin: "Superadmin", panitia: "Panitia", konten: "Operator konten" } as const;
 
@@ -151,7 +151,6 @@ export function PanelAkun({ akun, saya }: { akun: Akun[]; saya: string }) {
                 <td className="px-4 py-3">{PERAN[a.peran]}</td>
                 <td className="space-y-1 px-4 py-3">
                   {a.isActive ? <Badge nada="sukses">Aktif</Badge> : <Badge>Nonaktif</Badge>}
-                  {a.wajibGantiPassword && <Badge nada="peringatan">Belum ganti password</Badge>}
                 </td>
                 <td className="angka px-4 py-3 text-tinta-redup">{a.loginTerakhir ? formatTanggal(a.loginTerakhir) : "Belum pernah"}</td>
                 <td className="whitespace-nowrap px-2 py-2 text-right">

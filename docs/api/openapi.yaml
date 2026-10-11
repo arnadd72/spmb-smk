@@ -117,12 +117,11 @@ paths:
                 properties:
                   user:
                     type: object
-                    required: [id, nama, peran, wajibGantiPassword]
+                    required: [id, nama, peran]
                     properties:
                       id: { type: string }
                       nama: { type: string }
                       peran: { $ref: '#/components/schemas/Peran' }
-                      wajibGantiPassword: { type: boolean }
         '401':
           description: Username atau password salah (pesan sama untuk akun tak dikenal dan nonaktif).
           content:

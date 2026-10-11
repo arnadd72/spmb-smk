@@ -4,7 +4,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { ambilDashboard } from "@/server/actions/dashboard";
 import { gantiPassword } from "@/server/actions/gantiPassword";
 import { loginAdmin } from "@/server/actions/loginAdmin";
-import { bacaToken, buatToken } from "@/server/auth/sesi";
+import { bacaToken } from "@/server/auth/sesi";
 import { wajibSesiAdmin } from "@/server/auth/verifikasiSesi";
 import { prisma } from "@/server/db/client";
 import { simpanPengaturan } from "@/server/services/pengaturan";
@@ -53,29 +53,17 @@ async function buatUser(mustChange: boolean) {
   });
 }
 
-describe("wajib ganti password", () => {
-  it("login akun berstatus mustChangePassword menghasilkan token terkunci; API admin menjawab 403 PASSWORD_CHANGE_REQUIRED", async () => {
+describe("ganti password (sukarela)", () => {
+  it("tidak ada penguncian: akun dengan flag lama mustChangePassword tetap bisa memakai API admin", async () => {
     await buatUser(true);
-    const { token, user } = await loginAdmin({ username: "uji", password: "PasswordLama123" });
-    expect(user.wajibGantiPassword).toBe(true);
-    expect((await bacaToken(token))?.mcp).toBe(true);
-
-    cookieAdmin = token;
-    const e = await galat(wajibSesiAdmin());
-    expect(e.status).toBe(403);
-    expect(e.code).toBe("PASSWORD_CHANGE_REQUIRED");
-  });
-
-  it("akun biasa tidak terkunci", async () => {
-    await buatUser(false);
     const { token } = await loginAdmin({ username: "uji", password: "PasswordLama123" });
     cookieAdmin = token;
     await expect(wajibSesiAdmin("panitia")).resolves.toMatchObject({ peran: "panitia" });
   });
 
-  it("ganti password: password lama salah ditolak, kebijakan ditegakkan, sukses membuka kunci dan dicatat audit", async () => {
+  it("ganti password: password lama salah ditolak, kebijakan ditegakkan, sukses dan dicatat audit", async () => {
     const u = await buatUser(true);
-    const sesi = { sub: u.id.toString(), peran: "panitia" as const, nama: "Uji", mcp: true };
+    const sesi = { sub: u.id.toString(), peran: "panitia" as const, nama: "Uji" };
 
     const salah = await galat(gantiPassword(sesi, { passwordLama: "salah-lama-1", passwordBaru: "PasswordBaru2026", konfirmasi: "PasswordBaru2026" }));
     expect(salah.errors?.passwordLama).toBeDefined();
@@ -87,22 +75,17 @@ describe("wajib ganti password", () => {
     await expect(gantiPassword(sesi, { passwordLama: "PasswordLama123", passwordBaru: "PasswordBaru2026", konfirmasi: "lain" })).rejects.toThrow(/Konfirmasi/);
 
     const { token } = await gantiPassword(sesi, { passwordLama: "PasswordLama123", passwordBaru: "PasswordBaru2026", konfirmasi: "PasswordBaru2026" });
-    expect((await bacaToken(token))?.mcp).toBe(false);
+    expect((await bacaToken(token))?.sub).toBe(u.id.toString());
 
     const baru = await prisma.user.findUniqueOrThrow({ where: { id: u.id } });
-    expect(baru.mustChangePassword).toBe(false);
     expect(await bcrypt.compare("PasswordBaru2026", baru.passwordHash)).toBe(true);
     expect(await prisma.auditLog.count({ where: { aksi: "password.ganti" } })).toBe(1);
     expect(JSON.stringify(await prisma.auditLog.findMany(), (_k, v) => (typeof v === "bigint" ? v.toString() : v))).not.toContain("PasswordBaru2026");
 
     await expect(loginAdmin({ username: "uji", password: "PasswordLama123" })).rejects.toThrow();
-    expect((await loginAdmin({ username: "uji", password: "PasswordBaru2026" })).user.wajibGantiPassword).toBe(false);
+    await expect(loginAdmin({ username: "uji", password: "PasswordBaru2026" })).resolves.toBeDefined();
   });
 
-  it("token tanpa mcp tetap sah dan terbaca sebagai tidak terkunci", async () => {
-    const token = await buatToken({ sub: "1", peran: "konten", nama: "X" });
-    expect((await bacaToken(token))?.mcp).toBe(false);
-  });
 });
 
 describe("dashboard", () => {

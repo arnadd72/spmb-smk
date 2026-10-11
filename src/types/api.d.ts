@@ -41,7 +41,6 @@ export interface paths {
                                 id: string;
                                 nama: string;
                                 peran: components["schemas"]["Peran"];
-                                wajibGantiPassword: boolean;
                             };
                         };
                     };

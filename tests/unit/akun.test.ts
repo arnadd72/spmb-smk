@@ -59,16 +59,16 @@ describe("password sementara", () => {
 });
 
 describe("kelola akun", () => {
-  it("buat akun: password sementara ditampilkan sekali, tersimpan sebagai hash, wajib ganti, tidak muncul di audit", async () => {
+  it("buat akun: password sementara ditampilkan sekali, tersimpan sebagai hash, langsung bisa dipakai masuk, tidak muncul di audit", async () => {
     const h = await buatAkun({ nama: "Budi Panitia", username: "Budi.Panitia", peran: "panitia" }, ctx());
     expect(h.username).toBe("budi.panitia");
     const u = await prisma.user.findUniqueOrThrow({ where: { username: "budi.panitia" } });
     expect(u.passwordHash).not.toContain(h.passwordSementara);
     expect(await bcrypt.compare(h.passwordSementara, u.passwordHash)).toBe(true);
-    expect([u.mustChangePassword, u.isActive, u.peran]).toEqual([true, true, "panitia"]);
+    expect([u.isActive, u.peran]).toEqual([true, "panitia"]);
 
-    const masuk = await loginAdmin({ username: "budi.panitia", password: h.passwordSementara });
-    expect(masuk.user.wajibGantiPassword).toBe(true);
+    cookieAdmin = (await loginAdmin({ username: "budi.panitia", password: h.passwordSementara })).token;
+    await expect(wajibSesiAdmin("panitia")).resolves.toMatchObject({ peran: "panitia" });
     const audit = JSON.stringify(await prisma.auditLog.findMany(), (_k, v) => (typeof v === "bigint" ? v.toString() : v));
     expect(audit).not.toContain(h.passwordSementara);
     expect(await daftarAkun()).toHaveLength(2);
@@ -110,18 +110,16 @@ describe("kelola akun", () => {
     expect((await ambilSesiAdmin())?.peran).toBe("konten");
   });
 
-  it("reset password: password baru sementara, wajib ganti, sesi lama terkunci, throttle login dibersihkan", async () => {
+  it("reset password: password baru sementara langsung berlaku, password lama ditolak, throttle login dibersihkan", async () => {
     const h = await buatAkun({ nama: "Eka", username: "eka", peran: "panitia" }, ctx());
-    await prisma.user.update({ where: { username: "eka" }, data: { mustChangePassword: false } });
     cookieAdmin = (await loginAdmin({ username: "eka", password: h.passwordSementara })).token;
     await prisma.percobaanLogin.create({ data: { username: "eka", berhasil: false } });
 
     const r = await ubahAkun(h.id, { resetPassword: true }, ctx());
     expect(r.passwordSementara).toBeDefined();
     expect(r.passwordSementara).not.toBe(h.passwordSementara);
-    expect((await galat(wajibSesiAdmin())).code).toBe("PASSWORD_CHANGE_REQUIRED");
     await expect(loginAdmin({ username: "eka", password: h.passwordSementara })).rejects.toThrow();
-    expect((await loginAdmin({ username: "eka", password: r.passwordSementara! })).user.wajibGantiPassword).toBe(true);
+    await expect(loginAdmin({ username: "eka", password: r.passwordSementara! })).resolves.toBeDefined();
     expect(await prisma.auditLog.count({ where: { aksi: "akun.reset_password" } })).toBe(1);
   });
 

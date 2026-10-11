@@ -6,7 +6,6 @@ import { ambilSesiAdmin } from "@/server/auth/verifikasiSesi";
 export default async function LayoutPanel({ children }: LayoutProps<"/admin">) {
   const sesi = await ambilSesiAdmin();
   if (!sesi) redirect("/admin/login");
-  if (sesi.mcp) redirect("/admin/ganti-password");
 
   return (
     <AdminShell nama={sesi.nama} peran={sesi.peran}>

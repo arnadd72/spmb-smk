@@ -6,7 +6,7 @@ import { bacaToken, buatToken } from "@/server/auth/sesi";
 describe("sesi admin (JWT)", () => {
   it("token yang dibuat bisa dibaca kembali", async () => {
     const token = await buatToken({ sub: "7", peran: "panitia", nama: "Budi" });
-    expect(await bacaToken(token)).toEqual({ sub: "7", peran: "panitia", nama: "Budi", mcp: false });
+    expect(await bacaToken(token)).toEqual({ sub: "7", peran: "panitia", nama: "Budi" });
   });
 
   it("tanpa token atau token sampah menghasilkan null", async () => {

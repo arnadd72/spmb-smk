@@ -10,9 +10,9 @@ export type PeranUji = "superadmin" | "panitia" | "konten";
 
 /**
  * Akun uji khusus e2e (username diawali "e2e-", password acak per akun, dihapus oleh global-teardown), supaya
- * akun superadmin asli tidak disentuh dan tidak terkena status wajib ganti password. Butuh database dev.
+ * akun superadmin asli tidak disentuh. Butuh database dev.
  */
-export async function buatAkunUji(peran: PeranUji, opsi: { wajibGanti?: boolean } = {}) {
+export async function buatAkunUji(peran: PeranUji) {
   const username = `e2e-${peran}-${randomBytes(4).toString("hex")}`;
   const password = `Uji${randomBytes(9).toString("hex")}9`;
   const db = new Client({ connectionString: process.env.DATABASE_URL });
@@ -20,7 +20,7 @@ export async function buatAkunUji(peran: PeranUji, opsi: { wajibGanti?: boolean 
   try {
     await db.query(
       'INSERT INTO "User"(name, username, "passwordHash", peran, "mustChangePassword", "updatedAt") VALUES ($1,$2,$3,$4::"Peran",$5,now())',
-      [`Uji ${peran}`, username, await bcrypt.hash(password, 4), peran, opsi.wajibGanti ?? false],
+      [`Uji ${peran}`, username, await bcrypt.hash(password, 4), peran, false],
     );
   } finally {
     await db.end();

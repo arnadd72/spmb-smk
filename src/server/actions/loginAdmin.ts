@@ -18,7 +18,7 @@ function ambilHashTiruan(): string {
 
 export type HasilLogin = {
   token: string;
-  user: { id: string; nama: string; peran: PeranAdmin; wajibGantiPassword: boolean };
+  user: { id: string; nama: string; peran: PeranAdmin };
 };
 
 export async function loginAdmin(input: InputLogin, ip?: string): Promise<HasilLogin> {
@@ -44,14 +44,13 @@ export async function loginAdmin(input: InputLogin, ip?: string): Promise<HasilL
   await prisma.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
   await catatAudit({ userId: user.id.toString(), aksi: "login", entitasTipe: "user", entitasId: user.id.toString(), ip });
 
-  const token = await buatToken({ sub: user.id.toString(), peran: user.peran, nama: user.name, mcp: user.mustChangePassword });
+  const token = await buatToken({ sub: user.id.toString(), peran: user.peran, nama: user.name });
   return {
     token,
     user: {
       id: user.id.toString(),
       nama: user.name,
       peran: user.peran,
-      wajibGantiPassword: user.mustChangePassword,
     },
   };
 }

@@ -29,7 +29,6 @@ export type AkunAdmin = {
   username: string;
   peran: "superadmin" | "panitia" | "konten";
   isActive: boolean;
-  wajibGantiPassword: boolean;
   loginTerakhir: Date | null;
   dibuat: Date;
 };
@@ -42,7 +41,6 @@ export async function daftarAkun(): Promise<AkunAdmin[]> {
     username: u.username,
     peran: u.peran,
     isActive: u.isActive,
-    wajibGantiPassword: u.mustChangePassword,
     loginTerakhir: u.lastLoginAt,
     dibuat: u.createdAt,
   }));
@@ -54,7 +52,7 @@ export async function buatAkun(mentah: unknown, ctx: KonteksAksi) {
 
   const passwordSementara = buatPasswordSementara();
   const u = await prisma.user.create({
-    data: { name: input.nama, username: input.username, peran: input.peran, passwordHash: await bcrypt.hash(passwordSementara, 12), mustChangePassword: true },
+    data: { name: input.nama, username: input.username, peran: input.peran, passwordHash: await bcrypt.hash(passwordSementara, 12) },
   });
   await catatAudit({ userId: ctx.userId, aksi: "akun.buat", entitasTipe: "user", entitasId: u.id.toString(), dataBaru: { username: u.username, peran: u.peran }, ip: ctx.ip });
   return { id: u.id.toString(), username: u.username, passwordSementara };
@@ -84,7 +82,7 @@ export async function ubahAkun(id: string, mentah: unknown, ctx: KonteksAksi) {
       ...(input.nama !== undefined ? { name: input.nama } : {}),
       ...(input.peran !== undefined ? { peran: input.peran } : {}),
       ...(input.isActive !== undefined ? { isActive: input.isActive } : {}),
-      ...(passwordSementara ? { passwordHash: await bcrypt.hash(passwordSementara, 12), mustChangePassword: true } : {}),
+      ...(passwordSementara ? { passwordHash: await bcrypt.hash(passwordSementara, 12) } : {}),
     },
   });
   if (passwordSementara) await prisma.percobaanLogin.deleteMany({ where: { username: lama.username } });

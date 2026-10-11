@@ -5,7 +5,7 @@ import { catatAudit } from "@/server/services/audit";
 import { GalatApi } from "@/server/types/galat";
 import { skemaGantiPassword } from "@/server/validasi/auth";
 
-/** Ganti password sendiri. Sesudahnya mustChangePassword mati dan token baru (tanpa mcp) diterbitkan. */
+/** Ganti password sendiri (sukarela). Token baru diterbitkan sesudahnya. */
 export async function gantiPassword(sesi: IsiSesi, mentah: unknown, ip?: string): Promise<{ token: string }> {
   const input = skemaGantiPassword.parse(mentah);
   const user = await prisma.user.findUnique({ where: { id: BigInt(sesi.sub) } });
@@ -17,7 +17,7 @@ export async function gantiPassword(sesi: IsiSesi, mentah: unknown, ip?: string)
 
   await prisma.user.update({
     where: { id: user.id },
-    data: { passwordHash: await bcrypt.hash(input.passwordBaru, 12), mustChangePassword: false },
+    data: { passwordHash: await bcrypt.hash(input.passwordBaru, 12) },
   });
   await catatAudit({ userId: sesi.sub, aksi: "password.ganti", entitasTipe: "user", entitasId: sesi.sub, ip });
 

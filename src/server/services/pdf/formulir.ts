@@ -181,7 +181,7 @@ export function nilaiSlot(d: DataFormulir): Record<string, string> {
 }
 
 /** Buang karakter di luar himpunan huruf font standar (WinAnsi), hilangkan aksen. */
-function amankan(teks: string, font: PDFFont): string {
+export function amankan(teks: string, font: PDFFont): string {
   const sah = new Set(font.getCharacterSet());
   return [...teks.normalize("NFC").replace(/\s+/g, " ").trim()]
     .map((c) => {
@@ -192,7 +192,7 @@ function amankan(teks: string, font: PDFFont): string {
     .join("");
 }
 
-function pas(font: PDFFont, teks: string, ukuranAwal: number, maks: number, min = UKURAN_MIN): { teks: string; ukuran: number } {
+export function pas(font: PDFFont, teks: string, ukuranAwal: number, maks: number, min = UKURAN_MIN): { teks: string; ukuran: number } {
   let ukuran = ukuranAwal;
   while (ukuran > min && font.widthOfTextAtSize(teks, ukuran) > maks) ukuran = Math.round((ukuran - 0.25) * 100) / 100;
   let t = teks;

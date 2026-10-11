@@ -5,6 +5,8 @@ import { kirimPendaftaran } from "@/server/services/pendaftaran";
 import { tokenDrafDariCookie } from "../../../_lib/draf";
 import { tangani } from "../../../_lib/tangani";
 
+export const maxDuration = 60;
+
 export const POST = tangani(async (req: Request) => {
   periksaOrigin(req);
   const { konfirmasi_final } = (await req.json().catch(() => ({}))) as { konfirmasi_final?: unknown };

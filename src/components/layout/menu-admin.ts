@@ -30,7 +30,7 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
     item: [
       { label: "Kuota", href: "/admin/kuota", peran: PENDAFTAR, siap: true },
       { label: "Input Manual", href: "/admin/input-manual", peran: PENDAFTAR, siap: true },
-      { label: "Ekspor XLSX", href: "/admin/ekspor", peran: PENDAFTAR, siap: false },
+      { label: "Ekspor Data", href: "/admin/ekspor", peran: PENDAFTAR, siap: true },
     ],
   },
   {

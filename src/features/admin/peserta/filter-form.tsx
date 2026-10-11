@@ -22,11 +22,11 @@ function Pilih({ nama, label, nilai, opsi }: { nama: string; label: string; nila
   );
 }
 
-export function FilterPesertaForm({ filter, jurusan, periodeAktif }: { filter: FilterPeserta; jurusan: string[]; periodeAktif: string }) {
+export function FilterPesertaForm({ filter, jurusan, periodeAktif, aksi = "/admin/peserta" }: { filter: FilterPeserta; jurusan: string[]; periodeAktif: string; aksi?: string }) {
   const adaFilter = Object.entries(filter).some(([k, v]) => v && !["halaman", "urut", "arah"].includes(k));
 
   return (
-    <form method="get" action="/admin/peserta" role="search" aria-label="Cari dan saring pendaftar" className="mt-5 rounded-kartu border border-garis bg-permukaan p-4">
+    <form method="get" action={aksi} role="search" aria-label="Cari dan saring pendaftar" className="mt-5 rounded-kartu border border-garis bg-permukaan p-4">
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-1 flex-col gap-1 text-sm font-semibold text-tinta">
           Cari
@@ -107,7 +107,7 @@ export function FilterPesertaForm({ filter, jurusan, periodeAktif }: { filter: F
 
       {adaFilter && (
         <p className="mt-3">
-          <Link href="/admin/peserta" className="inline-flex min-h-11 items-center text-sm font-semibold text-primer-tua underline underline-offset-4">
+          <Link href={aksi} className="inline-flex min-h-11 items-center text-sm font-semibold text-primer-tua underline underline-offset-4">
             Hapus semua filter
           </Link>
         </p>

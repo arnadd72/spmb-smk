@@ -59,7 +59,7 @@ export function AdminShell({
 
   return (
     <div className="min-h-dvh lg:grid lg:grid-cols-[16rem_1fr]">
-      <aside className="hidden border-r border-garis bg-permukaan lg:block">
+      <aside className="hidden border-r border-garis bg-permukaan lg:sticky lg:top-0 lg:block lg:h-dvh lg:self-start lg:overflow-y-auto">
         <p className="border-b border-garis p-4 font-display text-lg font-extrabold text-primer-tua">
           SPMB Admin
         </p>

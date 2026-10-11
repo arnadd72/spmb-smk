@@ -16,6 +16,7 @@ import {
   type BerkasDraf,
 } from "@/server/services/draf";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
+import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatBobotJurusan } from "@/server/services/rekomendasi";
@@ -122,6 +123,12 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
   if (hasil.baru) {
     await pindahkanKeDrive(hasil.nomor).catch((e) =>
       console.error("[submit] sinkron Drive ditunda:", e instanceof Error ? e.message : "tidak diketahui"),
+    );
+  }
+  // 7. Email kode pendaftaran (bila mengisi email). Gagal kirim tidak menggagalkan pendaftaran; cron harian mengulang.
+  if (hasil.baru) {
+    await kirimKodePendaftaran(hasil.nomor, hasil.aksesToken).catch((e) =>
+      console.error("[submit] email ditunda:", e instanceof Error ? e.message : "tidak diketahui"),
     );
   }
   return { nomor: hasil.nomor, aksesToken: hasil.aksesToken };

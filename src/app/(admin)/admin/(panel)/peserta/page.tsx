@@ -45,6 +45,12 @@ export default async function HalamanPeserta({ searchParams }: PageProps<"/admin
 
       <FilterPesertaForm filter={filter} jurusan={jurusan.map((j) => j.kode)} periodeAktif={tahunAjaran} />
 
+      <p className="mt-3">
+        <Link href={`/admin/ekspor${queryFilter(filter, { halaman: undefined })}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primer-tua underline underline-offset-4">
+          Ekspor hasil filter ini (XLSX atau rekap PDF)
+        </Link>
+      </p>
+
       {(filter.sinkron === "menunggu" || filter.sinkron === "gagal") && (
         <div className="mt-4">
           <TombolSinkronSemua />

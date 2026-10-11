@@ -32,3 +32,26 @@ test("panitia tidak boleh membuka halaman sistem (diarahkan ke dashboard dengan 
   await expect(page).toHaveURL(/\/admin\?akses=ditolak$/);
   await expect(page.getByText("Peran Anda tidak memiliki akses")).toBeVisible();
 });
+
+test("sidebar admin tetap di tempat saat halaman digulir, dan bisa digulir sendiri di layar pendek", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 500 });
+  await masukSebagai(page, "superadmin");
+  await page.goto("/admin/isian-formulir"); // halaman panjang
+  await expect(page.getByRole("heading", { level: 1, name: "Isian formulir" })).toBeVisible();
+  const aside = page.locator("aside").first();
+
+  await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+  await page.waitForTimeout(300);
+  expect(await page.evaluate(() => window.scrollY)).toBeGreaterThan(300);
+  const kotak = await aside.boundingBox();
+  expect(kotak?.y).toBe(0); // menempel di atas layar walau halaman sudah digulir jauh
+  expect(kotak?.height).toBeLessThanOrEqual(500);
+
+  // Menu lebih panjang dari layar: sidebar digulir sendiri tanpa menggeser isi halaman
+  const yHalaman = await page.evaluate(() => window.scrollY);
+  const bisaGulir = await aside.evaluate((el) => el.scrollHeight > el.clientHeight);
+  expect(bisaGulir).toBe(true);
+  await aside.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+  expect(await aside.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(yHalaman);
+});

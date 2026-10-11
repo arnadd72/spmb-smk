@@ -3,7 +3,7 @@
 // GSAP hanya untuk route publik (PRD 16.5). Jangan impor file ini dari wizard atau admin.
 // GSAP dimuat lazy lewat import() setelah hidrasi, jadi tidak masuk bundle awal, dan seluruh isi HTML
 // tetap dirender server (SEO). Animasi hanya jalan bila perangkat tidak meminta kurangi gerak.
-import { useEffect, type RefObject } from "react";
+import { useLayoutEffect, type RefObject } from "react";
 
 export type PerkakasGsap = {
   gsap: typeof import("gsap").default;
@@ -21,7 +21,7 @@ type Opsi = {
 };
 
 export function useGsapPublik(akar: RefObject<HTMLElement | null>, { animasi, minLebar }: Opsi) {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const el = akar.current;
     if (!el) return;
 

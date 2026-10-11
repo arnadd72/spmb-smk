@@ -13,7 +13,7 @@
 > 1. File ini adalah `docs/PRD.md` — sumber kebenaran tunggal. Baca seluruhnya sebelum menyentuh kode, termasuk kalau Anda agen baru yang belum pernah melihat proyek ini.
 > 2. Bagian 24 berisi instruksi transisi khusus karena proyek ini baru dipindah dari arsitektur Laravel. Baca itu LEBIH DULU bila ada kode lama di repo.
 > 3. Ikuti roadmap dua fase di Bagian 20. Fase A (fitur & tampilan) dikerjakan dulu, dengan database dan storage LOKAL. Fase B (produksi) baru setelah tim pemilik proyek menyetujui tampilan dan fitur.
-> 4. Bagian 15.1 soal PDF formulir berstatus **[BLOKIR]** sampai `docs/template-formulir.docx` dan `docs/template-formulir.md` tersedia. Kerjakan bagian lain dulu; jangan menebak-nebak isi template.
+> 4. Bagian 15.1 (PDF formulir) sudah selesai; template ada di `docs/template-formulir.docx`. Jangan menebak desain di luar template.
 > 5. Jangan menambah fitur, library, atau mengubah arsitektur di luar PRD ini tanpa bertanya. Kalau ada keputusan baru, PRD diperbarui dulu baru kode menyusul.
 
 ---
@@ -99,7 +99,8 @@ Bagian ini adalah catatan hidup untuk agen yang melanjutkan. Perbarui di commit 
 | A2 Data & auth | Selesai | Semua model Prisma (Bagian 8), seed (4 jurusan, 17 mapel, 19 bobot, 65 field formulir, 6 FAQ), matriks peran (`src/server/auth/peran.ts`), `GET /admin/jurusan` dan `/admin/mapel`, `docs/api/openapi.yaml` + tipe terbangkit `src/types/api.d.ts`. Test otomatis memindai SEMUA rute admin dan memastikan 401 tanpa sesi |
 | A3 Konten & landing | Hampir selesai | **Selesai:** landing, `/jurusan`, `/jurusan/[kode]`, `/berita`, `/berita/[slug]`, CRUD admin berita/agenda/galeri/testimoni/FAQ, ubah jurusan, pengaturan (termasuk blok Google Drive), revalidasi halaman publik saat konten disimpan. **Belum:** unggah gambar langsung ke Supabase Storage (sementara alamat gambar diisi manual), landing menampilkan berita/agenda/galeri/testimoni dari database, editor bobot (A6), dan endpoint publik JSON `/api/v1/landing`, `/jurusan`, `/berita`, `/faq` (ditambah saat dibutuhkan klien: wizard A4, Tanya Panitia A8) |
 | A4 Wizard tanpa OCR | Selesai | Draf bertoken, 8 langkah isian manual dari form builder, tabel nilai rapor manual, rekomendasi bobot, submit + nomor, halaman sukses, cek status. Berkas unggahan memakai driver disk lokal (butir 24). E2E hijau |
-| A5 sampai A8 | Belum | Urut sesuai 20.1. 15.1 (PDF formulir) ditunda atas permintaan pemilik proyek |
+| 15.1 PDF formulir | Selesai | Template Word diekspor ke PDF dasar, isian ditimpa `pdf-lib` di koordinat terpetakan. Detail di 15.1 dan butir 28 |
+| A5 sampai A8 | Belum | Urut sesuai 20.1. OCR (A5) menunggu API key Google Vision, pemilik proyek meminta A6 lebih dulu |
 
 Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 
@@ -136,6 +137,7 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
 25. **Draf dan submit (A4):** isian draf disimpan terenkripsi AES-GCM dalam satu blob per langkah (`{"1": {...}}`), berkas di kolom `berkas`. `langkahTerakhir` = langkah terjauh yang boleh dibuka (mulai 1). Idempotensi submit **tanpa header `Idempotency-Key`**: baris draf dikunci `SELECT ... FOR UPDATE` di transaksi dan hasil (nomor + token akses, terenkripsi) disimpan di draf, sehingga klik ganda mengembalikan hasil yang sama. Nomor `SPMB-{TAHUN}-{NNNN}` (awalan SPMB, tahun = tahun pertama `tahun_ajaran`) dengan `pg_advisory_xact_lock`. Berkas dipindah ke Drive sesudah commit secara best-effort; bila Drive belum terhubung `berkasSinkron` tetap `menunggu` dan referensi berkas sementara ada di `berkasMeta` (sinkron ulang = A6/Fase B).
 26. **Pengaturan baru dibaca wizard:** `gelombang_buka`, `gelombang_tutup` (YYYY-MM-DD, kosong = selalu buka) dan `semester_rapor` (bawaan `1,2,3,4,5`). Formulir pengaturan admin belum memuatnya (ditambah di A6); sementara bisa diisi lewat tabel `Pengaturan`. `tahun_ajaran` kosong memakai bawaan (mulai Oktober = tahun ajaran berikutnya).
 27. **Aturan wizard yang dipilih:** tabel nilai rapor hanya menampilkan mapel yang punya bobot di jurusan aktif, dan semuanya wajib terisi minimal satu semester (PRD v3.1 10.4). Pilihan jurusan 1 terisi awal dengan saran teratas. `Kembali` tidak menyimpan isian langkah yang sedang dibuka (hanya langkah yang sudah disimpan yang tersimpan). Jenis berkas dideteksi dari isi (magic bytes), bukan dari nama atau MIME klien. Cek status dibatasi 10 per menit per IP memakai tabel `PercobaanLogin` (penanda `cek:{ip}`).
+28. **PDF formulir (15.1) dikerjakan atas permintaan pemilik proyek, 11 Okt 2026**, mendahului A6. Pas photo, Petugas, dan Tanda Tangan dibiarkan kosong. Kunci pengaturan baru dibaca: `tanggal_verifikasi` (YYYY-MM-DD, opsional).
 
 ---
 
@@ -695,7 +697,7 @@ Vision API `documentTextDetection` memberi teks per kata beserta koordinat kotak
 
 ## 15. Dokumen Keluaran
 
-### 15.1 PDF formulir — **[BLOKIR] menunggu template**
+### 15.1 PDF formulir — **[SELESAI]** (template diterima 7 Okt 2026, diimplementasikan 11 Okt 2026)
 
 Ini perubahan paling penting di v4. PRD v3.1 meminta PDF yang "meniru" formulir kertas. **Permintaan baru: PDF yang dihasilkan sistem harus sama persis (100%) — desain, tata letak, dan isi — dengan template resmi** yang akan Anda taruh di:
 
@@ -717,6 +719,16 @@ Ini perubahan paling penting di v4. PRD v3.1 meminta PDF yang "meniru" formulir 
 - Hasil akhir diverifikasi dengan overlay visual (PDF hasil ditumpuk transparan di atas scan/export PDF template asli) untuk memastikan 0 pergeseran.
 
 **Setelah template tiba, update bagian ini** dengan daftar field-ke-koordinat yang sudah dipetakan, supaya PRD tetap jadi acuan tunggal.
+
+**Implementasi (11 Okt 2026).** `src/server/services/pdf/template-dasar.pdf` = `docs/template-formulir.docx` diekspor lewat Microsoft Word (COM, `ExportAsFixedFormat`), 3 halaman 612,12 x 936,12 pt: hal 1-2 formulir, hal 3 dua lembar Tanda Terima. Tidak pernah diubah kode. Penimpa isian: `src/server/services/pdf/formulir.ts`; peta koordinat lengkap (id slot, halaman, x, garis dasar y, lebar maks) di `peta-formulir.ts`, diukur langsung dari PDF dasar (char origin + bentuk vektor). Sumbu Y ke bawah dari tepi atas. Ringkasan pemetaan:
+
+| Halaman | Isi |
+|---|---|
+| 1 | No. Pendaftaran (kotak atas), A.1-A.15 di atas garis titik-titik, kotak jenis kelamin (X), dua kotak penghasilan (digit kode 01-05), kotak jurusan (angka 1 = pilihan pertama, 2 = pilihan kedua) |
+| 2 | B (SMP, ijazah, lama belajar, nilai ujian + terbilang), C (golongan darah, tinggi/berat, penyakit), D (hobi), kotak seragam (X), "Wangon, {tanggal kirim}", nama di tanda tangan murid, Referensi Pendaftar |
+| 3 | Dua lembar Tanda Terima: nomor/jurusan (kode), nama, asal sekolah, RT/RW/desa, kecamatan, kabupaten, "Wangon, {tanggal}", "Harap datang tanggal" dari pengaturan `tanggal_verifikasi` |
+
+Keputusan: (a) tahun pelajaran 2026/2027 di template ditutup kotak putih dan digambar ulang dengan Times New Roman tebal ukuran sama dari `periode`; (b) isian HURUF BESAR (petunjuk formulir), email tetap huruf kecil, teks mengecil otomatis (min 6,5 pt) lalu terpotong bila tidak muat; (c) tanpa barcode dan tanpa `bwip-js`: template tidak memilikinya dan permintaan "sama persis" menang atas 15.1 lama; (d) nomor pendaftaran di Tanda Terima 8 pt karena kolomnya hanya 56 pt; (e) kolom Petugas, Tanda Tangan, kotak berkas, dan Pas photo dibiarkan kosong untuk panitia; (f) alamat jalan murid dan orang tua tidak punya kolom di template, jadi tidak dicetak; (g) font standar Times (WinAnsi), karakter di luar itu diganti `?` tanpa aksen. Akses: `GET /api/v1/pendaftar/{token}/formulir` (token akses halaman sukses; `?unduh=1` memaksa unduh; tanpa cache); admin memakai `formulirDariNomor` di A6. Verifikasi: render PDF hasil ke PNG (mupdf, di luar repo) dan dibandingkan dengan render template; test CI memeriksa halaman, ukuran, jejak koordinat tiap slot, dan isi content stream. Build produksi memakai `outputFileTracingIncludes` di `next.config.ts` agar template ikut terbawa ke Vercel (belum diuji di Vercel).
 
 ### 15.2 Ekspor XLSX
 

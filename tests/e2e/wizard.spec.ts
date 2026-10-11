@@ -131,6 +131,15 @@ test.describe("wizard pendaftaran manual", () => {
     expect(nomor).toMatch(/^SPMB-\d{4}-\d{4}$/);
     await axe(page);
 
+    // PDF formulir dapat diunduh dari halaman sukses
+    const tautan = await page.getByRole("link", { name: "Unduh formulir (PDF)" }).getAttribute("href");
+    const res = await page.request.get(tautan!);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("application/pdf");
+    expect(res.headers()["content-disposition"]).toContain(`Formulir-${nomor}.pdf`);
+    expect((await res.body()).subarray(0, 5).toString()).toBe("%PDF-");
+    expect((await page.request.get("/api/v1/pendaftar/tokensalah1234567890tokensalah1234567890/formulir")).status()).toBe(404);
+
     // Cookie draf sudah dihapus: langkah tidak bisa dibuka lagi
     await page.goto("/daftar/langkah/3");
     await expect(page).toHaveURL(/\/daftar$/);

@@ -23,7 +23,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
       <p className="angka mt-4 break-all rounded-kartu bg-primer px-5 py-6 text-center font-display text-[clamp(1.75rem,8vw,3rem)] font-bold text-primer-tinta" data-nomor>
         {r.nomor}
       </p>
-      <AksiSukses nomor={r.nomor} />
+      <AksiSukses nomor={r.nomor} token={token} />
 
       <p className="mt-6 rounded-kontrol bg-peringatan-latar px-3 py-2.5 text-sm font-medium text-peringatan">
         Simpan nomor pendaftaran dan tautan halaman ini. Nomor dipakai untuk cek status bersama tanggal lahir.

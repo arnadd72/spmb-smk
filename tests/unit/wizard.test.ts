@@ -10,6 +10,7 @@ import { prisma } from "@/server/db/client";
 import { ambilDraf, buatDraf, hapusDraf, muatDefinisiField, rekomendasiDraf, simpanLangkah, unggahBerkas } from "@/server/services/draf";
 import { dekripsi } from "@/server/services/kripto";
 import { cekStatus, kirimPendaftaran, ambilRingkasanSukses } from "@/server/services/pendaftaran";
+import { formulirDariToken } from "@/server/services/pdf/formulir";
 import { simpanPengaturan } from "@/server/services/pengaturan";
 import { hitungRekomendasi, muatBobotJurusan } from "@/server/services/rekomendasi";
 import { skemaLangkah, type DefinisiField } from "@/server/validasi/wizard";
@@ -270,6 +271,20 @@ describe("submit pendaftaran", () => {
     const { nomor, aksesToken } = await kirimPendaftaran(token, true);
     expect((await ambilRingkasanSukses(aksesToken))?.nomor).toBe(nomor);
     expect(await ambilRingkasanSukses("salah".padEnd(40, "x"))).toBeNull();
+  });
+});
+
+describe("PDF formulir dari pendaftaran", () => {
+  it("dibuat dari data tersimpan (terdekripsi) hanya untuk token akses yang benar", async () => {
+    const { token } = await buatDraf();
+    await isiLengkap(token);
+    const { nomor, aksesToken } = await kirimPendaftaran(token, true);
+
+    const hasil = await formulirDariToken(aksesToken);
+    expect(hasil?.nomor).toBe(nomor);
+    expect(Buffer.from(hasil!.pdf.subarray(0, 5)).toString()).toBe("%PDF-");
+    expect(await formulirDariToken("salah".padEnd(40, "x"))).toBeNull();
+    expect(await formulirDariToken("pendek")).toBeNull();
   });
 });
 

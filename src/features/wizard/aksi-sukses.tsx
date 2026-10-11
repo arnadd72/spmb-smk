@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { CheckIcon, CopyIcon, PrinterIcon } from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, DownloadSimpleIcon, PrinterIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 
-export function AksiSukses({ nomor }: { nomor: string }) {
+export function AksiSukses({ nomor, token }: { nomor: string; token: string }) {
   const [tersalin, setTersalin] = useState(false);
 
   async function salin() {
@@ -23,9 +23,24 @@ export function AksiSukses({ nomor }: { nomor: string }) {
         {tersalin ? <CheckIcon aria-hidden weight="bold" className="size-5" /> : <CopyIcon aria-hidden className="size-5" />}
         <span aria-live="polite">{tersalin ? "Nomor tersalin" : "Salin nomor"}</span>
       </Button>
-      <Button varian="hantu" onClick={() => window.print()} penuhMobile>
+      <a
+        href={`/api/v1/pendaftar/${token}/formulir?unduh=1`}
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-kontrol bg-primer px-4 text-sm font-semibold text-primer-tinta hover:bg-primer-tua sm:w-auto"
+      >
+        <DownloadSimpleIcon aria-hidden className="size-5" />
+        Unduh formulir (PDF)
+      </a>
+      <a
+        href={`/api/v1/pendaftar/${token}/formulir`}
+        target="_blank"
+        rel="noopener"
+        className="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt sm:w-auto"
+      >
         <PrinterIcon aria-hidden className="size-5" />
-        Cetak halaman
+        Buka untuk dicetak
+      </a>
+      <Button varian="hantu" onClick={() => window.print()} penuhMobile>
+        Cetak halaman ini
       </Button>
     </div>
   );

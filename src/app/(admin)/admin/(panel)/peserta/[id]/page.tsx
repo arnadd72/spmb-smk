@@ -4,8 +4,10 @@ import { ChatCircleDotsIcon, FilePdfIcon, PencilSimpleIcon } from "@phosphor-ico
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { BatangProgres } from "@/features/admin/dashboard/grafik";
+import { KelolaBerkas } from "@/features/admin/peserta/kelola-berkas";
 import { StatusBadge } from "@/features/admin/peserta/status-badge";
 import { formatTanggal } from "@/lib/format";
+import { ambilBerkasPendaftar } from "@/server/actions/berkas";
 import { ambilPeserta } from "@/server/actions/peserta";
 import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
@@ -18,7 +20,6 @@ export const metadata = { title: "Detail pendaftar" };
 
 type Skor = { kode: string; nama: string; skor: number; label: string; penjelasan?: string; rincian: { kode: string; nama: string; bobot: number; nilai: number; kontribusi: number }[] };
 type Rapor = { semester: number[]; mapel: Record<string, Record<string, number>> };
-type BerkasMeta = Record<string, { nama: string; ukuran: number }[] | { nama: string; ukuran: number } | undefined>;
 
 const LABEL_NILAI = { belumDicek: "Belum dicek", sesuai: "Sesuai dengan rapor", dikoreksi: "Dikoreksi panitia" } as const;
 const LABEL_AKSI: Record<string, string> = {
@@ -40,11 +41,10 @@ function tampil(f: DefinisiField, v: unknown): string {
   return String(v);
 }
 
-const ukuran = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(b / 1024)} KB`);
-
-export default async function DetailPendaftar({ params }: PageProps<"/admin/peserta/[id]">) {
+export default async function DetailPendaftar({ params, searchParams }: PageProps<"/admin/peserta/[id]">) {
   await wajibPeranHalaman(...PERAN.pendaftar);
   const { id } = await params;
+  const baru = (await searchParams).baru === "1";
   let p;
   try {
     p = await ambilPeserta(id);
@@ -52,12 +52,14 @@ export default async function DetailPendaftar({ params }: PageProps<"/admin/pese
     if (e instanceof GalatApi && e.status === 404) notFound();
     throw e;
   }
-  const [fields, mapel] = await Promise.all([muatDefinisiField(), prisma.mataPelajaran.findMany({ select: { kode: true, nama: true } })]);
+  const [fields, mapel, berkas] = await Promise.all([
+    muatDefinisiField(),
+    prisma.mataPelajaran.findMany({ select: { kode: true, nama: true } }),
+    ambilBerkasPendaftar(id),
+  ]);
   const namaMapel = new Map(mapel.map((m) => [m.kode, m.nama]));
   const rapor = p.nilaiRapor as Rapor;
   const skor = (p.rekomendasiSkor as Skor[]) ?? [];
-  const meta = (p.berkasMeta ?? {}) as BerkasMeta;
-  const berkas = Object.entries(meta).flatMap(([k, v]) => (Array.isArray(v) ? v.map((b, i) => ({ k: `${k} ${v.length > 1 ? i + 1 : ""}`.trim(), ...b })) : v ? [{ k, ...v }] : []));
 
   const bagian = [1, 5, 6, 7].map((l) => ({
     judul: NAMA_LANGKAH[l - 1],
@@ -74,6 +76,11 @@ export default async function DetailPendaftar({ params }: PageProps<"/admin/pese
           Data peserta
         </Link>
       </p>
+      {baru && (
+        <p role="status" className="mt-3 rounded-kontrol bg-sukses-latar px-4 py-3 text-sm font-semibold text-sukses">
+          Pendaftar luring tersimpan dengan nomor {p.nomor}. Unggah berkas akta, KK, dan rapor di bagian Berkas bila ada.
+        </p>
+      )}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold text-ink">{String(p.nilai.nama_lengkap)}</h1>
@@ -241,20 +248,7 @@ export default async function DetailPendaftar({ params }: PageProps<"/admin/pese
             Sinkron ke Drive:{" "}
             <Badge nada={p.berkasSinkron === "selesai" ? "sukses" : p.berkasSinkron === "gagal" ? "bahaya" : "peringatan"}>{p.berkasSinkron}</Badge>
           </p>
-          {berkas.length === 0 ? (
-            <p className="mt-3 text-sm text-tinta-redup">Tidak ada berkas diunggah.</p>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-2">
-              {berkas.map((b) => (
-                <li key={`${b.k}-${b.nama}`} className="flex justify-between gap-3 rounded-kontrol bg-permukaan-alt px-3 py-2 text-sm">
-                  <span className="min-w-0 truncate font-medium capitalize">
-                    {b.k}: <span className="normal-case font-normal">{b.nama}</span>
-                  </span>
-                  <span className="angka shrink-0 text-tinta-redup">{ukuran(b.ukuran)}</span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <KelolaBerkas id={p.id} berkas={berkas} />
         </Card>
 
         <Card>

@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { TombolSinkronSemua } from "@/features/admin/verifikasi/tombol-sinkron";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
 type Pengaturan = Record<string, string>;
@@ -43,6 +44,7 @@ const KELOMPOK: { judul: string; field: DefPengaturan[] }[] = [
 
 function BagianDrive() {
   const [status, setStatus] = useState<StatusDrive | null>(null);
+  const [antrean, setAntrean] = useState<{ menunggu: number; gagal: number } | null>(null);
   const [pesan, setPesan] = useState<{ nada: "sukses" | "bahaya"; teks: string }>();
   const [sibuk, setSibuk] = useState<"uji" | "putus">();
 
@@ -58,6 +60,9 @@ function BagianDrive() {
     apiFetch<StatusDrive>("/admin/google-drive/status")
       .then((r) => !batal && setStatus(r))
       .catch(() => !batal && setStatus(null));
+    apiFetch<{ menunggu: number; gagal: number }>("/admin/sinkron")
+      .then((r) => !batal && setAntrean(r))
+      .catch(() => !batal && setAntrean(null));
     return () => {
       batal = true;
     };
@@ -116,6 +121,19 @@ function BagianDrive() {
           Putuskan
         </Button>
       </div>
+
+      {antrean && (
+        <div className="mt-5 border-t border-garis pt-4">
+          <p className="text-sm text-tinta">
+            Berkas menunggu sinkron: <span className="angka font-bold">{antrean.menunggu}</span> pendaftar. Gagal: <span className="angka font-bold">{antrean.gagal}</span> pendaftar.
+          </p>
+          {(antrean.menunggu > 0 || antrean.gagal > 0) && (
+            <div className="mt-3">
+              <TombolSinkronSemua />
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

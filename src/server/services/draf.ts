@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/client";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
+import { terdaftarPerJurusan } from "@/server/services/kuota";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, mapelBerbobot, muatBobotJurusan, type HasilRekomendasi } from "@/server/services/rekomendasi";
@@ -46,6 +47,9 @@ export type KonfigWizard = {
   tutup: string | null;
   status: "buka" | "belum" | "tutup";
   kontak: string;
+  persyaratan: string;
+  persetujuan: string;
+  waGroup: string;
 };
 
 const wibSekarang = () => new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
@@ -58,12 +62,15 @@ function tahunAjaranBawaan(): string {
 }
 
 export async function ambilKonfigWizard(): Promise<KonfigWizard> {
-  const [tahun, buka, tutup, semester, kontak] = await Promise.all([
+  const [tahun, buka, tutup, semester, kontak, persyaratan, persetujuan, waGroup] = await Promise.all([
     ambilPengaturan("tahun_ajaran"),
     ambilPengaturan("gelombang_buka"),
     ambilPengaturan("gelombang_tutup"),
     ambilPengaturan("semester_rapor"),
     ambilPengaturan("kontak_panitia"),
+    ambilPengaturan("teks_persyaratan"),
+    ambilPengaturan("teks_persetujuan"),
+    ambilPengaturan("wa_group_url"),
   ]);
   const hari = wibSekarang();
   const status = buka && hari < buka ? "belum" : tutup && hari > tutup ? "tutup" : "buka";
@@ -79,6 +86,9 @@ export async function ambilKonfigWizard(): Promise<KonfigWizard> {
     tutup: tutup || null,
     status,
     kontak: kontak ?? "",
+    persyaratan: persyaratan ?? "",
+    persetujuan: persetujuan ?? "",
+    waGroup: waGroup ?? "",
   };
 }
 
@@ -340,10 +350,8 @@ export async function rekomendasiDraf(token: string | undefined): Promise<HasilR
 
   // Info kuota (tidak memblokir, PRD 10.4 langkah 4): jurusan dengan pendaftar >= kuota.
   const jurusan = await prisma.jurusan.findMany({ where: { isActive: true }, select: { id: true, kode: true, kuota: true } });
-  const jumlah = await prisma.pendaftar.groupBy({ by: ["jurusan1Id"], _count: { _all: true }, where: { jurusan1Id: { not: null } } });
-  const kuotaPenuh = jurusan
-    .filter((j) => (jumlah.find((x) => x.jurusan1Id === j.id)?._count._all ?? 0) >= j.kuota)
-    .map((j) => j.kode);
+  const terpakai = await terdaftarPerJurusan((await ambilKonfigWizard()).tahunAjaran);
+  const kuotaPenuh = jurusan.filter((j) => (terpakai.get(String(j.id)) ?? 0) >= j.kuota).map((j) => j.kode);
 
   return { ...hasil, kuotaPenuh };
 }

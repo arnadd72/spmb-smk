@@ -99,7 +99,7 @@ export const skemaJurusan = z.object({
 const tanggalOpsional = z
   .string()
   .trim()
-  .refine((v) => v === "" || !Number.isNaN(Date.parse(v)), "Tanggal tidak valid.");
+  .refine((v) => v === "" || (/^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(v))), "Tanggal tidak valid (format tahun-bulan-tanggal).");
 
 export const SKEMA_PENGATURAN = {
   tahun_ajaran: z.string().trim().regex(/^\d{4}\/\d{4}$/, "Format tahun ajaran harus 2027/2028."),

@@ -349,7 +349,7 @@ export function dataFormulirDari(p: BarisPendaftar, tanggalVerifikasi: string | 
 }
 
 async function formatTanggalVerifikasi(): Promise<string | null> {
-  const v = await ambilPengaturan("tanggal_verifikasi");
+  const v = await ambilPengaturan("tanggal_verifikasi_fisik");
   return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? tanggalPanjang(new Date(`${v}T00:00:00+07:00`)) : null;
 }
 

@@ -38,6 +38,8 @@ vi.mock("@/server/services/penyimpanan", async (asli) => ({
 
 import {
   ambilBerkasPendaftar,
+  hapusBerkasPendaftar,
+  unggahBerkasPendaftar,
   bukaBerkas,
   sinkronBerkasPendaftar,
   sinkronSemuaTertunda,
@@ -349,3 +351,64 @@ describe("penampil berkas dan sinkron Drive", () => {
     expect(massal).toMatchObject({ diproses: 1, selesai: 1, gagal: 0 });
   });
 });
+
+describe("kelola berkas oleh panitia", () => {
+  const JPG = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(40, 3)]);
+
+  it("mengganti akta: berkas lama hilang, yang baru terbaca; isi palsu dan kunci asing ditolak", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    const lama = (p.berkasMeta as { akta: { ref: string } }).akta.ref;
+    drive.terhubung = false; // berkas baru tetap di penyimpanan sementara
+
+    const daftar = await unggahBerkasPendaftar(id, "akta", JPG, "akta baru.jpg", ctx);
+    expect(daftar.find((d) => d.kunci === "akta")).toMatchObject({ nama: "akta baru.jpg", mime: "image/jpeg", sumber: "sementara" });
+    const { aliran, mime } = await bukaBerkas(id, "akta", 0, ctx);
+    expect(mime).toBe("image/jpeg");
+    expect((await baca(aliran)).equals(JPG)).toBe(true);
+    expect(await penyimpananTempAda(lama)).toBe(false);
+
+    expect((await galat(unggahBerkasPendaftar(id, "akta", Buffer.from("<html>bukan gambar".padEnd(40, " ")), "a.jpg", ctx))).status).toBe(422);
+    expect((await galat(unggahBerkasPendaftar(id, "ijazah", JPG, "a.jpg", ctx))).status).toBe(422);
+    expect((await galat(unggahBerkasPendaftar(id, "akta", Buffer.concat([JPG, Buffer.alloc(5 * 1024 * 1024)]), "a.jpg", ctx))).status).toBe(422);
+    expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.berkas_unggah" } })).toBe(1);
+  });
+
+  it("menambah halaman rapor sampai batas 10, lalu menghapus satu", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    for (let i = 0; i < 9; i++) await unggahBerkasPendaftar(id, "rapor", JPG, `r${i}.jpg`, ctx);
+    expect((await ambilBerkasPendaftar(id)).filter((d) => d.kunci === "rapor")).toHaveLength(10);
+    expect((await galat(unggahBerkasPendaftar(id, "rapor", JPG, "kelebihan.jpg", ctx))).status).toBe(422);
+
+    const sisa = await hapusBerkasPendaftar(id, "rapor", 0, ctx);
+    expect(sisa.filter((d) => d.kunci === "rapor")).toHaveLength(9);
+    expect((await galat(hapusBerkasPendaftar(id, "kk", 0, ctx))).status).toBe(404);
+  });
+
+  it("mengganti berkas yang sudah di Drive menghapus berkas lama di Drive dan menyinkronkan yang baru", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    drive.terhubung = true;
+    await sinkronBerkasPendaftar(id, ctx);
+    const idLama = (await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).aktaFileId as string;
+    expect(drive.isi.has(idLama)).toBe(true);
+
+    await unggahBerkasPendaftar(id, "akta", JPG, "baru.jpg", ctx);
+    const b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
+    expect(drive.isi.has(idLama)).toBe(false);
+    expect(b.aktaFileId).not.toBe(idLama);
+    expect(drive.isi.get(b.aktaFileId as string)?.equals(JPG)).toBe(true);
+    expect(b.berkasSinkron).toBe("selesai");
+
+    // hapus berkas yang ada di Drive juga menghapusnya dari Drive
+    await hapusBerkasPendaftar(id, "akta", 0, ctx);
+    expect(drive.isi.has(b.aktaFileId as string)).toBe(false);
+    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).aktaFileId).toBeNull();
+  });
+});
+
+async function penyimpananTempAda(ref: string) {
+  const { penyimpananTemp } = await import("@/server/services/penyimpanan");
+  return penyimpananTemp().ada(ref);
+}

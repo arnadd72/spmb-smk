@@ -4,8 +4,10 @@ import { catatAudit } from "@/server/services/audit";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { pindahkanKeDrive } from "@/server/services/pendaftaran";
-import type { Berkas, BerkasDraf } from "@/server/services/draf";
+import { MAKS_BERKAS_RAPOR, MAKS_UKURAN_BYTE, deteksiMime, type Berkas, type BerkasDraf } from "@/server/services/draf";
+import { buatTokenAcak } from "@/server/services/kripto";
 import { GalatApi } from "@/server/types/galat";
+import type { Prisma } from "@/generated/prisma/client";
 import { idPendaftar } from "./peserta";
 import type { KonteksAksi } from "./konten";
 
@@ -121,7 +123,7 @@ export async function sinkronBerkasPendaftar(id: string, ctx?: KonteksAksi): Pro
   }
 
   try {
-    await pindahkanKeDrive(p.nomorPendaftaran, p.namaLengkap, p.periode, (p.berkasMeta ?? {}) as BerkasDraf);
+    await pindahkanKeDrive(p.nomorPendaftaran);
     if (ctx) await catatAudit({ userId: ctx.userId, aksi: "pendaftar.sinkron", entitasTipe: "pendaftar", entitasId: pid.toString(), ip: ctx.ip });
     return { nomor: p.nomorPendaftaran, status: "selesai" };
   } catch (e) {
@@ -146,4 +148,112 @@ export async function sinkronSemuaTertunda(ctx?: KonteksAksi, batas = 25) {
     gagal: hasil.filter((h) => h.status === "gagal").length,
     menunggu: hasil.filter((h) => h.status === "menunggu").length,
   };
+}
+
+// ------------------------------------------------------------------ ganti, tambah, hapus berkas oleh panitia
+
+const KUNCI_ADMIN = ["akta", "kk", "rapor"] as const;
+
+const bersihNama = (nama: string) => nama.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "berkas";
+
+async function hapusDariDrive(idBerkas: string | null | undefined) {
+  if (!idBerkas) return;
+  try {
+    await (await penyimpananDokumen()).hapus(idBerkas);
+  } catch {
+    // Drive terputus: berkas lama tertinggal di Drive, tetapi tidak lagi dirujuk pendaftar.
+  }
+}
+
+function adaYangTertunda(meta: BerkasDraf, p: { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown }): boolean {
+  const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
+  if (meta.akta && !p.aktaFileId) return true;
+  if (meta.kk && !p.kkFileId) return true;
+  return Array.isArray(meta.rapor) && meta.rapor.some((_, i) => !rapor[i]);
+}
+
+/** Ganti Akta/KK atau tambah halaman Rapor. Isi diperiksa dari byte, bukan dari nama atau tipe kiriman. */
+export async function unggahBerkasPendaftar(id: string, kunci: string, isi: Buffer, namaAsli: string, ctx: KonteksAksi): Promise<DeskripsiBerkas[]> {
+  if (!(KUNCI_ADMIN as readonly string[]).includes(kunci)) throw GalatApi.validasi({ berkas: ["Jenis berkas tidak dikenal."] });
+  if (isi.length === 0) throw GalatApi.validasi({ berkas: ["Berkas kosong."] });
+  if (isi.length > MAKS_UKURAN_BYTE) throw GalatApi.validasi({ berkas: ["Ukuran berkas melebihi 5 MB."] });
+  const jenis = deteksiMime(isi);
+  if (!jenis) throw GalatApi.validasi({ berkas: ["Format berkas harus JPG, PNG, WebP, atau PDF."] });
+
+  const pid = idPendaftar(id);
+  const p = await prisma.pendaftar.findUnique({ where: { id: pid } });
+  if (!p) throw GalatApi.tidakDitemukan("Pendaftar tidak ditemukan.");
+  const meta = { ...((p.berkasMeta ?? {}) as BerkasDraf) };
+  const temp = penyimpananTemp();
+  const baru: Berkas = {
+    ref: await temp.simpan(`admin/${p.nomorPendaftaran}/${kunci}-${buatTokenAcak(8)}.${jenis.ext}`, isi, jenis.mime),
+    nama: bersihNama(namaAsli),
+    mime: jenis.mime,
+    ukuran: isi.length,
+  };
+
+  const data: Prisma.PendaftarUpdateInput = { berkasSinkron: "menunggu" };
+  if (kunci === "rapor") {
+    const daftar = Array.isArray(meta.rapor) ? [...meta.rapor] : [];
+    if (daftar.length >= MAKS_BERKAS_RAPOR) {
+      await temp.hapus(baru.ref).catch(() => undefined);
+      throw GalatApi.validasi({ berkas: [`Maksimal ${MAKS_BERKAS_RAPOR} berkas rapor.`] });
+    }
+    meta.rapor = [...daftar, baru];
+    data.raporFileIds = [...(Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : []), null];
+  } else {
+    const lama = meta[kunci] as Berkas | undefined;
+    if (lama) await temp.hapus(lama.ref).catch(() => undefined);
+    await hapusDariDrive(kunci === "akta" ? p.aktaFileId : p.kkFileId);
+    meta[kunci] = baru;
+    if (kunci === "akta") data.aktaFileId = null;
+    else data.kkFileId = null;
+  }
+  data.berkasMeta = JSON.parse(JSON.stringify(meta));
+  await prisma.pendaftar.update({ where: { id: pid }, data });
+  await catatAudit({ userId: ctx.userId, aksi: "pendaftar.berkas_unggah", entitasTipe: "pendaftar", entitasId: pid.toString(), dataBaru: { berkas: kunci, nama: baru.nama }, ip: ctx.ip });
+
+  await sinkronBerkasPendaftar(id).catch(() => undefined); // coba langsung ke Drive; bila belum bisa, tetap menunggu
+  return ambilBerkasPendaftar(id);
+}
+
+export async function hapusBerkasPendaftar(id: string, kunci: string, indeks: number, ctx: KonteksAksi): Promise<DeskripsiBerkas[]> {
+  const pid = idPendaftar(id);
+  const p = await prisma.pendaftar.findUnique({ where: { id: pid } });
+  if (!p) throw GalatApi.tidakDitemukan("Pendaftar tidak ditemukan.");
+  const meta = { ...((p.berkasMeta ?? {}) as BerkasDraf) };
+  const temp = penyimpananTemp();
+
+  const data: Prisma.PendaftarUpdateInput = {};
+  let nama: string | undefined;
+  if (kunci === "rapor" && Array.isArray(meta.rapor) && meta.rapor[indeks]) {
+    const [b] = meta.rapor.splice(indeks, 1);
+    nama = b.nama;
+    const ids = Array.isArray(p.raporFileIds) ? [...(p.raporFileIds as (string | null)[])] : [];
+    const [idLama] = ids.splice(indeks, 1);
+    await temp.hapus(b.ref).catch(() => undefined);
+    await hapusDariDrive(idLama);
+    data.raporFileIds = ids;
+  } else if ((kunci === "akta" || kunci === "kk") && meta[kunci] && !Array.isArray(meta[kunci])) {
+    const b = meta[kunci] as Berkas;
+    nama = b.nama;
+    await temp.hapus(b.ref).catch(() => undefined);
+    await hapusDariDrive(kunci === "akta" ? p.aktaFileId : p.kkFileId);
+    delete meta[kunci];
+    if (kunci === "akta") data.aktaFileId = null;
+    else data.kkFileId = null;
+  } else {
+    throw GalatApi.tidakDitemukan("Berkas tidak ditemukan.");
+  }
+
+  const sesudah = {
+    aktaFileId: kunci === "akta" ? null : p.aktaFileId,
+    kkFileId: kunci === "kk" ? null : p.kkFileId,
+    raporFileIds: (data.raporFileIds as unknown) ?? p.raporFileIds,
+  };
+  data.berkasMeta = JSON.parse(JSON.stringify(meta));
+  data.berkasSinkron = adaYangTertunda(meta, sesudah) ? "menunggu" : "selesai";
+  await prisma.pendaftar.update({ where: { id: pid }, data });
+  await catatAudit({ userId: ctx.userId, aksi: "pendaftar.berkas_hapus", entitasTipe: "pendaftar", entitasId: pid.toString(), dataLama: { berkas: kunci, nama }, ip: ctx.ip });
+  return ambilBerkasPendaftar(id);
 }

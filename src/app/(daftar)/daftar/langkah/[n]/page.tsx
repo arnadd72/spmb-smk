@@ -49,11 +49,19 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
         pembuka={
           <div className="rounded-kartu bg-permukaan-alt p-4 text-sm text-tinta">
             <p className="font-semibold">Perlindungan data pribadi</p>
-            <p className="mt-1">
-              Data yang Anda isi dipakai panitia SPMB SMK Ma&apos;arif NU 1 Wangon untuk seleksi dan administrasi peserta didik
-              tahun ajaran {konfig.tahunAjaran}. Data disimpan aman, data sensitif dienkripsi, dan hanya dapat dilihat panitia
-              yang berwenang.{konfig.kontak ? ` Pertanyaan: ${konfig.kontak}.` : ""}
-            </p>
+            {konfig.persetujuan ? (
+              konfig.persetujuan.split(/\n+/).map((baris, i) => (
+                <p key={i} className="mt-1">
+                  {baris}
+                </p>
+              ))
+            ) : (
+              <p className="mt-1">
+                Data yang Anda isi dipakai panitia SPMB SMK Ma&apos;arif NU 1 Wangon untuk seleksi dan administrasi peserta didik
+                tahun ajaran {konfig.tahunAjaran}. Data disimpan aman, data sensitif dienkripsi, dan hanya dapat dilihat panitia
+                yang berwenang.{konfig.kontak ? ` Pertanyaan: ${konfig.kontak}.` : ""}
+              </p>
+            )}
           </div>
         }
       />

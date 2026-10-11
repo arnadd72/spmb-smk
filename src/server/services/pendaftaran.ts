@@ -7,11 +7,9 @@ import {
 import {
   bacaBerkas,
   bacaData,
-  bersihkanBerkas,
   bungkusData,
   konteksValidasi,
   pastikanPendaftaranBuka,
-  semuaBerkas,
   validasiLangkah,
   wajibDraf,
   type Berkas,
@@ -28,6 +26,18 @@ import { GalatApi } from "@/server/types/galat";
 const AWALAN_NOMOR = "SPMB";
 
 export type HasilKirim = { nomor: string; aksesToken: string };
+
+type Transaksi = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/** Nomor pendaftaran berikutnya `SPMB-{TAHUN}-{NNNN}`, dikunci advisory lock per tahun agar tidak bentrok. Dipakai wizard dan input manual. */
+export async function nomorBerikut(tx: Transaksi, tahun: string): Promise<string> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"nomor_" + tahun}))`;
+  const awalan = `${AWALAN_NOMOR}-${tahun}-`;
+  const maks = await tx.$queryRaw<{ n: number }[]>`
+    SELECT COALESCE(MAX(CAST(RIGHT("nomorPendaftaran", 4) AS INTEGER)), 0)::int AS n
+    FROM "Pendaftar" WHERE "nomorPendaftaran" LIKE ${awalan + "%"}`;
+  return `${awalan}${String((maks[0]?.n ?? 0) + 1).padStart(4, "0")}`;
+}
 
 export async function kirimPendaftaran(token: string | undefined, konfirmasiFinal: unknown): Promise<HasilKirim> {
   const baris = await wajibDraf(token);
@@ -77,12 +87,7 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
     const ulang = segar && hasilTersimpan(segar);
     if (ulang) return { ...ulang, baru: false as const };
 
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${"nomor_" + tahun}))`;
-    const awalan = `${AWALAN_NOMOR}-${tahun}-`;
-    const maks = await tx.$queryRaw<{ n: number }[]>`
-      SELECT COALESCE(MAX(CAST(RIGHT("nomorPendaftaran", 4) AS INTEGER)), 0)::int AS n
-      FROM "Pendaftar" WHERE "nomorPendaftaran" LIKE ${awalan + "%"}`;
-    const nomor = `${awalan}${String((maks[0]?.n ?? 0) + 1).padStart(4, "0")}`;
+    const nomor = await nomorBerikut(tx, tahun);
 
     await tx.pendaftar.create({
       data: {
@@ -115,7 +120,7 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
 
   // 6. Setelah commit: pindahkan berkas ke Drive. Gagal tidak membatalkan pendaftaran (berkas tetap di temp).
   if (hasil.baru) {
-    await pindahkanKeDrive(hasil.nomor, String(semua.nama_lengkap), konfig.tahunAjaran, berkas).catch((e) =>
+    await pindahkanKeDrive(hasil.nomor).catch((e) =>
       console.error("[submit] sinkron Drive ditunda:", e instanceof Error ? e.message : "tidak diketahui"),
     );
   }
@@ -132,42 +137,52 @@ function hasilTersimpan(baris: { submittedAt: Date | null; data: unknown }): Has
 
 const namaAman = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").trim().toUpperCase().slice(0, 60);
 
-/** Pindahkan berkas dari penyimpanan sementara ke Drive: SPMB/{periode}/{nomor} - {NAMA}/ (PRD v4 7.4). */
-export async function pindahkanKeDrive(nomor: string, nama: string, periode: string, berkas: BerkasDraf): Promise<void> {
-  const daftar = semuaBerkas(berkas);
-  if (daftar.length === 0) {
-    await prisma.pendaftar.update({ where: { nomorPendaftaran: nomor }, data: { berkasSinkron: "selesai" } });
+/**
+ * Pindahkan berkas yang belum punya ID Drive dari penyimpanan sementara ke Drive:
+ * SPMB/{periode}/{nomor} - {NAMA}/ (PRD v4 7.4). Yang sudah di Drive dilewati, jadi aman dipanggil berulang.
+ */
+export async function pindahkanKeDrive(nomor: string): Promise<void> {
+  const p = await prisma.pendaftar.findUnique({ where: { nomorPendaftaran: nomor } });
+  if (!p) throw GalatApi.tidakDitemukan("Pendaftar tidak ditemukan.");
+  const meta = (p.berkasMeta ?? {}) as BerkasDraf;
+
+  type Tugas = { kunci: string; i: number; b: Berkas };
+  const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
+  const tugas: Tugas[] = [];
+  for (const [kunci, nilai] of Object.entries(meta)) {
+    if (!nilai) continue;
+    if (Array.isArray(nilai)) nilai.forEach((b, i) => !(kunci === "rapor" && rapor[i]) && tugas.push({ kunci, i, b }));
+    else if (!(kunci === "akta" && p.aktaFileId) && !(kunci === "kk" && p.kkFileId)) tugas.push({ kunci, i: 0, b: nilai });
+  }
+  if (tugas.length === 0) {
+    await prisma.pendaftar.update({ where: { id: p.id }, data: { berkasSinkron: "selesai" } });
     return;
   }
 
   const drive = await penyimpananDokumen(); // melempar bila Drive belum dihubungkan
   const temp = penyimpananTemp();
-  const folder = `${periode.replace("/", "-")}/${nomor} - ${namaAman(nama)}`;
+  const folder = `${p.periode.replace("/", "-")}/${nomor} - ${namaAman(p.namaLengkap)}`;
 
-  const idDrive: Record<string, string | string[]> = {};
-  const unggah = async (kunci: string, b: Berkas, i: number) => {
+  let akta = p.aktaFileId;
+  let kk = p.kkFileId;
+  const idRapor = [...rapor];
+  const terpindah: Berkas[] = [];
+  for (const t of tugas) {
     const potongan: Buffer[] = [];
-    for await (const p of await temp.ambilStream(b.ref)) potongan.push(Buffer.from(p));
-    const ext = b.ref.split(".").pop();
-    return drive.simpan(`${folder}/${kunci}${i > 0 ? `-${i + 1}` : ""}.${ext}`, Buffer.concat(potongan), b.mime);
-  };
-
-  for (const [kunci, nilai] of Object.entries(berkas)) {
-    if (!nilai) continue;
-    if (Array.isArray(nilai)) idDrive[kunci] = await Promise.all(nilai.map((b, i) => unggah(kunci, b, i)));
-    else idDrive[kunci] = await unggah(kunci, nilai, 0);
+    for await (const bagian of await temp.ambilStream(t.b.ref)) potongan.push(Buffer.from(bagian));
+    const ext = t.b.ref.split(".").pop();
+    const id = await drive.simpan(`${folder}/${t.kunci}${t.i > 0 ? `-${t.i + 1}` : ""}.${ext}`, Buffer.concat(potongan), t.b.mime);
+    if (t.kunci === "akta") akta = id;
+    else if (t.kunci === "kk") kk = id;
+    else if (t.kunci === "rapor") idRapor[t.i] = id;
+    terpindah.push(t.b);
   }
 
   await prisma.pendaftar.update({
-    where: { nomorPendaftaran: nomor },
-    data: {
-      aktaFileId: (idDrive.akta as string | undefined) ?? null,
-      kkFileId: (idDrive.kk as string | undefined) ?? null,
-      raporFileIds: idDrive.rapor ?? undefined,
-      berkasSinkron: "selesai",
-    },
+    where: { id: p.id },
+    data: { aktaFileId: akta, kkFileId: kk, ...(idRapor.length > 0 ? { raporFileIds: idRapor } : {}), berkasSinkron: "selesai" },
   });
-  await bersihkanBerkas(berkas);
+  await Promise.all(terpindah.map((b) => temp.hapus(b.ref).catch(() => undefined)));
 }
 
 // ------------------------------------------------------------------ halaman sukses

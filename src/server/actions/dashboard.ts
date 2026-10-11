@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/client";
 import { ambilKonfigWizard } from "@/server/services/draf";
+import { terdaftarPerJurusan } from "@/server/services/kuota";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 
 // Data dashboard admin (PRD v3.1 13.2) untuk periode (tahun ajaran) berjalan.
@@ -34,11 +35,11 @@ export async function ambilDashboard(): Promise<DataDashboard> {
   const periode = konfig.tahunAjaran;
   const where = { periode };
 
-  const [perStatus, nilaiBelumDicek, jurusan, pilihan1, rekomendasi, perHariMentah, terbaru, gagal, menunggu, drive] = await Promise.all([
+  const [perStatus, nilaiBelumDicek, jurusan, terpakai, rekomendasi, perHariMentah, terbaru, gagal, menunggu, drive] = await Promise.all([
     prisma.pendaftar.groupBy({ by: ["statusVerifikasi"], where, _count: { _all: true } }),
     prisma.pendaftar.count({ where: { ...where, statusNilai: "belumDicek" } }),
     prisma.jurusan.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } }),
-    prisma.pendaftar.groupBy({ by: ["jurusan1Id"], where, _count: { _all: true } }),
+    terdaftarPerJurusan(periode),
     prisma.pendaftar.groupBy({ by: ["rekomendasiJurusanId"], where, _count: { _all: true } }),
     prisma.$queryRaw<{ d: string; n: number }[]>`
       SELECT to_char(("createdAt" AT TIME ZONE 'Asia/Jakarta')::date, 'YYYY-MM-DD') AS d, count(*)::int AS n
@@ -55,7 +56,7 @@ export async function ambilDashboard(): Promise<DataDashboard> {
   const total = perStatus.reduce((a, x) => a + x._count._all, 0);
 
   const perJurusan = jurusan.map<KartuJurusan>((j) => {
-    const terdaftar = pilihan1.find((x) => x.jurusan1Id === j.id)?._count._all ?? 0;
+    const terdaftar = terpakai.get(String(j.id)) ?? 0;
     return {
       kode: j.kode,
       nama: j.nama,

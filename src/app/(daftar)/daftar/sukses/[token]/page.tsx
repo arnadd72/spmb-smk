@@ -3,13 +3,14 @@ import { notFound } from "next/navigation";
 import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { AksiSukses } from "@/features/wizard/aksi-sukses";
 import { formatTanggal } from "@/lib/format";
+import { ambilKonfigWizard } from "@/server/services/draf";
 import { ambilRingkasanSukses } from "@/server/services/pendaftaran";
 
 export const metadata = { title: "Pendaftaran berhasil", robots: { index: false, follow: false } };
 
 export default async function HalamanSukses({ params }: PageProps<"/daftar/sukses/[token]">) {
   const { token } = await params;
-  const r = await ambilRingkasanSukses(token);
+  const [r, konfig] = await Promise.all([ambilRingkasanSukses(token), ambilKonfigWizard()]);
   if (!r) notFound();
 
   return (
@@ -48,6 +49,16 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
           <li>Bawa berkas asli (akta, kartu keluarga, rapor) saat verifikasi berkas fisik di sekolah.</li>
           <li>Pantau hasilnya lewat halaman Cek Status.</li>
         </ol>
+        {konfig.waGroup.startsWith("https://") && (
+          <a
+            href={konfig.waGroup}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-5 mr-2 inline-flex min-h-11 items-center rounded-kontrol bg-primer px-4 text-sm font-semibold text-primer-tinta hover:bg-primer-tua print:hidden"
+          >
+            Gabung grup WhatsApp pendaftar
+          </a>
+        )}
         <Link
           href="/cek-status"
           className="mt-5 inline-flex min-h-11 items-center rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt print:hidden"

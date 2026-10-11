@@ -50,6 +50,16 @@ export default async function HalamanDaftar() {
                 </li>
               ))}
             </ul>
+            {konfig.persyaratan && (
+              <div className="mt-5 rounded-kartu bg-permukaan-alt p-4">
+                <h3 className="font-bold text-ink">Persyaratan</h3>
+                {konfig.persyaratan.split(/\n+/).map((baris, i) => (
+                  <p key={i} className="mt-1.5 text-sm text-tinta">
+                    {baris}
+                  </p>
+                ))}
+              </div>
+            )}
             {konfig.tutup && (
               <p className="mt-4 text-sm text-tinta-redup">
                 Pendaftaran ditutup <span className="angka">{formatTanggal(konfig.tutup)}</span>.

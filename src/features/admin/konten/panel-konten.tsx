@@ -1,5 +1,6 @@
 "use client";
 
+import { UnggahGambar } from "./unggah-gambar";
 import { useCallback, useEffect, useState } from "react";
 import { MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +106,9 @@ export function IsiForm({
         }
         return (
           <Field key={f.kunci} label={f.label} wajib={f.wajib} bantuan={f.bantuan} galat={pesan}>
-            {f.tipe === "area" || f.tipe === "html" || f.tipe === "daftarTeks" ? (
+            {f.tipe === "gambar" ? (
+              <UnggahGambar nilai={String(nilai[f.kunci] ?? "")} onChange={(v) => ubah(f.kunci, v)} />
+            ) : f.tipe === "area" || f.tipe === "html" || f.tipe === "daftarTeks" ? (
               <Textarea
                 rows={f.tipe === "html" ? 10 : f.tipe === "daftarTeks" ? 5 : 4}
                 value={String(nilai[f.kunci] ?? "")}

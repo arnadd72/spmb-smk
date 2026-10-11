@@ -1,5 +1,6 @@
 import { prisma } from "@/server/db/client";
 import { ambilPengaturan } from "@/server/services/pengaturan";
+import { ambilAgendaMendatang, ambilDaftarBerita, type BeritaRingkas, type EventRingkas } from "./ambilPublik";
 
 export type JurusanLanding = {
   kode: string;
@@ -14,9 +15,16 @@ export type JurusanLanding = {
 
 export type FaqLanding = { id: string; pertanyaan: string; jawaban: string };
 
+export type FotoGaleri = { id: string; judul: string | null; gambar: string };
+export type TestimoniLanding = { id: string; nama: string; keterangan: string | null; isi: string; foto: string | null };
+
 export type DataLanding = {
   jurusan: JurusanLanding[];
   faq: FaqLanding[];
+  berita: BeritaRingkas[];
+  agenda: EventRingkas[];
+  galeri: FotoGaleri[];
+  testimoni: TestimoniLanding[];
   /** Mis. "2027/2028". Null bila panitia belum mengisi pengaturan. */
   tahunAjaran: string | null;
 };
@@ -29,7 +37,7 @@ const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is s
  */
 export async function ambilDataLanding(): Promise<DataLanding> {
   try {
-    const [jurusan, faq, tahunAjaran] = await Promise.all([
+    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, testimoni] = await Promise.all([
       prisma.jurusan.findMany({
         where: { isActive: true },
         orderBy: { urutan: "asc" },
@@ -37,6 +45,10 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       }),
       prisma.faq.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" }, take: 6 }),
       ambilPengaturan("tahun_ajaran"),
+      ambilDaftarBerita(3),
+      ambilAgendaMendatang(3),
+      prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 5 }),
+      prisma.testimoni.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 4 }),
     ]);
 
     return {
@@ -51,9 +63,13 @@ export async function ambilDataLanding(): Promise<DataLanding> {
         mapelUtama: j.bobot.map((b) => b.mataPelajaran.nama),
       })),
       faq: faq.map((f) => ({ id: f.id.toString(), pertanyaan: f.pertanyaan, jawaban: f.jawaban })),
+      berita,
+      agenda,
+      galeri: galeri.map((g) => ({ id: g.id.toString(), judul: g.judul, gambar: g.gambar })),
+      testimoni: testimoni.map((t) => ({ id: t.id.toString(), nama: t.nama, keterangan: t.keterangan, isi: t.isi, foto: t.foto })),
     };
   } catch (e) {
     console.error("[landing] gagal membaca data:", e instanceof Error ? e.message : "tidak diketahui");
-    return { jurusan: [], faq: [], tahunAjaran: null };
+    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], testimoni: [], tahunAjaran: null };
   }
 }

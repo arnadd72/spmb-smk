@@ -1,8 +1,8 @@
 "use client";
 
-import Image from "next/image";
 import { useRef } from "react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
+import { GambarKonten } from "@/features/berita/gambar-konten";
 import { cn } from "@/lib/cn";
 
 // Foto asli dari situs sekolah, warna asli. Keterangan di bawah foto, bukan menimpanya.
@@ -44,8 +44,21 @@ const FOTO = [
   },
 ];
 
-export function KehidupanSekolah() {
+type FotoDb = { id: string; judul: string | null; gambar: string };
+
+export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
   const akar = useRef<HTMLElement>(null);
+  // Galeri dari admin menggantikan foto bawaan bila minimal tiga foto aktif; tata letak tetap memakai lima slot yang sama.
+  const daftar =
+    galeri.length >= 3
+      ? galeri.slice(0, FOTO.length).map((g, i) => ({
+          src: g.gambar,
+          alt: g.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon",
+          ket: g.judul ?? "",
+          kelas: FOTO[i].kelas,
+          rasio: FOTO[i].rasio,
+        }))
+      : FOTO;
 
   // Tiap foto terbuka dengan klip dari bawah, isinya bergeser pelan (parallax), lalu redup saat keluar layar.
   useGsapPublik(akar, {
@@ -100,14 +113,14 @@ export function KehidupanSekolah() {
         </h2>
 
         <div className="mt-10 grid gap-x-5 gap-y-8 lg:mt-14 lg:grid-cols-12">
-          {FOTO.map((f) => (
+          {daftar.map((f) => (
             <figure key={f.src} className={cn("flex flex-col gap-3", f.kelas)}>
               <div data-bingkai className={cn("relative w-full overflow-hidden rounded-kartu bg-permukaan-alt", f.rasio)}>
                 <div data-gambar className="absolute inset-0 will-change-transform">
-                  <Image src={f.src} alt={f.alt} fill sizes="(min-width: 1024px) 60vw, 100vw" className="object-cover" />
+                  <GambarKonten src={f.src} alt={f.alt} sizes="(min-width: 1024px) 60vw, 100vw" />
                 </div>
               </div>
-              <figcaption className="text-sm text-tinta-redup">{f.ket}</figcaption>
+              {f.ket && <figcaption className="text-sm text-tinta-redup">{f.ket}</figcaption>}
             </figure>
           ))}
         </div>

@@ -1,6 +1,7 @@
 import type { ZodType } from "zod";
 import { prisma } from "@/server/db/client";
 import { catatAudit } from "@/server/services/audit";
+import { hapusMediaBila } from "@/server/services/media";
 import { sanitasiHtml } from "@/server/services/sanitasi";
 import { serialisasi } from "@/server/services/serialisasi";
 import { slugUnik } from "@/server/services/slug";
@@ -45,6 +46,16 @@ const KONFIG: Record<Entitas, Konfig> = {
 };
 
 export type KonteksAksi = { userId: string; ip?: string };
+
+const KOLOM_GAMBAR = ["gambar", "foto"] as const;
+
+/** Hapus gambar hasil unggah yang tidak dipakai lagi (diganti atau barisnya dihapus). `baru` kosong = baris dihapus. */
+async function bersihkanGambarLama(lama: Record<string, unknown>, baru?: Record<string, unknown>) {
+  for (const kolom of KOLOM_GAMBAR) {
+    const url = lama[kolom];
+    if (typeof url === "string" && url && (!baru || baru[kolom] !== url)) await hapusMediaBila(url);
+  }
+}
 
 function idDariString(id: string): bigint {
   if (!/^\d{1,18}$/.test(id)) throw GalatApi.tidakDitemukan();
@@ -108,6 +119,7 @@ export async function ubahKonten(entitas: Entitas, id: string, mentah: unknown, 
   // Slug tidak berubah saat judul diedit, supaya tautan lama tetap hidup.
 
   const baru = await k.delegate.update({ where: { id: lama.id }, data: input });
+  await bersihkanGambarLama(lama, input);
   await catatAudit({ userId: ctx.userId, aksi: `${k.tipeAudit}.ubah`, entitasTipe: k.tipeAudit, entitasId: String(lama.id), dataLama: lama, dataBaru: input, ip: ctx.ip });
   return serialisasi(baru);
 }
@@ -118,6 +130,7 @@ export async function hapusKonten(entitas: Entitas, id: string, ctx: KonteksAksi
   if (!lama) throw GalatApi.tidakDitemukan();
 
   await k.delegate.delete({ where: { id: lama.id } });
+  await bersihkanGambarLama(lama);
   await catatAudit({ userId: ctx.userId, aksi: `${k.tipeAudit}.hapus`, entitasTipe: k.tipeAudit, entitasId: String(lama.id), dataLama: lama, ip: ctx.ip });
 }
 
@@ -130,6 +143,7 @@ export async function ubahJurusan(kode: string, mentah: unknown, ctx: KonteksAks
 
   const input = skemaJurusan.parse(mentah);
   const baru = await prisma.jurusan.update({ where: { id: lama.id }, data: input });
+  await bersihkanGambarLama(lama, input);
   await catatAudit({ userId: ctx.userId, aksi: "jurusan.ubah", entitasTipe: "jurusan", entitasId: lama.kode, dataLama: lama, dataBaru: input, ip: ctx.ip });
   return serialisasi(baru);
 }

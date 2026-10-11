@@ -39,7 +39,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
     field: [
       { kunci: "judul", label: "Judul", tipe: "teks", wajib: true },
       { kunci: "isi", label: "Isi berita", tipe: "html", wajib: true, bantuan: "Boleh memakai HTML dasar: p, strong, em, ul, ol, li, h2, h3, a, img. Skrip dan gaya sebaris dibuang otomatis." },
-      { kunci: "gambar", label: "Gambar sampul", tipe: "gambar", bantuan: "Alamat gambar (diawali / atau https://). Unggah langsung tersedia setelah Supabase Storage dihubungkan." },
+      { kunci: "gambar", label: "Gambar sampul", tipe: "gambar", bantuan: "Unggah gambar (JPG, PNG, WebP, maks 5 MB) atau tempel alamat yang diawali / atau https://." },
       { kunci: "publishedAt", label: "Tanggal terbit", tipe: "tanggalwaktu", bantuan: "Kosong = terbit saat disimpan. Isi tanggal depan untuk menjadwalkan." },
       aktif,
     ],

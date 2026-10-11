@@ -43,6 +43,9 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# Gambar konten hasil unggah saat pengembangan tanpa Supabase
+/public/uploads/
+
 # Postgres lokal tanpa Docker (scripts/db-lokal.mjs)
 /.local/
 

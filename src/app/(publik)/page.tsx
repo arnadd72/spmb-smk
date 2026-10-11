@@ -1,12 +1,14 @@
 import { AlurDaftar } from "@/features/landing/alur-daftar";
 import { FaqLanding } from "@/features/landing/faq-landing";
 import { Hero } from "@/features/landing/hero";
+import { KabarTerbaru } from "@/features/landing/kabar-terbaru";
 import { KehidupanSekolah } from "@/features/landing/kehidupan-sekolah";
 import { MarqueeJurusan } from "@/features/landing/marquee-jurusan";
 import { Pernyataan } from "@/features/landing/pernyataan";
 import { Penutup } from "@/features/landing/penutup";
 import { ProgramKeahlian } from "@/features/landing/program-keahlian";
 import { SaranJurusan } from "@/features/landing/saran-jurusan";
+import { TestimoniLanding } from "@/features/landing/testimoni-landing";
 import { ambilDataLanding } from "@/server/actions/ambilLanding";
 
 // Landing dirender server dan disegarkan tiap 5 menit (PRD v3.1 10.2). Revalidasi on-demand saat
@@ -29,8 +31,10 @@ export default async function Beranda() {
       <MarqueeJurusan />
       <ProgramKeahlian jurusan={data.jurusan} />
       <AlurDaftar />
-      <KehidupanSekolah />
+      <KehidupanSekolah galeri={data.galeri} />
+      <KabarTerbaru berita={data.berita} agenda={data.agenda} />
       <SaranJurusan />
+      <TestimoniLanding testimoni={data.testimoni} />
       <FaqLanding faq={data.faq} />
       <Penutup />
     </>

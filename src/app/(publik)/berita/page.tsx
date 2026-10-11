@@ -3,7 +3,7 @@ import { CalendarBlankIcon, MapPinIcon } from "@phosphor-icons/react/dist/ssr";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Reveal } from "@/components/motion/reveal";
 import { GambarKonten } from "@/features/berita/gambar-konten";
-import { formatTanggal } from "@/lib/format";
+import { formatTanggal, formatTanggalWaktu } from "@/lib/format";
 import { ambilAgendaMendatang, ambilDaftarBerita, type BeritaRingkas, type EventRingkas } from "@/server/actions/ambilPublik";
 
 export const revalidate = 300;
@@ -74,7 +74,7 @@ export default async function HalamanBerita() {
                   <p className="text-lg font-bold leading-snug">{a.judul}</p>
                   <p className="mt-1 flex items-center gap-2 text-sm font-semibold">
                     <CalendarBlankIcon aria-hidden weight="bold" className="size-4" />
-                    {formatTanggal(a.tanggal)}
+                    {formatTanggalWaktu(a.tanggal)}
                   </p>
                   {a.lokasi && (
                     <p className="mt-0.5 flex items-center gap-2 text-sm font-semibold">

@@ -85,6 +85,13 @@ describe("landing menampilkan konten dari database", () => {
     expect(d.jurusan).toHaveLength(4);
   });
 
+  it("agenda hari ini tetap tampil walau jamnya sudah lewat; kemarin tidak", async () => {
+    const hari = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+    await buatKonten("event", { judul: "Agenda pagi tadi", tanggal: new Date(`${hari}T00:05:00+07:00`), isActive: true }, ctx);
+    await buatKonten("event", { judul: "Agenda kemarin", tanggal: new Date(new Date(`${hari}T00:00:00+07:00`).getTime() - 3600_000), isActive: true }, ctx);
+    expect((await ambilDataLanding()).agenda.map((a) => a.judul)).toEqual(["Agenda pagi tadi"]);
+  });
+
   it("tanpa konten semua bagian kosong (bagian disembunyikan di halaman), tanpa error", async () => {
     const d = await ambilDataLanding();
     expect([d.berita, d.agenda, d.galeri, d.testimoni].every((x) => x.length === 0)).toBe(true);

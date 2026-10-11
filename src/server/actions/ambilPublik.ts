@@ -97,9 +97,15 @@ export async function ambilBerita(slug: string): Promise<BeritaDetail | null> {
 
 export type EventRingkas = { slug: string; judul: string; tanggal: Date; lokasi: string | null };
 
+function awalHariIniWib(): Date {
+  const hari = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
+  return new Date(`${hari}T00:00:00+07:00`);
+}
+
 export async function ambilAgendaMendatang(batas = 3): Promise<EventRingkas[]> {
   const data = await prisma.event.findMany({
-    where: { isActive: true, tanggal: { gte: new Date() } },
+    // Agenda hari ini tetap tampil sepanjang hari (WIB), meski jamnya sudah lewat.
+    where: { isActive: true, tanggal: { gte: awalHariIniWib() } },
     orderBy: { tanggal: "asc" },
     take: batas,
   });

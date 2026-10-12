@@ -29,7 +29,7 @@ export function Navbar() {
     <header className="sticky top-0 z-30 border-b border-garis bg-latar/95 backdrop-blur-sm">
       <div className="wadah flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3 font-display text-lg font-extrabold leading-none text-primer-tua">
-          <Image src="/images/sekolah/lambang.png" alt="" width={40} height={40} className="size-10 object-contain" priority />
+          <Image src="/images/sekolah/logo-sekolah.png" alt="" width={40} height={40} className="size-10 object-contain" priority />
           <span>
             SMK Ma&apos;arif NU 1 Wangon
             <span className="mt-1 block text-xs font-semibold tracking-wide text-tinta-redup">SPMB</span>

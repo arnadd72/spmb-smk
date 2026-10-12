@@ -1,27 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
+import { Poppins } from "next/font/google";
 import "@/styles/globals.css";
 
-// Dua keluarga font, di-host sendiri (Fontshare, lisensi gratis untuk komersial). Keputusan pemilik
-// proyek 11 Okt 2026: mengganti Bricolage Grotesque + Plus Jakarta Sans (lihat PRD 1.3).
-const clash = localFont({
-  variable: "--font-clash",
+// Satu keluarga font Poppins untuk judul dan isi (PRD 1.3 butir 38), menggantikan Clash Display + Satoshi.
+// Berkas Clash/Satoshi di ./fonts tidak dipakai lagi.
+// next/font/google meng-host sendiri berkas font saat build: browser tidak menghubungi Google.
+const poppins = Poppins({
+  variable: "--font-poppins",
   display: "swap",
-  src: [
-    { path: "./fonts/ClashDisplay-500.woff2", weight: "500" },
-    { path: "./fonts/ClashDisplay-600.woff2", weight: "600" },
-    { path: "./fonts/ClashDisplay-700.woff2", weight: "700" },
-  ],
-});
-
-const satoshi = localFont({
-  variable: "--font-satoshi",
-  display: "swap",
-  src: [
-    { path: "./fonts/Satoshi-400.woff2", weight: "400" },
-    { path: "./fonts/Satoshi-500.woff2", weight: "500" },
-    { path: "./fonts/Satoshi-700.woff2", weight: "700" },
-  ],
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -41,7 +29,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="id" className={`${clash.variable} ${satoshi.variable}`}>
+    <html lang="id" className={poppins.variable}>
       <body>{children}</body>
     </html>
   );

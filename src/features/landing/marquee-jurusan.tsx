@@ -36,7 +36,7 @@ export function MarqueeJurusan() {
   const isi = KODE.flatMap((k) => [k, "/"]);
 
   return (
-    <section ref={akar} aria-hidden className="overflow-hidden bg-kuning py-4 text-ink lg:py-5">
+    <section ref={akar} aria-hidden className="overflow-hidden bg-mint py-4 text-ink lg:py-5">
       <div data-jalur className="flex w-max whitespace-nowrap">
         {[0, 1].map((salinan) => (
           <div key={salinan} className="flex shrink-0 items-center gap-6 pr-6 lg:gap-10 lg:pr-10">

@@ -36,7 +36,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
       const teks = el.querySelector<HTMLElement>("[data-teks]");
 
       // Masuk: huruf judul naik dari balik topeng baris, lalu sisanya menyusul.
-      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines", charsClass: "huruf" }) : null;
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines", linesClass: "baris", charsClass: "huruf" }) : null;
       const masuk = gsap.timeline({ delay: 0.15 });
       if (split) masuk.from(split.chars, { yPercent: 115, rotate: 6, duration: 0.9, ease: "expo.out", stagger: 0.018 });
       masuk
@@ -102,7 +102,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
       <div data-teks className="wadah relative z-10 flex h-full flex-col pt-8 lg:pt-12">
         <h1
           data-judul
-          className="max-w-[16ch] text-[clamp(2rem,4.4vw,3.9rem)] font-semibold leading-[1] tracking-[-0.02em] text-ink lg:max-w-none"
+          className="max-w-[16ch] text-[clamp(2rem,4.4vw,3.9rem)] font-semibold leading-[1.15] tracking-[-0.02em] text-ink lg:max-w-none"
         >
           Belajar terampil,
           <br className="hidden sm:block" /> tumbuh berakhlak.
@@ -115,14 +115,14 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
           <div data-masuk className="flex flex-col gap-3 sm:flex-row">
             <Magnetik className="sm:inline-block">
               <Link href="/daftar" className="block">
-                <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
+                <Button ukuran="lg" className="w-full sm:w-auto">
                   Daftar Sekarang
                 </Button>
               </Link>
             </Magnetik>
             <Magnetik className="sm:inline-block">
               <Link href="/cek-status" className="block">
-                <Button varian="gelap" ukuran="lg" className="w-full sm:w-auto">
+                <Button varian="bingkai" ukuran="lg" className="w-full sm:w-auto">
                   Cek Status
                 </Button>
               </Link>
@@ -137,7 +137,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
       </div>
 
       <div className="pointer-events-none absolute bottom-[3.25rem] right-[calc(max(var(--pad),calc((100vw-84rem)/2+var(--pad)))+1rem)] z-10 hidden items-center gap-3 rounded-kartu bg-permukaan/95 px-3 py-2.5 shadow-kartu lg:flex">
-        <Image src="/images/sekolah/lambang.png" alt="" width={40} height={40} className="size-10 object-contain" />
+        <Image src="/images/sekolah/logo-sekolah.png" alt="" width={40} height={40} className="size-10 object-contain" />
         <p className="text-sm font-bold leading-tight text-ink">
           SMK Pusat
           <br />

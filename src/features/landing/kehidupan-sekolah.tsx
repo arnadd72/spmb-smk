@@ -6,41 +6,43 @@ import { GambarKonten } from "@/features/berita/gambar-konten";
 import { cn } from "@/lib/cn";
 
 // Foto asli dari situs sekolah, warna asli. Keterangan di bawah foto, bukan menimpanya.
+// Tata letak layar lebar: dua baris berpasangan (7/5 lalu 5/7) bertepi sejajar, lalu satu foto lebar penuh.
+// Di tiap baris, foto berasio tetap menentukan tinggi baris; pasangannya (`lg:flex-1`) mengisi tinggi yang sama.
 const FOTO = [
   {
     src: "/images/sekolah/p5-karya.webp",
     alt: "Siswa dan guru menunjukkan tempat sampah hasil karya kelas di halaman sekolah",
     ket: "Gelar karya: tempat sampah daur ulang buatan siswa kelas XI.",
-    kelas: "lg:col-span-6",
+    kelas: "lg:col-span-7",
     rasio: "aspect-[16/10]",
   },
   {
     src: "/images/sekolah/istighotsah.webp",
     alt: "Siswa berkumpul untuk istighotsah di aula sekolah",
     ket: "Istighotsah bersama sebelum kunjungan industri.",
-    kelas: "lg:col-span-4 lg:col-start-8 lg:mt-12",
-    rasio: "aspect-[4/5]",
-  },
-  {
-    src: "/images/sekolah/p5-kostum.webp",
-    alt: "Siswi memakai kostum dari bahan daur ulang pada Projek Penguatan Profil Pelajar Pancasila",
-    ket: "Pawai karya Projek Penguatan Profil Pelajar Pancasila.",
-    kelas: "lg:col-span-4 lg:col-start-2 lg:-mt-6",
-    rasio: "aspect-[4/3]",
+    kelas: "lg:col-span-5",
+    rasio: "aspect-[4/3] lg:aspect-auto lg:flex-1",
   },
   {
     src: "/images/sekolah/kelas-otkp.webp",
     alt: "Siswa makan bersama di kelas Otomatisasi dan Tata Kelola Perkantoran",
     ket: "Makan bergizi bersama di kelas perkantoran.",
-    kelas: "lg:col-span-6 lg:mt-6",
-    rasio: "aspect-[16/10]",
+    kelas: "lg:col-span-5",
+    rasio: "aspect-[4/3] lg:aspect-auto lg:flex-1",
+  },
+  {
+    src: "/images/sekolah/p5-kostum.webp",
+    alt: "Siswi memakai kostum dari bahan daur ulang pada Projek Penguatan Profil Pelajar Pancasila",
+    ket: "Pawai karya Projek Penguatan Profil Pelajar Pancasila.",
+    kelas: "lg:col-span-7",
+    rasio: "aspect-[2/1]",
   },
   {
     src: "/images/sekolah/kultum.webp",
     alt: "Siswa mendengarkan kultum di musala sekolah",
     ket: "Kultum bersama di musala.",
-    kelas: "lg:col-span-10 lg:col-start-2",
-    rasio: "aspect-[16/8] lg:aspect-[21/7]",
+    kelas: "lg:col-span-12",
+    rasio: "aspect-[16/9] lg:aspect-[21/8]",
   },
 ];
 
@@ -64,7 +66,7 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-hidup]");
-      const split = judul ? SplitText.create(judul, { aria: "none", type: "words", mask: "words" }) : null;
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "words", mask: "words", wordsClass: "kata" }) : null;
       if (split) {
         gsap.from(split.words, {
           yPercent: 110,

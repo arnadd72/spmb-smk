@@ -16,7 +16,7 @@ export function FaqLanding({ faq }: { faq: FaqData[] }) {
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-faq]");
-      const split = judul ? SplitText.create(judul, { aria: "none", type: "words", mask: "words" }) : null;
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "words", mask: "words", wordsClass: "kata" }) : null;
       if (split) {
         gsap.from(split.words, {
           yPercent: 110,

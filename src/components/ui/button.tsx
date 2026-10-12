@@ -2,7 +2,7 @@ import type { ButtonHTMLAttributes } from "react";
 import { SpinnerGapIcon } from "@phosphor-icons/react/dist/ssr";
 import { cn } from "@/lib/cn";
 
-type Varian = "utama" | "aksen" | "sekunder" | "terang" | "gelap" | "hantu" | "bahaya";
+type Varian = "utama" | "aksen" | "sekunder" | "terang" | "gelap" | "bingkai" | "hantu" | "bahaya";
 type Ukuran = "md" | "lg";
 
 const varian: Record<Varian, string> = {
@@ -14,6 +14,9 @@ const varian: Record<Varian, string> = {
   terang: "border border-kertas/60 bg-transparent text-kertas hover:bg-kertas/10",
   // Tombol pekat di atas latar terang.
   gelap: "bg-ink text-kertas hover:bg-ink/85",
+  // Garis pekat di atas latar terang; terisi saat disorot, diklik, atau difokus keyboard (juga bila Link pembungkusnya yang fokus).
+  bingkai:
+    "border-2 border-ink bg-transparent text-ink hover:bg-ink hover:text-kertas active:bg-ink active:text-kertas focus-visible:bg-ink focus-visible:text-kertas in-focus-visible:bg-ink in-focus-visible:text-kertas",
   hantu: "text-primer-tua bg-transparent hover:bg-permukaan-alt",
   bahaya: "bg-bahaya text-white hover:brightness-90",
 };
@@ -49,7 +52,7 @@ export function Button({
       aria-busy={memuat || undefined}
       className={cn(
         "inline-flex items-center justify-center gap-2 rounded-kontrol font-semibold whitespace-nowrap",
-        "transition-[background-color,transform,filter] duration-150 ease-keluar",
+        "transition-[background-color,color,border-color,transform,filter] duration-150 ease-keluar",
         "active:translate-y-px disabled:cursor-not-allowed disabled:opacity-55",
         varian[v],
         ukuran[u],

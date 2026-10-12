@@ -61,7 +61,7 @@ export function Pembuka() {
         className="pembuka fixed inset-0 z-[70] grid place-items-center bg-ink text-kertas"
       >
         <div className="flex flex-col items-center gap-4">
-          <Image data-lambang src="/images/sekolah/lambang.png" alt="" width={96} height={96} className="size-24 object-contain" priority />
+          <Image data-lambang src="/images/sekolah/logo-sekolah.png" alt="" width={96} height={96} className="size-24 object-contain" priority />
           <p data-sapaan className="font-display text-2xl font-semibold tracking-tight">
             SPMB SMK Ma&apos;arif NU 1 Wangon
           </p>

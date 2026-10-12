@@ -9,32 +9,34 @@
 
 :root {
   /* Mentah */
-  --hijau-nu: #057a3c;
-  --hijau-tua: #03452a;
-  --hijau-gelap: #0e1f17;
-  --kertas: #f6f3ec;
-  --kertas-garis: #e9e4d8;
-  --tinta: #16201a;
-  --emas: #d9a21b;
-  /* Palet landing: warna sekolah (hijau, kuning) ditambah tinta pekat dan dua penyeimbang hangat/sejuk */
-  --ink: #0e1512;
-  --kuning: #f4b400;
-  --jingga: #ff6b35;
-  --mint: #9ae0cc;
-  --hijau-terang: #12b558;
+  /* Palet "Daun Zaitun" (PRD 1.3 butir 38): #123524, #387324, #85A947, krem netral #F2EFE6. Nama token lama
+     (kuning, jingga, emas) dipertahankan agar komponen tidak berubah; nilainya kini hijau muda. */
+  --hijau-nu: #387324;
+  --hijau-tua: #2c5a1c;
+  --hijau-gelap: #0d271b;
+  --kertas: #f2efe6;
+  --kertas-garis: #e5e0d2;
+  --tinta: #123524;
+  --emas: #85a947;
+  --ink: #123524;
+  --kuning: #85a947;
+  --jingga: #85a947;
+  --mint: #c5d89d;
+  --hijau-terang: #a3c960;
+  --hijau-hutan: #1b4630;
 
   /* Semantik: tema terang (wizard, admin, PDF, email selalu terang) */
   --latar: var(--kertas);
-  --permukaan: #fffdf8;
+  --permukaan: #f9f7f1;
   --permukaan-alt: var(--kertas-garis);
-  --garis: #d8d1bf;
+  --garis: #d6d0bf;
   --tinta-utama: var(--tinta);
-  --tinta-redup: #4a5a50;
+  --tinta-redup: #4b5b3a;
   --primer: var(--hijau-nu);
   --primer-tinta: #ffffff;
   --primer-tua: var(--hijau-tua);
   --aksen: var(--kuning);
-  --aksen-tinta: #0e1512;
+  --aksen-tinta: #123524;
   --fokus: #0b5fb3;
 
   /* Status: kontras AA di atas latar kertas */
@@ -90,6 +92,7 @@
   --color-jingga: var(--jingga);
   --color-mint: var(--mint);
   --color-hijau-terang: var(--hijau-terang);
+  --color-hijau-hutan: var(--hijau-hutan);
   --color-sukses: var(--sukses);
   --color-sukses-latar: var(--sukses-latar);
   --color-info: var(--info);
@@ -99,8 +102,8 @@
   --color-bahaya: var(--bahaya);
   --color-bahaya-latar: var(--bahaya-latar);
 
-  --font-display: var(--font-clash), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-satoshi), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-poppins), ui-sans-serif, system-ui, sans-serif;
 
   /* Satu sistem radius: 6 px kontrol, 14 px kartu, penuh untuk pil */
   --radius-kontrol: 6px;
@@ -125,6 +128,18 @@
   body {
     min-height: 100dvh;
     overflow-x: hidden;
+  }
+
+  /*
+   * Topeng SplitText (mask: "lines"/"words") memakai overflow: clip setinggi line-height, sehingga ekor huruf
+   * (j, p, g) terpotong pada judul berjarak baris rapat. Perluas area klip ke bawah tanpa mengubah jarak baris;
+   * huruf yang menunggu animasi masuk (geser 110-120%) tetap tersembunyi. Kelas topeng = linesClass/wordsClass
+   * + "-mask" (lihat SplitText.create di src/features/landing).
+   */
+  .baris-mask,
+  .kata-mask {
+    padding-bottom: 0.14em;
+    margin-bottom: -0.14em;
   }
 
   h1,

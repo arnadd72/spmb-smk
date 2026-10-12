@@ -24,7 +24,7 @@ export function PerjalananStatus() {
       const titik = el.querySelectorAll("[data-titik-aktif]");
       const garis = el.querySelectorAll("[data-garis-isi]");
 
-      gsap.set(redup, { opacity: 0.55 });
+      gsap.set(redup, { opacity: 0.7 });
       gsap.set(titik, { opacity: 0, scale: 0.6 });
       gsap.set(garis, { scaleY: 0 });
 
@@ -39,7 +39,7 @@ export function PerjalananStatus() {
       });
       // Tahan keadaan akhir sebentar, lalu kembali redup untuk putaran berikutnya.
       tl.to({}, { duration: 0.6 })
-        .to(redup, { opacity: 0.55, duration: 0.5, ease: "power1.inOut" })
+        .to(redup, { opacity: 0.7, duration: 0.5, ease: "power1.inOut" })
         .to(titik, { opacity: 0, scale: 0.6, duration: 0.5, ease: "power1.inOut" }, "<")
         .to(garis, { scaleY: 0, duration: 0.5, ease: "power1.inOut" }, "<");
     },

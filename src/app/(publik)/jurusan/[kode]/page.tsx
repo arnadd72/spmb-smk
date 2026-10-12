@@ -50,7 +50,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
           </div>
           {t.foto && (
             <div className="relative aspect-[16/10] overflow-hidden rounded-kartu">
-              <Image src={t.foto.src} alt={t.foto.alt} fill priority sizes="(min-width: 1024px) 40vw, 100vw" className="object-cover" />
+              <Image src={t.foto.src} alt={t.foto.alt} fill priority sizes="(min-width: 1024px) 40vw, 100vw" className={cn("object-cover", t.foto.posisi)} />
             </div>
           )}
         </div>
@@ -125,7 +125,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
             Tertarik dengan {j.kode}? Daftar dan lihat kecocokan nilai rapor Anda.
           </p>
           <Link href="/daftar" className="w-full sm:w-auto">
-            <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
+            <Button ukuran="lg" className="w-full sm:w-auto">
               Daftar Sekarang
             </Button>
           </Link>

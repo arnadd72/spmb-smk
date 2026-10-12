@@ -13,7 +13,7 @@ export function Penutup() {
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-penutup]");
-      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines" }) : null;
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines", linesClass: "baris" }) : null;
       if (split) {
         gsap.from(split.chars, {
           yPercent: 120,
@@ -41,7 +41,7 @@ export function Penutup() {
     <section ref={akar} aria-labelledby="judul-penutup" className="relative overflow-hidden bg-ink py-20 text-kertas lg:py-28">
       <Image
         data-lambang-latar
-        src="/images/sekolah/lambang.png"
+        src="/images/sekolah/logo-sekolah.png"
         alt=""
         width={800}
         height={800}
@@ -62,7 +62,7 @@ export function Penutup() {
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Magnetik className="sm:inline-block" kekuatan={0.4}>
             <Link data-aksi href="/daftar" className="block">
-              <Button varian="aksen" ukuran="lg" className="w-full sm:w-auto">
+              <Button ukuran="lg" className="w-full sm:w-auto">
                 Daftar Sekarang
               </Button>
             </Link>

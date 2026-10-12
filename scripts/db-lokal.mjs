@@ -19,6 +19,7 @@ function cariBin() {
   const kandidat = [
     process.env.PG_BIN,
     "C:/laragon/bin/postgresql/postgresql-14.5-1/bin",
+    "C:/laragon/bin/postgresql/postgresql/bin",
     "C:/Program Files/PostgreSQL/16/bin",
     "C:/Program Files/PostgreSQL/15/bin",
     "C:/Program Files/PostgreSQL/14/bin",

@@ -25,7 +25,8 @@ export function penyimpananTemp(): PenyimpananDokumen {
     if (process.env.NODE_ENV === "production") {
       throw new Error("NEXT_PUBLIC_SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY belum diisi.");
     }
-    return new DriverLokal(process.env.DRAF_TEMP_DIR ?? path.join(process.cwd(), ".local", "draf-temp"));
+    // `||`, bukan `??`: DRAF_TEMP_DIR kosong di .env (bawaan .env.example) harus jatuh ke folder bawaan, bukan root proyek.
+    return new DriverLokal(process.env.DRAF_TEMP_DIR || path.join(process.cwd(), ".local", "draf-temp"));
   }
 
   const supabase = createClient(url, kunci, { auth: { persistSession: false } });

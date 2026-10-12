@@ -34,7 +34,7 @@ export default async function HalamanAudit({ searchParams }: PageProps<"/admin/a
 
       <form method="get" action="/admin/audit-log" role="search" aria-label="Saring audit log" className="mt-5 rounded-kartu border border-garis bg-permukaan p-4">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <label className="flex flex-col gap-1 text-sm font-semibold text-tinta">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-tinta">
             Aksi
             <select name="aksi" defaultValue={filter.aksi ?? ""} className={cn(kontrolDasar, "font-normal")}>
               <option value="">Semua</option>
@@ -45,7 +45,7 @@ export default async function HalamanAudit({ searchParams }: PageProps<"/admin/a
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-tinta">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-tinta">
             Dilakukan oleh
             <select name="oleh" defaultValue={filter.oleh ?? ""} className={cn(kontrolDasar, "font-normal")}>
               <option value="">Semua</option>
@@ -56,7 +56,7 @@ export default async function HalamanAudit({ searchParams }: PageProps<"/admin/a
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-tinta">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-tinta">
             Objek
             <select name="entitas" defaultValue={filter.entitas ?? ""} className={cn(kontrolDasar, "font-normal")}>
               <option value="">Semua</option>
@@ -67,15 +67,15 @@ export default async function HalamanAudit({ searchParams }: PageProps<"/admin/a
               ))}
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-tinta">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-tinta">
             ID objek
             <input name="q" defaultValue={filter.q ?? ""} placeholder="mis. 12 atau AKL" className={cn(kontrolDasar, "font-normal")} />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-tinta">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-tinta">
             Dari tanggal
             <input type="date" name="dari" defaultValue={filter.dari ?? ""} className={cn(kontrolDasar, "font-normal")} />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold text-tinta">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold text-tinta">
             Sampai tanggal
             <input type="date" name="sampai" defaultValue={filter.sampai ?? ""} className={cn(kontrolDasar, "font-normal")} />
           </label>
@@ -97,7 +97,8 @@ export default async function HalamanAudit({ searchParams }: PageProps<"/admin/a
           <EmptyState judul="Tidak ada catatan" deskripsi="Belum ada aktivitas yang cocok dengan filter ini." />
         </div>
       ) : (
-        <div className="relative mt-6 overflow-x-auto rounded-kartu border border-garis bg-permukaan">
+        // Wadah gulir tabel bisa difokus keyboard agar isinya bisa digeser tanpa mouse (axe scrollable-region-focusable).
+        <div tabIndex={0} role="region" aria-label="Tabel catatan audit" className="relative mt-6 overflow-x-auto rounded-kartu border border-garis bg-permukaan">
           <table className="w-full min-w-[48rem] text-left text-sm">
             <caption className="sr-only">Catatan audit</caption>
             <thead className="border-b border-garis bg-permukaan-alt text-tinta-redup">

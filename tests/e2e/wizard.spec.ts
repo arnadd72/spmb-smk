@@ -93,9 +93,7 @@ test.describe("wizard pendaftaran manual", () => {
     // Langkah 3: rapor wajib, tabel nilai
     await expect(page).toHaveURL(/\/langkah\/3$/);
     await lanjut(page);
-    await expect(page.getByText("Unggah berkas rapor terlebih dahulu.")).toBeVisible();
-    await page.locator("[data-berkas=rapor]").setInputFiles({ name: "rapor.png", mimeType: "image/png", buffer: PNG });
-    await expect(page.getByText("terunggah")).toBeVisible();
+    await expect(page.getByText("Isi minimal satu semester.").first()).toBeVisible();
     for (const sel of await page.locator("input[aria-label$='semester 1']").all()) await sel.fill("82");
     await axe(page);
     await lanjut(page);

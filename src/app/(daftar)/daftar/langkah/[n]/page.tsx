@@ -82,20 +82,11 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
     );
   } else if (n === 3) {
     const [konfig, bobot] = await Promise.all([ambilKonfigWizard(), muatBobotJurusan()]);
-    const def = doLangkah.find((f) => f.kunci === "rapor");
     const mapelRapor = mapelBerbobot(bobot);
     const mapelOcr = await muatMapelUntukOcr(mapelRapor.map((m) => m.kode));
     const aliasMapel = new Map(mapelOcr.map((m) => [m.kode, m.alias]));
     isi = (
       <LangkahRapor
-        slot={{
-          kunci: "rapor",
-          label: def?.label ?? "Rapor SMP/MTs",
-          wajib: true,
-          jamak: true,
-          bantuan: "Unggah semua halaman rapor yang memuat nilai, bisa beberapa berkas (maksimal 10).",
-        }}
-        berkas={daftarBerkas(draf.berkas.rapor)}
         mapel={mapelRapor.map((m) => ({ kode: m.kode, nama: m.nama, alias: aliasMapel.get(m.kode) ?? [] }))}
         semester={konfig.semester}
         awal={awal.nilai_rapor as NilaiRapor | undefined}
@@ -128,7 +119,6 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       baris: [
         { label: "Akta kelahiran", nilai: draf.berkas.akta ? "Terunggah" : "Tidak diunggah" },
         { label: "Kartu keluarga", nilai: draf.berkas.kk ? "Terunggah" : "Tidak diunggah" },
-        { label: "Berkas rapor", nilai: `${daftarBerkas(draf.berkas.rapor).length} berkas` },
         ...mapelBerbobot(bobot).map((m) => {
           const r = rataMapel(rapor?.mapel[m.kode]);
           return { label: `Rata-rata ${m.nama}`, nilai: r === null ? "" : r.toFixed(1) };

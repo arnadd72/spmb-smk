@@ -14,7 +14,6 @@ const SUMBER = { drive: ["Di Drive", "sukses"], sementara: ["Menunggu Drive", "p
 const SLOT = [
   { kunci: "akta", label: "Akta kelahiran", aksi: "Ganti akta" },
   { kunci: "kk", label: "Kartu keluarga", aksi: "Ganti KK" },
-  { kunci: "rapor", label: "Rapor", aksi: "Tambah halaman rapor" },
 ] as const;
 
 /** Lihat, ganti, tambah, dan hapus berkas pendaftar oleh panitia (PRD 13.5, 13.7). */

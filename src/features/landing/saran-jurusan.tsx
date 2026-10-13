@@ -71,7 +71,7 @@ export function SaranJurusan() {
             Bingung memilih jurusan? Biarkan nilai rapor bicara.
           </h2>
           <p className="mt-6 max-w-[48ch] text-base text-ink/80 lg:text-lg">
-            Setelah rapor diunggah, sistem menghitung kecocokan tiap jurusan dari mata pelajaran yang paling berpengaruh. Setiap
+            Setelah nilai rapor Anda isi (bisa dibaca otomatis dari foto), sistem menghitung kecocokan tiap jurusan dari mata pelajaran yang paling berpengaruh. Setiap
             hasil disertai rincian, jadi mudah dibicarakan dengan orang tua dan guru. Ini saran, bukan keputusan.
           </p>
         </div>

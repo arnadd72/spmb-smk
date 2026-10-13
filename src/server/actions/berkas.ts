@@ -4,7 +4,7 @@ import { catatAudit } from "@/server/services/audit";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { pindahkanKeDrive } from "@/server/services/pendaftaran";
-import { MAKS_BERKAS_RAPOR, MAKS_UKURAN_BYTE, deteksiMime, type Berkas, type BerkasDraf } from "@/server/services/draf";
+import { MAKS_UKURAN_BYTE, deteksiMime, type Berkas, type BerkasDraf } from "@/server/services/draf";
 import { buatTokenAcak } from "@/server/services/kripto";
 import { GalatApi } from "@/server/types/galat";
 import type { Prisma } from "@/generated/prisma/client";
@@ -152,7 +152,8 @@ export async function sinkronSemuaTertunda(ctx?: KonteksAksi, batas = 25) {
 
 // ------------------------------------------------------------------ ganti, tambah, hapus berkas oleh panitia
 
-const KUNCI_ADMIN = ["akta", "kk", "rapor"] as const;
+// Foto rapor tidak lagi diunggah (PRD butir 40); berkas rapor lama (bila ada) masih bisa dilihat dan dihapus.
+const KUNCI_ADMIN = ["akta", "kk"] as const;
 
 const bersihNama = (nama: string) => nama.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "berkas";
 
@@ -174,7 +175,7 @@ function adaYangTertunda(meta: BerkasDraf, p: { aktaFileId: string | null; kkFil
   return Array.isArray(meta.rapor) && meta.rapor.some((_, i) => !rapor[i]);
 }
 
-/** Ganti Akta/KK atau tambah halaman Rapor. Isi diperiksa dari byte, bukan dari nama atau tipe kiriman. */
+/** Ganti Akta atau KK. Isi diperiksa dari byte, bukan dari nama atau tipe kiriman. */
 export async function unggahBerkasPendaftar(id: string, kunci: string, isi: Buffer, namaAsli: string, ctx: KonteksAksi): Promise<DeskripsiBerkas[]> {
   if (!(KUNCI_ADMIN as readonly string[]).includes(kunci)) throw GalatApi.validasi({ berkas: ["Jenis berkas tidak dikenal."] });
   if (isi.length === 0) throw GalatApi.validasi({ berkas: ["Berkas kosong."] });
@@ -195,22 +196,12 @@ export async function unggahBerkasPendaftar(id: string, kunci: string, isi: Buff
   };
 
   const data: Prisma.PendaftarUpdateInput = { berkasSinkron: "menunggu" };
-  if (kunci === "rapor") {
-    const daftar = Array.isArray(meta.rapor) ? [...meta.rapor] : [];
-    if (daftar.length >= MAKS_BERKAS_RAPOR) {
-      await temp.hapus(baru.ref).catch(() => undefined);
-      throw GalatApi.validasi({ berkas: [`Maksimal ${MAKS_BERKAS_RAPOR} berkas rapor.`] });
-    }
-    meta.rapor = [...daftar, baru];
-    data.raporFileIds = [...(Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : []), null];
-  } else {
-    const lama = meta[kunci] as Berkas | undefined;
-    if (lama) await temp.hapus(lama.ref).catch(() => undefined);
-    await hapusDariDrive(kunci === "akta" ? p.aktaFileId : p.kkFileId);
-    meta[kunci] = baru;
-    if (kunci === "akta") data.aktaFileId = null;
-    else data.kkFileId = null;
-  }
+  const lama = meta[kunci] as Berkas | undefined;
+  if (lama) await temp.hapus(lama.ref).catch(() => undefined);
+  await hapusDariDrive(kunci === "akta" ? p.aktaFileId : p.kkFileId);
+  meta[kunci] = baru;
+  if (kunci === "akta") data.aktaFileId = null;
+  else data.kkFileId = null;
   data.berkasMeta = JSON.parse(JSON.stringify(meta));
   await prisma.pendaftar.update({ where: { id: pid }, data });
   await catatAudit({ userId: ctx.userId, aksi: "pendaftar.berkas_unggah", entitasTipe: "pendaftar", entitasId: pid.toString(), dataBaru: { berkas: kunci, nama: baru.nama }, ip: ctx.ip });

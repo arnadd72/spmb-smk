@@ -160,7 +160,7 @@ function instruksiSistem(k: Konteks): string {
     k.tanggalVerifikasi ? `Verifikasi berkas fisik: ${tanggal(k.tanggalVerifikasi)}.` : "",
     konfig.kontak ? `Kontak panitia: ${konfig.kontak}.` : "",
     konfig.persyaratan ? `Persyaratan: ${konfig.persyaratan.slice(0, 1200)}` : "",
-    "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas, unggah akta dan KK, unggah rapor dan isi nilai, saran dan pilihan jurusan, data murid, data orang tua, data pendidikan kesehatan seragam, tinjau dan kirim). Setelah kirim ada nomor pendaftaran dan formulir PDF. Cek status di halaman Cek Status dengan nomor pendaftaran dan tanggal lahir.",
+    "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas, unggah akta dan KK, isi nilai rapor (bisa dibaca otomatis dari foto, foto rapor tidak disimpan), saran dan pilihan jurusan, data murid, data orang tua, data pendidikan kesehatan seragam, tinjau dan kirim). Setelah kirim ada nomor pendaftaran dan formulir PDF. Cek status di halaman Cek Status dengan nomor pendaftaran dan tanggal lahir.",
     "Jurusan:",
     ...k.jurusan.map((j) => `- ${j.kode} ${j.nama}: ${j.deskripsi} (kuota ${j.kuota}, sisa ${j.sisa})`),
     "FAQ resmi:",

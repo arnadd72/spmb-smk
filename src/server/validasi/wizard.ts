@@ -43,7 +43,8 @@ export const NAMA_LANGKAH = [
 ] as const;
 
 /** Field langkah 1 sampai 8 yang ditangani khusus (bukan input teks biasa). */
-export const KUNCI_FILE_KHUSUS = ["akta", "kk", "rapor"] as const;
+/** Berkas yang disimpan. Foto rapor sengaja tidak: hanya nilainya yang dibaca di browser dan dipakai (PRD butir 40). */
+export const KUNCI_FILE_KHUSUS = ["akta", "kk"] as const;
 export const KUNCI_NILAI_UJIAN = ["b_indonesia", "b_inggris", "matematika", "ipa"] as const;
 
 const kosongJadiUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);

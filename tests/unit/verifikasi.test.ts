@@ -289,10 +289,8 @@ describe("penampil berkas dan sinkron Drive", () => {
   it("berkas yang belum di Drive dibaca dari penyimpanan sementara dan pembukaannya diaudit", async () => {
     const p = await pendaftarWizard();
     const daftar = await ambilBerkasPendaftar(p.id.toString());
-    expect(daftar.map((d) => [d.kunci, d.sumber])).toEqual([
-      ["akta", "sementara"],
-      ["rapor", "sementara"],
-    ]);
+    // Foto rapor tidak pernah diunggah (PRD butir 40): hanya akta yang tersimpan.
+    expect(daftar.map((d) => [d.kunci, d.sumber])).toEqual([["akta", "sementara"]]);
 
     const { aliran, mime, nama } = await bukaBerkas(p.id.toString(), "akta", 0, ctx);
     expect(mime).toBe("image/png");
@@ -323,7 +321,7 @@ describe("penampil berkas dan sinkron Drive", () => {
     const b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
     expect(b.berkasSinkron).toBe("selesai");
     expect(b.aktaFileId).toMatch(/^drive-/);
-    expect((b.raporFileIds as string[])[0]).toMatch(/^drive-/);
+    expect(b.raporFileIds).toBeNull();
 
     const daftar = await ambilBerkasPendaftar(id);
     expect(daftar.every((d) => d.sumber === "drive")).toBe(true);
@@ -374,16 +372,13 @@ describe("kelola berkas oleh panitia", () => {
     expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.berkas_unggah" } })).toBe(1);
   });
 
-  it("menambah halaman rapor sampai batas 10, lalu menghapus satu", async () => {
+  it("rapor tidak bisa diunggah (hanya nilainya yang disimpan), menghapus berkas yang tidak ada ditolak", async () => {
     const p = await pendaftarWizard();
     const id = p.id.toString();
-    for (let i = 0; i < 9; i++) await unggahBerkasPendaftar(id, "rapor", JPG, `r${i}.jpg`, ctx);
-    expect((await ambilBerkasPendaftar(id)).filter((d) => d.kunci === "rapor")).toHaveLength(10);
-    expect((await galat(unggahBerkasPendaftar(id, "rapor", JPG, "kelebihan.jpg", ctx))).status).toBe(422);
-
-    const sisa = await hapusBerkasPendaftar(id, "rapor", 0, ctx);
-    expect(sisa.filter((d) => d.kunci === "rapor")).toHaveLength(9);
+    expect((await galat(unggahBerkasPendaftar(id, "rapor", JPG, "r.jpg", ctx))).status).toBe(422);
+    expect((await ambilBerkasPendaftar(id)).filter((d) => d.kunci === "rapor")).toHaveLength(0);
     expect((await galat(hapusBerkasPendaftar(id, "kk", 0, ctx))).status).toBe(404);
+    expect((await galat(hapusBerkasPendaftar(id, "rapor", 0, ctx))).status).toBe(404);
   });
 
   it("mengganti berkas yang sudah di Drive menghapus berkas lama di Drive dan menyinkronkan yang baru", async () => {

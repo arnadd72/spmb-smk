@@ -16,7 +16,7 @@ type Tahap = { judul: string; isi: string; warna: string; Ikon: ComponentType<{ 
 // Alur sesuai PRD (wizard 8 langkah diringkas jadi 5 tahap yang dipahami orang tua).
 const TAHAP: Tahap[] = [
   { judul: "Isi data diri", isi: "Nama, NISN, dan tanggal lahir. Tanpa membuat akun.", warna: "bg-kuning text-ink", Ikon: IdentificationCardIcon },
-  { judul: "Unggah dokumen", isi: "Foto akta, kartu keluarga, dan rapor. Sistem membaca isinya, Anda tinggal memeriksa.", warna: "bg-mint text-ink", Ikon: UploadSimpleIcon },
+  { judul: "Unggah dokumen", isi: "Foto akta dan kartu keluarga, serta rapor untuk dibaca nilainya. Sistem membaca isinya, Anda tinggal memeriksa. Foto rapor tidak disimpan.", warna: "bg-mint text-ink", Ikon: UploadSimpleIcon },
   { judul: "Lihat saran jurusan", isi: "Dihitung dari nilai rapor yang Anda konfirmasi. Pilihan akhir tetap di tangan Anda.", warna: "bg-ink text-kertas", Ikon: ChartBarHorizontalIcon },
   { judul: "Kirim dan simpan nomor", isi: "Terima nomor pendaftaran dan formulir PDF yang bisa dicetak.", warna: "bg-jingga text-ink", Ikon: PaperPlaneTiltIcon },
   { judul: "Bawa berkas ke sekolah", isi: "Panitia mencocokkan berkas fisik dan nilai rapor, lalu memberi keputusan.", warna: "bg-primer text-kertas", Ikon: ClipboardTextIcon },

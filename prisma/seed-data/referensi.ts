@@ -79,13 +79,13 @@ export const FAQ = [
   },
   {
     pertanyaan: "Dokumen apa yang harus disiapkan?",
-    jawaban: "Siapkan foto atau pindaian Akta Kelahiran, Kartu Keluarga, dan rapor SMP/MTs. Pada saat verifikasi, bawa berkas fisik sesuai daftar di halaman sukses.",
+    jawaban: "Siapkan foto atau pindaian Akta Kelahiran dan Kartu Keluarga untuk diunggah, serta rapor SMP/MTs untuk dibaca nilainya (foto rapor tidak disimpan). Pada saat verifikasi, bawa berkas fisik sesuai daftar di halaman sukses.",
     keywords: ["dokumen", "berkas", "persyaratan", "syarat", "akta", "kk", "rapor", "upload"],
     kategori: "Persyaratan",
   },
   {
     pertanyaan: "Bagaimana cara mengunggah rapor?",
-    jawaban: "Pada Langkah 3, unggah rapor dalam format JPG, PNG, WebP, atau PDF dengan ukuran maksimal 5 MB per berkas. Sistem membaca nilai otomatis, lalu Anda memeriksa dan memperbaiki tabel nilainya.",
+    jawaban: "Pada Langkah 3, Anda bisa memotret halaman rapor agar nilainya dibaca otomatis di HP Anda, atau mengisi tabel nilai sendiri. Foto rapor tidak diunggah dan tidak disimpan. Periksa dan perbaiki tabel nilainya sebelum lanjut.",
     keywords: ["rapor", "nilai", "upload", "unggah", "foto", "pdf"],
     kategori: "Cara Upload",
   },

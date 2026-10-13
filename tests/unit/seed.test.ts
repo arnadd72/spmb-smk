@@ -69,8 +69,8 @@ describe("seed referensi", () => {
 });
 
 describe("seed form field", () => {
-  it("rapor dan nilai_rapor terkunci dan wajib (tidak bisa dimatikan selama rekomendasi aktif)", async () => {
-    for (const kunci of ["rapor", "nilai_rapor"]) {
+  it("nilai_rapor terkunci dan wajib (tidak bisa dimatikan selama rekomendasi aktif)", async () => {
+    for (const kunci of ["nilai_rapor"]) {
       const f = await prisma.formField.findUniqueOrThrow({ where: { kunci } });
       expect(f).toMatchObject({ terkunci: true, wajib: true, langkah: 3 });
     }

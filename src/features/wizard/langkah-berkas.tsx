@@ -56,8 +56,8 @@ function Unggah({
     setGalat(undefined);
     setSibuk(true);
     try {
-      // Foto kamera HP sering lebih dari 5 MB: perkecil dulu (sisi panjang 2000 px untuk rapor, 1600 px lainnya).
-      const f = await kompresGambar(asli, slot.kunci === "rapor" ? 2000 : 1600);
+      // Foto kamera HP sering lebih dari 5 MB: perkecil dulu (sisi panjang 1600 px).
+      const f = await kompresGambar(asli, 1600);
       if (f.size > MAKS_MB * 1024 * 1024) {
         setGalat(`Ukuran berkas ${ukuran(f.size)} melebihi batas ${MAKS_MB} MB.`);
         return;
@@ -315,20 +315,17 @@ const kunciSel = (kode: string, sem: number | string) => `${kode}|${sem}`;
 const angka = (v: string) => Number(v.trim().replace(",", "."));
 
 export function LangkahRapor({
-  slot,
-  berkas,
   mapel,
   semester,
   awal,
 }: {
-  slot: SlotBerkas;
-  berkas: BerkasKlien[];
   mapel: { kode: string; nama: string; alias: string[] }[];
   semester: number[];
   awal?: NilaiRapor;
 }) {
   const router = useRouter();
-  const [jumlahBerkas, setJumlahBerkas] = useState(berkas.length);
+  const pilihFoto = useRef<HTMLInputElement>(null);
+  const nomorFoto = useRef(0);
   const [grid, setGrid] = useState<Grid>(() =>
     Object.fromEntries(mapel.map((m) => [m.kode, Object.fromEntries(semester.map((s) => [String(s), awal?.mapel[m.kode]?.[String(s)]?.toString() ?? ""]))])),
   );
@@ -376,9 +373,10 @@ export function LangkahRapor({
     setAsal((a) => Object.fromEntries(Object.entries(a).filter(([k]) => !entri.diterapkan.includes(k))));
   }
 
-  async function jalankan(f: File, baru: BerkasKlien) {
-    const ref = baru.ref;
-    setDaftarOcr((d) => ({ ...d, [ref]: { nama: baru.nama, status: { status: "membaca" }, semester: null, diterapkan: [] } }));
+  /** Foto rapor hanya dibaca di HP ini untuk mengisi nilai. Foto tidak diunggah dan tidak disimpan (PRD butir 40). */
+  async function jalankan(f: File) {
+    const ref = String(++nomorFoto.current);
+    setDaftarOcr((d) => ({ ...d, [ref]: { nama: f.name, status: { status: "membaca" }, semester: null, diterapkan: [] } }));
     const r = await bacaRapor(f, { namaMurid: "", tanggalLahir: "", mapel: refMapel }, (tahap) =>
       setDaftarOcr((d) => (d[ref] ? { ...d, [ref]: { ...d[ref], status: { status: "membaca", tahap } } } : d)),
     );
@@ -398,10 +396,10 @@ export function LangkahRapor({
     terapkan(ref, entri.hasil, sem);
   }
 
-  function dihapus(b: BerkasKlien) {
-    const entri = daftarOcr[b.ref];
+  function buangHasil(ref: string) {
+    const entri = daftarOcr[ref];
     if (entri) lepaskan(entri);
-    setDaftarOcr((d) => Object.fromEntries(Object.entries(d).filter(([r]) => r !== b.ref)));
+    setDaftarOcr((d) => Object.fromEntries(Object.entries(d).filter(([r]) => r !== ref)));
   }
 
   const rata = (kode: string) => {
@@ -437,10 +435,6 @@ export function LangkahRapor({
   async function kirim(e: SyntheticEvent) {
     e.preventDefault();
     setGalatUmum(undefined);
-    if (jumlahBerkas === 0) {
-      setGalatUmum("Unggah berkas rapor terlebih dahulu.");
-      return;
-    }
     const isi = { semester, mapel: Object.fromEntries(Object.entries(grid).map(([k, s]) => [k, Object.fromEntries(Object.entries(s).map(([a, b]) => [a, b.replace(",", ".")]))])) };
     const cek = skemaNilaiRapor(semester, mapel.map((m) => m.kode)).safeParse(isi);
     if (!cek.success) {
@@ -468,11 +462,38 @@ export function LangkahRapor({
 
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
-      <Unggah slot={slot} awal={berkas} onUbah={setJumlahBerkas} onBerkas={(f, b) => void jalankan(f, b)} onHapus={dihapus} />
+      <div className="flex flex-col items-start gap-2 rounded-kartu border-2 border-dashed border-garis p-4">
+        <p className="text-sm font-semibold text-tinta">Isi nilai dari foto rapor (opsional)</p>
+        <p className="text-sm text-tinta-redup">
+          Foto rapor hanya dibaca di HP Anda untuk mengisi tabel di bawah. Foto tidak diunggah dan tidak disimpan. Bisa beberapa halaman, satu per satu.
+        </p>
+        <Button type="button" varian="sekunder" onClick={() => pilihFoto.current?.click()}>
+          Ambil foto atau pilih foto rapor
+        </Button>
+        <input
+          ref={pilihFoto}
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          capture="environment"
+          aria-label="Pilih foto rapor untuk dibaca"
+          data-baca-rapor
+          className="sr-only"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) void jalankan(f);
+            e.target.value = "";
+          }}
+        />
+      </div>
 
       {entriOcr.map(([ref, e]) => (
         <div key={ref} className="flex flex-col gap-2">
           <StatusOcr s={e.status} />
+          {e.status.status === "gagal" && (
+            <Button type="button" varian="hantu" onClick={() => buangHasil(ref)} className="self-start">
+              Tutup pesan
+            </Button>
+          )}
           {e.status.status === "selesai" && e.hasil && (
             <div className="flex flex-col gap-2 rounded-kartu border border-garis bg-permukaan p-3 text-sm">
               <p className="font-semibold text-tinta">
@@ -494,6 +515,9 @@ export function LangkahRapor({
                   ))}
                 </select>
               </label>
+              <Button type="button" varian="hantu" onClick={() => buangHasil(ref)} className="self-start">
+                Hapus hasil baca ini
+              </Button>
               {e.hasil.tidakDikenali.length > 0 && (
                 <p className="text-tinta-redup">
                   Tidak dikenali (isi manual bila perlu): {e.hasil.tidakDikenali.map((t) => `${t.nama} (${t.nilai})`).join(", ")}.
@@ -554,7 +578,7 @@ export function LangkahRapor({
       </ul>
 
       <p className="rounded-kontrol bg-info-latar px-3 py-2.5 text-sm font-medium text-info">
-        Nilai akan dicocokkan panitia dengan rapor asli saat verifikasi berkas.
+        Foto rapor tidak disimpan di sistem. Panitia dapat meminta rapor asli untuk dicocokkan dengan nilai ini saat verifikasi atau daftar ulang.
       </p>
 
       {galatUmum && <PesanGalat pesan={galatUmum} />}

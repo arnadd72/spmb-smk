@@ -7,7 +7,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 process.env.DRAF_TEMP_DIR = mkdtempSync(path.join(os.tmpdir(), "spmb-ocr-"));
 
 import { prisma } from "@/server/db/client";
-import { ambilDraf, buatDraf, simpanLangkah } from "@/server/services/draf";
+import { ambilDraf, buatDraf, simpanLangkah, unggahBerkas } from "@/server/services/draf";
 import { MAKS_CATATAN_PER_JAM, catatHasilOcr } from "@/server/services/ocr";
 import { kirimPendaftaran } from "@/server/services/pendaftaran";
 import { simpanPengaturan } from "@/server/services/pengaturan";
@@ -15,7 +15,7 @@ import { muatBobotJurusan } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 import { bersihkanIsianOcr } from "@/server/validasi/ocr";
 import { seedFormField, seedReferensi } from "../../prisma/seed-lib";
-import { isiLengkap } from "../fixture-wizard";
+import { PNG, isiLengkap } from "../fixture-wizard";
 
 async function bersih() {
   await prisma.ocrHasil.deleteMany();
@@ -108,6 +108,27 @@ describe("saran OCR di draf (langkah 2) dan asal nilai rapor (langkah 3)", () =>
     const mapel = [...new Set(bobot.flatMap((j) => j.bobot.map((m) => m.kode)))];
     await simpanLangkah(token, 3, { nilai_rapor: { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80 }])) }, sumber_nilai: "google" });
     expect((await ambilDraf(token))?.data["3"].sumber_nilai).toBe("manual");
+  });
+});
+
+describe("foto rapor tidak disimpan (PRD butir 40)", () => {
+  it("unggah berkas rapor ditolak dan langkah 3 tersimpan tanpa berkas", async () => {
+    const { token } = await buatDraf();
+    await isiLengkap(token);
+    expect((await galat(unggahBerkas(token, "rapor", PNG, "rapor.png"))).status).toBe(422);
+    const draf = await ambilDraf(token);
+    expect(draf?.berkas.rapor).toBeUndefined();
+    expect(draf?.data["3"].nilai_rapor).toBeDefined();
+  });
+
+  it("pendaftaran terkirim tanpa berkas rapor, nilainya tersimpan", async () => {
+    const { token } = await buatDraf();
+    await isiLengkap(token);
+    const { nomor } = await kirimPendaftaran(token, true);
+    const p = await prisma.pendaftar.findUniqueOrThrow({ where: { nomorPendaftaran: nomor } });
+    expect(p.raporFileIds).toBeNull();
+    expect(JSON.stringify(p.berkasMeta)).not.toMatch(/rapor/);
+    expect(p.nilaiRapor).not.toBeNull();
   });
 });
 

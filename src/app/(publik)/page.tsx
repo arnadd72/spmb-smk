@@ -18,7 +18,7 @@ export const revalidate = 300;
 export const metadata = {
   title: { absolute: "SPMB SMK Ma'arif NU 1 Wangon | Penerimaan Murid Baru" },
   description:
-    "Pendaftaran murid baru SMK Ma'arif NU 1 Wangon, Banyumas: AKL, MPLB, FKK, dan TKR. Daftar tanpa akun, unggah rapor, dapatkan saran jurusan.",
+    "Pendaftaran murid baru SMK Ma'arif NU 1 Wangon, Banyumas: AKL, MPLB, FKK, dan TKR. Daftar tanpa akun, isi nilai rapor, dapatkan saran jurusan.",
 };
 
 export default async function Beranda() {

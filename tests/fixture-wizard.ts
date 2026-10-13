@@ -41,7 +41,7 @@ export async function isiLengkap(token: string, tanpaJurusan2 = false) {
   const mapel = [...new Set(bobot.flatMap((j) => j.bobot.map((m) => m.kode)))];
 
   for (let n = 1; n <= 7; n++) {
-    if (n === 2 || n === 3) await unggahBerkas(token, n === 2 ? "akta" : "rapor", PNG, "scan.png");
+    if (n === 2) await unggahBerkas(token, "akta", PNG, "scan.png");
     const isi: Record<string, unknown> = {};
     for (const f of fields.filter((x) => x.langkah === n && x.tipe !== "file" && x.tipe !== "tabel")) isi[f.kunci] = nilaiValid(f);
     if (n === 3) isi.nilai_rapor = { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80, "2": 82 }])) };

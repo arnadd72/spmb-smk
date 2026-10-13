@@ -23,7 +23,6 @@ import {
 export const NAMA_COOKIE_DRAF = "spmb_draft";
 export const MASA_DRAF_HARI = 7;
 export const MAKS_UKURAN_BYTE = 5 * 1024 * 1024;
-export const MAKS_BERKAS_RAPOR = 10;
 
 export function opsiCookieDraf() {
   return {
@@ -219,7 +218,7 @@ function bersihNama(nama: string): string {
   return nama.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "berkas";
 }
 
-/** Kunci berkas yang boleh diunggah: akta, kk, rapor, atau field file kustom. */
+/** Kunci berkas yang boleh diunggah: akta, kk, atau field file kustom (rapor tidak pernah diunggah). */
 function kunciBerkasSah(kunci: string, fields: DefinisiField[]): boolean {
   return (KUNCI_FILE_KHUSUS as readonly string[]).includes(kunci) || fields.some((f) => f.kunci === kunci && f.tipe === "file");
 }
@@ -235,18 +234,14 @@ export async function unggahBerkas(token: string | undefined, kunci: string, isi
 
   const berkas = bacaBerkas(baris);
   const lama = berkas[kunci];
-  const jamak = kunci === "rapor";
-  if (jamak && Array.isArray(lama) && lama.length >= MAKS_BERKAS_RAPOR) {
-    throw GalatApi.validasi({ berkas: [`Maksimal ${MAKS_BERKAS_RAPOR} berkas rapor.`] });
-  }
 
   const temp = penyimpananTemp();
   const ref = await temp.simpan(`${baris.id}/${kunci}-${buatTokenAcak(8)}.${jenis.ext}`, isi, jenis.mime);
   const baru: Berkas = { ref, nama: bersihNama(namaAsli), mime: jenis.mime, ukuran: isi.length };
 
   // Satu-slot: berkas lama diganti dan dihapus dari penyimpanan.
-  if (!jamak && lama && !Array.isArray(lama)) await temp.hapus(lama.ref).catch(() => undefined);
-  berkas[kunci] = jamak ? [...(Array.isArray(lama) ? lama : []), baru] : baru;
+  if (lama && !Array.isArray(lama)) await temp.hapus(lama.ref).catch(() => undefined);
+  berkas[kunci] = baru;
 
   await prisma.pendaftaranDraft.update({ where: { id: baris.id }, data: { berkas: JSON.parse(JSON.stringify(berkas)) } });
   return baru;

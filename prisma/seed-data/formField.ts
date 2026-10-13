@@ -53,8 +53,7 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(2, 10, "akta", "Akta kelahiran", "file", opsional),
   f(2, 20, "kk", "Kartu keluarga", "file", opsional),
 
-  // Langkah 3: rapor (terkunci selama rekomendasi aktif)
-  f(3, 10, "rapor", "Rapor SMP/MTs", "file", { terkunci: true }),
+  // Langkah 3: nilai rapor (terkunci selama rekomendasi aktif). Foto rapor tidak diunggah, hanya nilainya.
   f(3, 20, "nilai_rapor", "Nilai rapor", "tabel", { terkunci: true }),
 
   // Langkah 4: pilihan jurusan

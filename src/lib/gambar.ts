@@ -1,8 +1,7 @@
 "use client";
 
 /**
- * Perkecil dan kompres foto di browser sebelum diunggah (PRD v3.1 10.4: sisi panjang maksimal 2000 px untuk rapor,
- * 1600 px untuk lainnya, JPEG kualitas 0,85). Foto kamera HP sering lebih dari 5 MB; hasilnya jauh lebih kecil
+ * Perkecil dan kompres foto di browser sebelum diunggah (PRD v3.1 10.4: sisi panjang maksimal 1600 px, JPEG kualitas 0,85). Foto kamera HP sering lebih dari 5 MB; hasilnya jauh lebih kecil
  * tapi angka pada KK dan rapor tetap terbaca. Berkas bukan gambar, sudah kecil, atau tidak bisa didekode dikembalikan apa adanya.
  */
 export async function kompresGambar(berkas: File, sisiMaks: number): Promise<File> {

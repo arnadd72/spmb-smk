@@ -161,6 +161,10 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
     - **Konsep:** OCR hanya bantuan. Foto dibaca di browser, hasilnya tampil sebagai isian yang bisa diedit dengan lencana keyakinan, dan **kalau gagal atau kurang jelas pendaftar mengisi manual** (batas waktu baca 40 detik, ditetapkan pemilik proyek). PDF tidak dibaca otomatis. Detail di Bagian 11.
     - **Teknis:** `ppu-paddle-ocr` + `onnxruntime-web` (build WASM lewat `turbopack.resolveAlias`); model tiny di `public/ocr/model` (di-commit, ±6,4 MB), runtime WASM disalin ke `public/ocr/ort` oleh `scripts/salin-wasm-ocr.mjs` pada `postinstall` (tidak di-commit). Foto diperkecil dan dikompres di browser sebelum diunggah (butir yang tertunda dari v3.1 10.4), sehingga foto kamera HP tidak lagi terhenti di batas 5 MB.
     - **Dampak ke data:** `OcrHasil.provider` bawaan `paddleocr`; tabel itu tidak menyimpan nilai hasil bacaan (data pribadi), hanya jenis, sukses, durasi, dan keyakinan per field. `Pendaftar.nilaiRaporSumber` kini terisi `ocr`, `ocr_dikoreksi`, atau `manual`. Statistik OCR tidak lagi menampilkan kuota.
+40. **Foto rapor tidak diunggah dan tidak disimpan; hanya nilainya yang dipakai (13 Okt 2026, atas permintaan pemilik proyek; mengubah v3.1 Langkah 3 "berkas rapor tetap wajib diunggah sebagai bukti"):**
+    - **Alur:** di Langkah 3 pendaftar boleh memotret halaman rapor (beberapa halaman, satu per satu). Foto hanya dibaca OCR di browser untuk mengisi tabel nilai, lalu dibuang; tidak ada unggahan ke server atau Google Drive. Pendaftar juga boleh mengisi tabel sepenuhnya manual. Syarat lanjut hanya tabel nilai yang valid (setiap mapel berbobot terisi minimal satu semester).
+    - **Dihapus:** field form builder `rapor` (tipe file; migration `20261013150000_hapus_field_berkas_rapor`), kunci `rapor` di `KUNCI_INTI` dan `KUNCI_FILE_KHUSUS`, batas 10 berkas rapor, unggah rapor oleh admin (`KUNCI_ADMIN`), dan pemindahan rapor ke Drive. Kolom `Pendaftar.raporFileIds` dibiarkan (data lama, tidak ditulis lagi); penampil admin masih menampilkan dan bisa menghapus berkas rapor lama bila ada.
+    - **Konsekuensi yang diterima:** panitia tidak punya foto rapor di sistem untuk dicocokkan dengan nilai yang diisi. Pencocokan dilakukan dengan rapor asli saat verifikasi berkas fisik atau daftar ulang (teks di Langkah 3 dan halaman sukses sudah menyebutnya). Sebagai gantinya `nilaiRaporSumber` (`ocr`, `ocr_dikoreksi`, `manual`) tetap dicatat, dan foto rapor (data pribadi anak) tidak pernah tersimpan.
 
 ### 1.4 Catatan serah terima: yang sudah dan belum dikerjakan (13 Oktober 2026)
 
@@ -664,8 +668,8 @@ Pembacaan dokumen berjalan **di HP pendaftar**, bukan di server (butir 39). Alas
 
 ```
 Pendaftar memilih foto (kamera atau galeri)
-  → kompresGambar (src/lib/gambar.ts): sisi panjang 2000 px (rapor) atau 1600 px, JPEG 0,85, urutan EXIF diterapkan
-  → [paralel] unggah ke /api/v1/draf/berkas   dan   OCR di browser:
+  → kompresGambar (src/lib/gambar.ts): sisi panjang 1600 px, JPEG 0,85, urutan EXIF diterapkan
+  → [paralel] unggah ke /api/v1/draf/berkas (hanya akta dan KK; foto rapor tidak diunggah, butir 40)   dan   OCR di browser:
        src/lib/ocr/mesin.ts   antarmuka bacaDokumen(), satu pembacaan pada satu waktu, batas 40 dtk
        src/lib/ocr/worker.ts  Web Worker: decode, perkecil ke 1500 px, luruskan (deskew.ts, proyeksi piksel),
                               PaddleOCR PP-OCRv6 tiny (onnxruntime-web, WASM) → BarisOcr[] { teks, kotak, skor }
@@ -698,7 +702,7 @@ parseRapor(baris: BarisOcr[], mapel: MapelRef[]);  // semester + nilai per mapel
 
 ### 11.4 Rapor
 
-Satu berkas = satu halaman rapor = satu semester. Tabel disusun dari koordinat: potongan teks dikelompokkan per baris (toleransi tinggi baris), kolom pertama berisi nama mapel, angka 0 sampai 100 di sebelah kanannya adalah nilai (nomor urut dan teks capaian kompetensi diabaikan; pada rapor K13 dipilih kolom "Pengetahuan"). Nama mapel dicocokkan ke `MataPelajaran.alias` (kemiripan ≥ 0,85 HIGH, 0,7-0,85 MEDIUM, selain itu masuk daftar "Tidak dikenali"). Semester dideteksi dari header ("Semester 2", "Kelas VIII Ganjil"); bila gagal, pendaftar memilih semester dari menu. Sel hasil baca mengisi tabel hanya bila sel itu masih kosong atau belum diubah pendaftar; sel MEDIUM berlatar kuning dan bertanda "Perlu dicek", sel yang diubah bertanda "Diubah". Tabel selalu bisa diedit penuh. `sumber_nilai` dikirim saat Langkah 3 disimpan: `ocr` (utuh), `ocr_dikoreksi` (ada yang diubah, ditambah, atau dihapus), atau `manual`, dan dipindahkan ke `Pendaftar.nilaiRaporSumber` saat submit.
+Satu foto = satu halaman rapor = satu semester. Foto rapor hanya dibaca di browser dan dibuang, tidak pernah diunggah atau disimpan (butir 40). Tabel disusun dari koordinat: potongan teks dikelompokkan per baris (toleransi tinggi baris), kolom pertama berisi nama mapel, angka 0 sampai 100 di sebelah kanannya adalah nilai (nomor urut dan teks capaian kompetensi diabaikan; pada rapor K13 dipilih kolom "Pengetahuan"). Nama mapel dicocokkan ke `MataPelajaran.alias` (kemiripan ≥ 0,85 HIGH, 0,7-0,85 MEDIUM, selain itu masuk daftar "Tidak dikenali"). Semester dideteksi dari header ("Semester 2", "Kelas VIII Ganjil"); bila gagal, pendaftar memilih semester dari menu. Sel hasil baca mengisi tabel hanya bila sel itu masih kosong atau belum diubah pendaftar; sel MEDIUM berlatar kuning dan bertanda "Perlu dicek", sel yang diubah bertanda "Diubah". Tabel selalu bisa diedit penuh. `sumber_nilai` dikirim saat Langkah 3 disimpan: `ocr` (utuh), `ocr_dikoreksi` (ada yang diubah, ditambah, atau dihapus), atau `manual`, dan dipindahkan ke `Pendaftar.nilaiRaporSumber` saat submit.
 
 ### 11.5 Ketentuan umum dan kapan dianggap gagal
 

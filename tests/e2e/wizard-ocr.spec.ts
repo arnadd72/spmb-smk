@@ -132,7 +132,7 @@ test.describe("OCR di wizard", () => {
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
-    await page.locator("[data-berkas=rapor]").setInputFiles({ name: "rapor-1.png", mimeType: "image/png", buffer: PNG });
+    await page.locator("[data-baca-rapor]").setInputFiles({ name: "rapor-1.png", mimeType: "image/png", buffer: PNG });
     await expect(page.getByLabel("Matematika semester 1")).toHaveValue("88");
     await expect(page.getByLabel("Bahasa Indonesia semester 1")).toHaveValue("76");
     await expect(page.getByText("2 mata pelajaran terbaca")).toBeVisible();
@@ -155,7 +155,7 @@ test.describe("OCR di wizard", () => {
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
     // Rapor gagal: tabel tetap bisa diisi manual
-    await page.locator("[data-berkas=rapor]").setInputFiles({ name: "rapor-1.png", mimeType: "image/png", buffer: PNG });
+    await page.locator("[data-baca-rapor]").setInputFiles({ name: "rapor-1.png", mimeType: "image/png", buffer: PNG });
     await expect(page.getByText(/tidak dapat dibaca otomatis\. Silakan isi data secara manual/)).toBeVisible();
     await page.getByLabel("Matematika semester 1").fill("85");
     await expect(page.getByLabel("Matematika semester 1")).toHaveValue("85");

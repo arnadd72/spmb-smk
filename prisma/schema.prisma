@@ -287,7 +287,7 @@ model OcrHasil {
   pendaftarId BigInt?
   /// akta | kk | rapor
   jenis       String
-  provider    String   @default("google_vision")
+  provider    String   @default("paddleocr")
   fields      Json
   confidence  Json
   durasiMs    Int

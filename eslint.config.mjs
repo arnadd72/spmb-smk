@@ -15,6 +15,8 @@ const eslintConfig = defineConfig([
     // Kerja lama yang diarsipkan, bukan kode aktif.
     "_archive/**",
     ".local/**",
+    // Runtime WASM OCR hasil salinan dari node_modules (scripts/salin-wasm-ocr.mjs).
+    "public/ocr/**",
   ]),
 ]);
 

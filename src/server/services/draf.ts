@@ -6,6 +6,7 @@ import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, mapelBerbobot, muatBobotJurusan, type HasilRekomendasi } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 import { KUNCI_INTI } from "@/server/validasi/formField";
+import { SUMBER_NILAI_RAPOR, bersihkanIsianOcr } from "@/server/validasi/ocr";
 import {
   KUNCI_FILE_KHUSUS,
   TOTAL_LANGKAH,
@@ -300,6 +301,15 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
     const r = skemaNilaiRapor(k.semester, k.mapelWajib).safeParse(mentah.nilai_rapor ?? { mapel: {} });
     if (r.success) hasil.nilai_rapor = r.data;
     else for (const i of r.error.issues) (galat[`nilai_rapor.${i.path.slice(1).join(".")}`] ??= []).push(i.message);
+    // Asal nilai (PRD 11.5): dibaca OCR, dibaca OCR lalu dikoreksi, atau diisi manual. Tidak dikenal berarti manual.
+    const sumber = SUMBER_NILAI_RAPOR.find((s) => s === mentah.sumber_nilai);
+    hasil.sumber_nilai = sumber ?? "manual";
+  }
+
+  // Saran isian dari OCR Akta dan KK (langkah 2): hanya prapengisian langkah 5 dan 6, disaring ulang di sini.
+  if (langkah === 2) {
+    const ocr = bersihkanIsianOcr(mentah.ocr);
+    if (Object.keys(ocr).length > 0) hasil.ocr = ocr;
   }
 
   // Tabel nilai ujian (langkah 7)

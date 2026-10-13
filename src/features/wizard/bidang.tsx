@@ -1,7 +1,7 @@
 "use client";
 
 import { useId } from "react";
-import { WarningCircleIcon } from "@phosphor-icons/react";
+import { FileTextIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -14,13 +14,21 @@ type Props = {
   onChange: (kunci: string, nilai: unknown) => void;
   galat?: string;
   disabled?: boolean;
+  /** Nilai ini terisi otomatis dari dokumen (OCR) dan belum diubah pendaftar. */
+  dariDokumen?: boolean;
 };
 
 const teks = (v: unknown) => (v === undefined || v === null ? "" : String(v));
 
 /** Satu field formulir sesuai tipenya (form builder dinamis, PRD 10.4). */
-export function Bidang({ f, nilai, onChange, galat, disabled }: Props) {
+export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Props) {
   const id = useId();
+  const tandaDokumen = dariDokumen ? (
+    <p className="flex items-center gap-1.5 text-sm font-medium text-info">
+      <FileTextIcon aria-hidden weight="duotone" className="size-4 shrink-0" />
+      Dari dokumen. Periksa kembali.
+    </p>
+  ) : null;
 
   if (f.tipe === "checkbox") {
     return (
@@ -66,6 +74,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled }: Props) {
           ))}
         </div>
         {f.teksBantuan && <p className="text-sm text-tinta-redup">{f.teksBantuan}</p>}
+        {tandaDokumen}
         {galat && <PesanGalat id={`${id}-galat`} pesan={galat} />}
       </fieldset>
     );
@@ -97,6 +106,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled }: Props) {
           className={cn(f.tipe === "number" && "max-w-40")}
         />
       )}
+      {tandaDokumen}
     </Field>
   );
 }

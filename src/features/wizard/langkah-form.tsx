@@ -24,6 +24,8 @@ type Props = {
   fields: DefinisiField[];
   awal: Record<string, unknown>;
   salinan?: Salinan;
+  /** Kunci -> nilai yang terisi dari OCR; ditandai "Dari dokumen" selama belum diubah. */
+  dariDokumen?: Record<string, string>;
   /** Konten tambahan di atas form (mis. persyaratan dan teks persetujuan). */
   pembuka?: ReactNode;
   labelLanjut?: string;
@@ -37,7 +39,7 @@ const LABEL_UJIAN: Record<string, string> = {
 };
 
 /** Form generik untuk langkah 1, 5, 6, dan 7: field dari form builder + validasi sama dengan server. */
-export function LangkahForm({ langkah, fields, awal, salinan, pembuka, labelLanjut = "Simpan dan lanjut" }: Props) {
+export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembuka, labelLanjut = "Simpan dan lanjut" }: Props) {
   const router = useRouter();
   const daftar = fieldBiasa(fields, langkah);
   const adaUjian = fields.some((f) => f.kunci === "nilai_ujian");
@@ -72,6 +74,8 @@ export function LangkahForm({ langkah, fields, awal, salinan, pembuka, labelLanj
     if (adaUjian) hasil.nilai_ujian = ujian;
     return hasil;
   }
+
+  const tandaDokumen = (kunci: string) => dariDokumen?.[kunci] !== undefined && nilai[kunci] === dariDokumen[kunci];
 
   function fokusGalatPertama() {
     requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("[aria-invalid=true]")?.focus());
@@ -127,10 +131,10 @@ export function LangkahForm({ langkah, fields, awal, salinan, pembuka, labelLanj
                 <input type="checkbox" checked={sama} onChange={(e) => setSama(e.target.checked)} className="mt-1 size-5 shrink-0 accent-primer" />
                 <span>{salinan.label}</span>
               </label>
-              <Bidang f={f} nilai={nilai[f.kunci]} onChange={ubah} galat={galat[f.kunci] || undefined} disabled={terkunci.has(f.kunci)} />
+              <Bidang f={f} nilai={nilai[f.kunci]} onChange={ubah} galat={galat[f.kunci] || undefined} disabled={terkunci.has(f.kunci)} dariDokumen={tandaDokumen(f.kunci)} />
             </div>
           ) : (
-            <Bidang key={f.kunci} f={f} nilai={nilai[f.kunci]} onChange={ubah} galat={galat[f.kunci] || undefined} disabled={terkunci.has(f.kunci)} />
+            <Bidang key={f.kunci} f={f} nilai={nilai[f.kunci]} onChange={ubah} galat={galat[f.kunci] || undefined} disabled={terkunci.has(f.kunci)} dariDokumen={tandaDokumen(f.kunci)} />
           ),
         )}
       </div>

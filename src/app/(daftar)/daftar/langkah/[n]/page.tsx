@@ -10,6 +10,7 @@ import { NAMA_LANGKAH, TOTAL_LANGKAH, rataMapel, type DefinisiField, type NilaiR
 import { Transisi } from "@/features/wizard/transisi";
 import { formatTanggal } from "@/lib/format";
 import { NAMA_COOKIE_DRAF, ambilDraf, ambilKonfigWizard, muatDefinisiField, rekomendasiDraf, type Berkas } from "@/server/services/draf";
+import { muatMapelUntukOcr } from "@/server/services/ocr";
 import { mapelBerbobot, muatBobotJurusan } from "@/server/services/rekomendasi";
 
 export const metadata = { title: "Pendaftaran", robots: { index: false } };
@@ -70,10 +71,21 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
     const slot = doLangkah
       .filter((f) => f.tipe === "file")
       .map((f) => ({ kunci: f.kunci, label: f.label, wajib: f.wajib, bantuan: f.teksBantuan ?? undefined }));
-    isi = <LangkahAkta slot={slot} berkas={Object.fromEntries(slot.map((s) => [s.kunci, daftarBerkas(draf.berkas[s.kunci])]))} />;
+    isi = (
+      <LangkahAkta
+        slot={slot}
+        berkas={Object.fromEntries(slot.map((s) => [s.kunci, daftarBerkas(draf.berkas[s.kunci])]))}
+        namaMurid={String(draf.data["1"]?.nama_lengkap ?? "")}
+        tanggalLahir={String(draf.data["1"]?.tanggal_lahir ?? "")}
+        awalOcr={(awal.ocr ?? {}) as Record<string, string>}
+      />
+    );
   } else if (n === 3) {
     const [konfig, bobot] = await Promise.all([ambilKonfigWizard(), muatBobotJurusan()]);
     const def = doLangkah.find((f) => f.kunci === "rapor");
+    const mapelRapor = mapelBerbobot(bobot);
+    const mapelOcr = await muatMapelUntukOcr(mapelRapor.map((m) => m.kode));
+    const aliasMapel = new Map(mapelOcr.map((m) => [m.kode, m.alias]));
     isi = (
       <LangkahRapor
         slot={{
@@ -84,7 +96,7 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
           bantuan: "Unggah semua halaman rapor yang memuat nilai, bisa beberapa berkas (maksimal 10).",
         }}
         berkas={daftarBerkas(draf.berkas.rapor)}
-        mapel={mapelBerbobot(bobot).map((m) => ({ kode: m.kode, nama: m.nama }))}
+        mapel={mapelRapor.map((m) => ({ kode: m.kode, nama: m.nama, alias: aliasMapel.get(m.kode) ?? [] }))}
         semester={konfig.semester}
         awal={awal.nilai_rapor as NilaiRapor | undefined}
       />
@@ -142,7 +154,11 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
               sumber: dataMurid,
             }
           : undefined;
-    isi = <LangkahForm langkah={n} fields={doLangkah} awal={awal} salinan={salinan} />;
+    // Saran dari OCR Akta dan KK (langkah 2) mengisi field yang belum pernah disimpan pendaftar.
+    const saranOcr = (draf.data["2"]?.ocr ?? {}) as Record<string, string>;
+    const kunciLangkah = new Set(doLangkah.map((f) => f.kunci));
+    const dariDokumen = Object.fromEntries(Object.entries(saranOcr).filter(([k]) => kunciLangkah.has(k) && (awal[k] === undefined || awal[k] === saranOcr[k])));
+    isi = <LangkahForm langkah={n} fields={doLangkah} awal={{ ...dariDokumen, ...awal }} salinan={salinan} dariDokumen={dariDokumen} />;
   }
 
   return (

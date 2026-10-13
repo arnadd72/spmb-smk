@@ -58,3 +58,6 @@ __pycache__/
 .venv/
 
 /src/generated/prisma
+
+# runtime WASM OCR, disalin dari node_modules oleh scripts/salin-wasm-ocr.mjs
+/public/ocr/ort/

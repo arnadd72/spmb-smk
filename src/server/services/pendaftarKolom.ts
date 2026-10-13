@@ -16,7 +16,8 @@ export const KOLOM_DIKENAL = new Set([
 ]);
 export const KOLOM_TERENKRIPSI = new Set(["nik", "no_kk", "no_hp", "no_wa", "no_hp_ortu"]);
 /** Field yang tidak masuk kolom: ditangani terpisah. */
-export const KUNCI_DILEWATI = new Set(["setuju", "konfirmasi_final", "jurusan_1", "jurusan_2", "nilai_rapor"]);
+/** `ocr` dan `sumber_nilai` hanya pembawa data wizard (saran OCR dan asal nilai rapor), bukan isian pendaftar. */
+export const KUNCI_DILEWATI = new Set(["setuju", "konfirmasi_final", "jurusan_1", "jurusan_2", "nilai_rapor", "ocr", "sumber_nilai"]);
 
 export const camel = (k: string) => k.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 

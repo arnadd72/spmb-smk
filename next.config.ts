@@ -23,7 +23,14 @@ const nextConfig: NextConfig = {
   // aset dev (/_next/...) diblokir dari origin selain localhost, sehingga JS klien (GSAP, Lenis) tidak jalan.
   // Build produksi tidak membutuhkannya.
   allowedDevOrigins: ["*.ngrok-free.app", "*.ngrok-free.dev", "*.ngrok.app", "*.ngrok.dev", "*.ngrok.io"],
+  // Model dan runtime WASM OCR jarang berubah dan berukuran besar: biarkan browser menyimpannya seminggu.
+  async headers() {
+    return [{ source: "/ocr/:path*", headers: [{ key: "Cache-Control", value: "public, max-age=604800" }] }];
+  },
   turbopack: {
+    // OCR di browser (PRD v4 11.2): pakai build WASM onnxruntime-web (sekitar 14 MB), bukan build WebGPU (28 MB) yang
+    // dipilih secara bawaan. Berkas runtime-nya disalin ke public/ocr/ort oleh scripts/salin-wasm-ocr.mjs.
+    resolveAlias: { "onnxruntime-web": "onnxruntime-web/wasm" },
     rules: {
       "*.css": {
         loaders: ["@tailwindcss/turbopack"],

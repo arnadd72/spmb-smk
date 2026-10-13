@@ -1,5 +1,4 @@
 import { EmptyState } from "@/components/ui/empty-state";
-import { BatangProgres } from "@/features/admin/dashboard/grafik";
 import { statistikOcr } from "@/server/actions/auditLog";
 import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
@@ -11,34 +10,30 @@ const NAMA = { akta: "Akta kelahiran", kk: "Kartu keluarga", rapor: "Rapor" } as
 export default async function HalamanStatistikOcr() {
   await wajibPeranHalaman(...PERAN.sistem);
   const s = await statistikOcr();
-  const persenKuota = Math.round((s.bulanIni / s.kuotaGratis) * 100);
 
   return (
     <div className="mx-auto max-w-4xl">
       <h1 className="text-3xl font-bold text-ink">Statistik OCR</h1>
       <p className="mt-1 max-w-[64ch] text-tinta-redup">
-        Pemakaian pembacaan dokumen otomatis (Google Vision): jumlah per jenis, tingkat berhasil, dan kecepatan. Kuota gratis bulanan {s.kuotaGratis} pembacaan.
+        Pembacaan dokumen otomatis berjalan di HP pendaftar (tanpa biaya dan tanpa kuota). Tabel ini menunjukkan jumlah per jenis, tingkat berhasil, dan kecepatan baca. Pembacaan yang gagal atau terlalu lama membuat pendaftar mengisi data secara manual.
       </p>
 
       {s.total === 0 ? (
         <div className="mt-6">
           <EmptyState
             judul="Belum ada pembacaan OCR"
-            deskripsi="Fitur baca dokumen otomatis belum aktif, sehingga pendaftar mengisi data secara manual. Statistik muncul di sini setelah OCR diaktifkan."
+            deskripsi="Belum ada pendaftar yang mengunggah dokumen. Statistik muncul di sini setelah pembacaan pertama."
           />
         </div>
       ) : (
         <>
-          <section aria-labelledby="kuota-ocr" className="mt-6 rounded-kartu border border-garis bg-permukaan p-4">
-            <h2 id="kuota-ocr" className="text-lg font-bold text-ink">
-              Pemakaian bulan ini
+          <section aria-labelledby="bulan-ocr" className="mt-6 rounded-kartu border border-garis bg-permukaan p-4">
+            <h2 id="bulan-ocr" className="text-lg font-bold text-ink">
+              Pembacaan bulan ini
             </h2>
             <p className="mt-1 text-sm text-tinta-redup">
-              <span className="angka font-semibold text-tinta">{s.bulanIni}</span> dari <span className="angka">{s.kuotaGratis}</span> pembacaan gratis ({persenKuota}%).
+              <span className="angka font-semibold text-tinta">{s.bulanIni}</span> pembacaan dari <span className="angka">{s.total}</span> pembacaan tercatat.
             </p>
-            <div className="mt-2">
-              <BatangProgres persen={persenKuota} nada={persenKuota >= 100 ? "bahaya" : persenKuota >= 80 ? "peringatan" : "primer"} />
-            </div>
           </section>
 
           <div className="relative mt-5 overflow-x-auto rounded-kartu border border-garis bg-permukaan">

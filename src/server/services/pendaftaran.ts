@@ -98,7 +98,7 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
         namaLengkap: String(semua.nama_lengkap),
         ...kolom,
         nilaiRapor: JSON.parse(JSON.stringify(rapor)),
-        nilaiRaporSumber: "manual",
+        nilaiRaporSumber: typeof semua.sumber_nilai === "string" ? semua.sumber_nilai : "manual",
         rekomendasiJurusanId: terbaik ? BigInt(terbaik.jurusanId) : null,
         rekomendasiSkor: JSON.parse(JSON.stringify(rekom.peringkat)),
         rekomendasiVersi: rekom.versi,

@@ -42,5 +42,5 @@ Aturan lapisan dan cara kerja agen AI: [`CLAUDE.md`](CLAUDE.md).
 
 ## Layanan eksternal
 
-Google Drive, Google Vision, Supabase Storage, dan Resend dipasang bertahap; kredensialnya diisi di `.env`
+Google Drive, Supabase Storage, dan Resend dipasang bertahap; kredensialnya diisi di `.env`
 (lihat `.env.example`). Tanpa kredensial, fitur terkait menjawab galat yang jelas dan sisanya tetap berjalan.

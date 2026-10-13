@@ -70,7 +70,7 @@ export async function daftarAudit(f: FilterAudit) {
   };
 }
 
-/** Ringkasan penggunaan OCR dari tabel OcrHasil (PRD v3.1 13.11). Kosong sampai OCR aktif di A5. */
+/** Ringkasan penggunaan OCR dari tabel OcrHasil (PRD v4 13.11). OCR berjalan di perangkat pendaftar, jadi tidak ada kuota. */
 export async function statistikOcr() {
   const baris = await prisma.ocrHasil.findMany({ select: { jenis: true, provider: true, sukses: true, durasiMs: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 20000 });
   const persentil = (urut: number[], p: number) => (urut.length === 0 ? 0 : urut[Math.min(urut.length - 1, Math.ceil((p / 100) * urut.length) - 1)]);
@@ -87,5 +87,5 @@ export async function statistikOcr() {
       p95: persentil(durasi, 95),
     };
   });
-  return { total: baris.length, bulanIni: baris.filter((x) => x.createdAt >= awalBulan).length, kuotaGratis: 1000, perJenis };
+  return { total: baris.length, bulanIni: baris.filter((x) => x.createdAt >= awalBulan).length, perJenis };
 }

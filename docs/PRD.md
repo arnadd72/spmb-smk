@@ -941,6 +941,16 @@ npx prisma migrate dev --name init
 | D3 | Rate limiting: Upstash Redis vs tabel manual | Mulai dari tabel manual (lebih sederhana, tanpa akun tambahan), pindah ke Upstash bila perlu lebih presisi |
 | D5 | **Cadangan bila Vercel Hobby/Supabase Free ternyata tidak cukup saat trafik tinggi** | Upgrade bertahap: Vercel Pro ($20/bln) dulu (paling murah & langsung), baru Supabase Pro bila 500 MB kelewat |
 | D6 | **Tingkatkan OCR bila akurasi PaddleOCR di browser kurang pada foto asli** | Uji dulu dengan foto asli (1.4), lalu urutan: praproses, model `small`, atau Google Vision/Document AI hanya sebagai cadangan |
+| D7 | **Cara pendaftar menerima kode pendaftaran: email (Resend atau Brevo) atau WhatsApp** (belum diputuskan pemilik proyek, 13 Okt 2026) | Opsi dan catatan di bawah tabel ini. Sampai diputuskan, kode tetap tampil di halaman sukses dan di PDF formulir, dan email lewat Resend tetap berjalan bila pendaftar mengisinya |
+
+**Catatan D7: opsi pengiriman kode pendaftaran (dicatat 13 Okt 2026, belum dikerjakan).**
+
+- **Email lewat Resend (sekarang):** kuota gratis ±100 email per hari dan 3.000 per bulan. Cukup bila hanya sebagian pendaftar mengisi email (isian email bersifat opsional). Tidak cukup bila sekitar 200 pendaftar per hari semuanya mengisi email.
+- **Email lewat Brevo:** kuota gratis ±300 email per hari menurut artikel perbandingan (angka harus dicek ulang di halaman harga Brevo sebelum dipakai). Cukup untuk ±200 per hari. Kiriman di atas kuota gagal (tidak ditunda), tetapi aplikasi sudah mengulang email tertunda lewat cron harian. Pindah dari Resend cukup memakai REST API lewat `fetch` (tanpa library baru), tetapi mengganti penyedia email termasuk perubahan arsitektur sehingga PRD diperbarui dulu dan persetujuan pemilik proyek diminta.
+- **WhatsApp otomatis lewat API resmi Meta (lewat penyedia seperti Qontak):** pesan pertama dari sekolah berbayar per pesan (tarif untuk Indonesia belum terverifikasi) dan butuh akun bisnis terverifikasi serta template yang disetujui Meta.
+- **WhatsApp otomatis lewat gateway tidak resmi (misalnya Fonnte, tersambung lewat QR):** murah, tetapi melanggar aturan WhatsApp sehingga nomor sekolah berisiko diblokir, dan kode pendaftaran (yang membuka status dan PDF pendaftar) lewat pihak ketiga tidak resmi. Tidak disarankan.
+- **Fitur "Simpan kode ke WhatsApp" (disetujui sebagai calon fitur, belum dikerjakan):** tombol di halaman sukses yang membuka WhatsApp pendaftar dengan pesan yang sudah terisi (nomor pendaftaran, kode akses, tautan cek status) lewat tautan `https://wa.me/?text=...`. Pendaftar menekan kirim sendiri ke nomornya sendiri atau orang tuanya. Gratis, tanpa API, tanpa pihak ketiga, dan tanpa risiko blokir; kekurangannya tidak otomatis. Dapat dipakai bersama email sebagai cadangan. Kodenya kecil: satu tombol di `src/app/(daftar)/daftar/sukses/[token]/page.tsx` ditambah satu test e2e.
+- **Keputusan yang ditunggu:** pemilik proyek memilih antara email (tetap Resend atau pindah Brevo), WhatsApp, atau gabungan. Setelah itu PRD Bagian 10.7 dan 14 diperbarui bersama kodenya.
 
 **Untuk pemilik proyek / pihak sekolah**
 

@@ -11,7 +11,7 @@ export const metadata = {
 
 const SIAPKAN = [
   "Akta kelahiran dan kartu keluarga (foto atau pindaian, opsional namun disarankan)",
-  "Rapor SMP/MTs, semester 1 sampai 5",
+  "Nilai rapor SMP/MTs (opsional; untuk mendapat saran jurusan)",
   "NISN dan NIK, nomor HP atau WhatsApp yang aktif",
   "Data orang tua: nama, pekerjaan, penghasilan, dan alamat",
 ];

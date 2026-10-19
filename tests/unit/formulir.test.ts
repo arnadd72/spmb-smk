@@ -33,10 +33,14 @@ const contoh: DataFormulir = {
   kecamatan: "Wangon",
   kabupaten: "Banyumas",
   namaAyah: "Slamet Riyadi",
+  ayahTempatLahir: "Banyumas",
+  ayahTanggalLahir: new Date("1980-03-03T00:00:00Z"),
   ayahTtl: "Banyumas, 3 Maret 1980",
   ayahPendidikan: "SMA/SMK",
   pekerjaanAyah: "Wiraswasta",
   namaIbu: "Siti Aminah",
+  ibuTempatLahir: "Cilacap",
+  ibuTanggalLahir: new Date("1983-07-12T00:00:00Z"),
   ibuTtl: "Cilacap, 12 Juli 1983",
   ibuPendidikan: "SMP",
   pekerjaanIbu: "Ibu Rumah Tangga",
@@ -66,7 +70,7 @@ const contoh: DataFormulir = {
   hobiLain: "Membaca",
   ukuranSeragam: "L",
   jurusan1: { kode: "AKL", nama: "Akuntansi dan Keuangan Lembaga" },
-  jurusan2: { kode: "FKK", nama: "Farmasi Klinis dan Komunitas" },
+  jurusan2: { kode: "LPK3", nama: "Layanan Penunjang Kefarmasian Klinis dan Komunitas" },
 };
 
 /** Seluruh content stream satu halaman (teks dari pdf-lib berupa string heksadesimal WinAnsi). */
@@ -139,6 +143,15 @@ describe("PDF formulir (PRD 15.1)", () => {
     const n = nilaiSlot(contoh);
     expect(n.email).toBe("ahmad@contoh.id");
     expect(n.ttl).toBe("Banyumas, 17 MEI 2011");
+  });
+
+  it("menggabungkan field lahir orang tua untuk PDF dan memakai TTL lama sebagai fallback", () => {
+    const n = nilaiSlot(contoh);
+    expect(n.ayahTtl).toBe("Banyumas, 3 MARET 1980");
+    expect(n.ibuTtl).toBe("Cilacap, 12 JULI 1983");
+    const lama = nilaiSlot({ ...contoh, ayahTempatLahir: null, ayahTanggalLahir: null, ibuTempatLahir: null, ibuTanggalLahir: null });
+    expect(lama.ayahTtl).toBe("Banyumas, 3 Maret 1980");
+    expect(lama.ibuTtl).toBe("Cilacap, 12 Juli 1983");
   });
 });
 

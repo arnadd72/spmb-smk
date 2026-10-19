@@ -37,7 +37,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         <Baris judul="Dikirim pada" nilai={formatTanggal(r.dikirimPada)} />
         <Baris judul="Pilihan jurusan 1" nilai={r.jurusan1 ? `${r.jurusan1.kode} · ${r.jurusan1.nama}` : "-"} />
         <Baris judul="Pilihan jurusan 2" nilai={r.jurusan2 ? `${r.jurusan2.kode} · ${r.jurusan2.nama}` : "-"} />
-        <Baris judul="Saran jurusan dari nilai rapor" nilai={r.rekomendasi ? `${r.rekomendasi.kode} · ${r.rekomendasi.nama}` : "-"} />
+        <Baris judul="Saran jurusan dari nilai rapor" nilai={r.rekomendasi ? `${r.rekomendasi.kode} · ${r.rekomendasi.nama}` : "Tidak dihitung (nilai rapor kosong)"} />
       </dl>
 
       <section aria-labelledby="langkah-lanjut" className="mt-10 border-t border-garis pt-6">
@@ -46,7 +46,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         </h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-tinta">
           <li>Panitia memverifikasi data dan berkas Anda.</li>
-          <li>Bawa berkas asli (akta, kartu keluarga, rapor) saat verifikasi berkas fisik di sekolah.</li>
+          <li>Bawa akta dan kartu keluarga saat verifikasi. Rapor dapat dibawa bila tersedia, terutama jika Anda mengisi nilai rapor.</li>
           <li>Pantau hasilnya lewat halaman Cek Status.</li>
         </ol>
         {konfig.waGroup.startsWith("https://") && (

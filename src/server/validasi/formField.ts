@@ -3,7 +3,7 @@ import { z } from "zod";
 // Form builder (PRD v3.1 Bagian 14): pengaturan isian formulir pendaftaran per langkah. Satu skema untuk server dan form admin.
 
 /** Isian inti: dipakai kolom wajib, cek status, atau alur wizard, sehingga tidak boleh disembunyikan atau dijadikan opsional. */
-export const KUNCI_INTI = new Set(["nama_lengkap", "nisn", "tanggal_lahir", "setuju", "jurusan_1", "nilai_rapor", "konfirmasi_final"]);
+export const KUNCI_INTI = new Set(["nama_lengkap", "nisn", "tanggal_lahir", "setuju", "jurusan_1", "konfirmasi_final"]);
 
 /** Langkah yang boleh diberi isian kustom, dan tipe yang didukung wizard. */
 export const LANGKAH_KUSTOM = [2, 5, 6, 7] as const;

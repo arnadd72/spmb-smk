@@ -196,10 +196,20 @@ model Pendaftar {
   kabupaten       String?
   propinsi        String?
   namaAyah        String?
+  /// Terenkripsi.
+  nikAyah         String?
+  ayahTempatLahir String?
+  ayahTanggalLahir DateTime? @db.Date
+  /// Data lama, dipertahankan untuk kompatibilitas PDF.
   ayahTtl         String?
   ayahPendidikan  String?
   pekerjaanAyah   String?
   namaIbu         String?
+  /// Terenkripsi.
+  nikIbu          String?
+  ibuTempatLahir  String?
+  ibuTanggalLahir DateTime? @db.Date
+  /// Data lama, dipertahankan untuk kompatibilitas PDF.
   ibuTtl          String?
   ibuPendidikan   String?
   pekerjaanIbu    String?

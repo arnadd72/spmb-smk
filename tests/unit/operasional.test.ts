@@ -72,12 +72,12 @@ describe("kuota", () => {
   });
 
   it("simpan massal: hanya yang berubah, dicatat di audit lama/baru", async () => {
-    const h = await simpanKuota({ kuota: { AKL: 80, MPLB: 72, FKK: "60", TKR: 72 } }, ctx);
-    expect(h.berubah.sort()).toEqual(["AKL", "FKK"]);
-    expect((await prisma.jurusan.findUniqueOrThrow({ where: { kode: "FKK" } })).kuota).toBe(60);
+    const h = await simpanKuota({ kuota: { AKL: 80, MPLB: 72, LPK3: "60", TKR: 72 } }, ctx);
+    expect(h.berubah.sort()).toEqual(["AKL", "LPK3"]);
+    expect((await prisma.jurusan.findUniqueOrThrow({ where: { kode: "LPK3" } })).kuota).toBe(60);
     const audit = await prisma.auditLog.findFirstOrThrow({ where: { aksi: "kuota.ubah" } });
-    expect(audit.dataLama).toEqual({ AKL: 72, FKK: 72 });
-    expect(audit.dataBaru).toEqual({ AKL: 80, FKK: 60 });
+    expect(audit.dataLama).toEqual({ AKL: 72, LPK3: 72 });
+    expect(audit.dataBaru).toEqual({ AKL: 80, LPK3: 60 });
     expect((await simpanKuota({ kuota: { AKL: 80 } }, ctx)).berubah).toEqual([]);
   });
 

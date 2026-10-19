@@ -148,7 +148,16 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
     const saranOcr = (draf.data["2"]?.ocr ?? {}) as Record<string, string>;
     const kunciLangkah = new Set(doLangkah.map((f) => f.kunci));
     const dariDokumen = Object.fromEntries(Object.entries(saranOcr).filter(([k]) => kunciLangkah.has(k) && (awal[k] === undefined || awal[k] === saranOcr[k])));
-    isi = <LangkahForm langkah={n} fields={doLangkah} awal={{ ...dariDokumen, ...awal }} salinan={salinan} dariDokumen={dariDokumen} />;
+    isi = (
+      <LangkahForm
+        langkah={n}
+        fields={doLangkah}
+        awal={{ ...dariDokumen, ...awal }}
+        salinan={salinan}
+        dariDokumen={dariDokumen}
+        tanggalLahirTampilan={n === 5 ? String(draf.data["1"]?.tanggal_lahir ?? "") : undefined}
+      />
+    );
   }
 
   return (

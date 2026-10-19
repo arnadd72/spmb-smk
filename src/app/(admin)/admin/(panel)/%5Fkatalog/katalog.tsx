@@ -47,7 +47,7 @@ function Bagian({ judul, catatan, children }: { judul: string; catatan?: string;
 const jurusanOpsi = [
   { nilai: "AKL", label: "Akuntansi dan Keuangan Lembaga" },
   { nilai: "MPLB", label: "Manajemen Perkantoran dan Layanan Bisnis" },
-  { nilai: "FKK", label: "Farmasi Klinis dan Komunitas" },
+  { nilai: "LPK3", label: "Layanan Penunjang Kefarmasian Klinis dan Komunitas" },
   { nilai: "TKR", label: "Teknik Kendaraan Ringan" },
 ];
 
@@ -103,7 +103,7 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
 
       <Bagian judul="Tipografi" catatan="Clash Display untuk judul dan angka besar, Satoshi untuk isi.">
         <div className="flex flex-col gap-3">
-          <p className="font-display text-5xl font-extrabold text-primer-tua sm:text-6xl">AKL MPLB FKK TKR</p>
+          <p className="font-display text-5xl font-extrabold text-primer-tua sm:text-6xl">AKL MPLB LPK3 TKR</p>
           <h3 className="text-3xl font-bold">Belajar terampil, tumbuh berakhlak</h3>
           <p className="max-w-2xl text-base leading-relaxed">
             Isi paragraf memakai Satoshi 16 px dengan tinggi baris 1,5. Pendaftaran dibuka sesuai jadwal gelombang dan
@@ -121,7 +121,7 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
               {[
                 ["AKL", "84,1"],
                 ["MPLB", "79,4"],
-                ["FKK", "75,0"],
+                ["LPK3", "75,0"],
               ].map(([k, s]) => (
                 <tr key={k} className="border-b border-garis">
                   <td className="py-2 font-semibold">{k}</td>
@@ -285,7 +285,7 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
           <Card>Reveal: muncul sekali saat masuk layar, 350 ms.</Card>
         </Reveal>
         <StaggerList className="grid gap-3 md:grid-cols-3">
-          {["AKL", "MPLB", "FKK"].map((k) => (
+          {["AKL", "MPLB", "LPK3"].map((k) => (
             <Card key={k} className="font-display text-3xl font-extrabold text-primer-tua">
               {k}
             </Card>

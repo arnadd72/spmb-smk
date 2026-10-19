@@ -24,26 +24,17 @@ const KK_PALSU = [
   `3 ${NAMA.toUpperCase()} 3301010903060002 LAKI-LAKI CILACAP 09-03-2011`,
 ].map((t, i) => baris(t, i * 40));
 
-const RAPOR_PALSU = [
-  baris("Semester : 1 (Ganjil)", 0),
-  baris("Matematika", 40, 80, 200),
-  baris("88", 40, 400, 40),
-  baris("Bahasa Indonesia", 80, 80, 200),
-  baris("76", 80, 400, 40),
-].sort((a, b) => a.kotak[1] - b.kotak[1] || a.kotak[0] - b.kotak[0]);
-
 /** Pasang mesin OCR palsu sebelum halaman dimuat: kembalikan hasil tetap, atau gagal bila `gagal` true. */
-async function palsukanOcr(page: Page, perJenis: { kk?: unknown[]; rapor?: unknown[]; gagal?: boolean }) {
+async function palsukanOcr(page: Page, perJenis: { kk?: unknown[]; gagal?: boolean }) {
   await page.addInitScript(
-    ({ kk, rapor, gagal }) => {
-      (window as unknown as { __SPMB_OCR_PALSU__: (f: File) => Promise<unknown> }).__SPMB_OCR_PALSU__ = async (f) => {
+    ({ kk, gagal }) => {
+      (window as unknown as { __SPMB_OCR_PALSU__: (f: File) => Promise<unknown> }).__SPMB_OCR_PALSU__ = async () => {
         await new Promise((r) => setTimeout(r, 150));
         if (gagal) throw new Error("palsu: gagal");
-        const rapor_ = f.name.includes("rapor");
-        return { baris: rapor_ ? rapor : kk, lebar: 1000, tinggi: 800, sudut: 0, durasiMs: 1200 };
+        return { baris: kk, lebar: 1000, tinggi: 800, sudut: 0, durasiMs: 1200 };
       };
     },
-    { kk: perJenis.kk ?? [], rapor: perJenis.rapor ?? [], gagal: perJenis.gagal ?? false },
+    { kk: perJenis.kk ?? [], gagal: perJenis.gagal ?? false },
   );
 }
 
@@ -104,7 +95,8 @@ test.describe("OCR di wizard", () => {
     await axe(page);
 
     // Pendaftar mengoreksi alamat
-    await kartu.getByLabel("Alamat").fill("DUSUN SIDAURIP KULON");
+    await kartu.getByLabel("Alamat").fill("dusun sidaurip kulon");
+    await expect(kartu.getByLabel("Alamat")).toHaveValue("DUSUN SIDAURIP KULON");
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
@@ -125,24 +117,6 @@ test.describe("OCR di wizard", () => {
     await expect(page.getByText("Dari dokumen. Periksa kembali.")).toHaveCount(jumlahTanda - 1);
   });
 
-  test("rapor terbaca mengisi tabel nilai, menandai perubahan, dan semester bisa dipilih bila tak terdeteksi", async ({ page }) => {
-    test.setTimeout(120_000);
-    await palsukanOcr(page, { rapor: RAPOR_PALSU });
-    await mulaiSampaiLangkah2(page);
-    await lanjut(page);
-    await expect(page).toHaveURL(/\/langkah\/3$/);
-
-    await page.locator("[data-baca-rapor]").setInputFiles({ name: "rapor-1.png", mimeType: "image/png", buffer: PNG });
-    await expect(page.getByLabel("Matematika semester 1")).toHaveValue("88");
-    await expect(page.getByLabel("Bahasa Indonesia semester 1")).toHaveValue("76");
-    await expect(page.getByText("2 mata pelajaran terbaca")).toBeVisible();
-    await axe(page);
-
-    // Mengubah nilai hasil baca ditandai "Diubah"
-    await page.getByLabel("Matematika semester 1").fill("90");
-    await expect(page.getByText("Diubah", { exact: true })).toBeVisible();
-  });
-
   test("OCR gagal: pesan ramah, isi manual tetap bisa dilanjutkan", async ({ page }) => {
     test.setTimeout(120_000);
     await palsukanOcr(page, { gagal: true });
@@ -154,9 +128,8 @@ test.describe("OCR di wizard", () => {
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
-    // Rapor gagal: tabel tetap bisa diisi manual
-    await page.locator("[data-baca-rapor]").setInputFiles({ name: "rapor-1.png", mimeType: "image/png", buffer: PNG });
-    await expect(page.getByText(/tidak dapat dibaca otomatis\. Silakan isi data secara manual/)).toBeVisible();
+    // Nilai rapor diisi manual; tidak ada pemilih foto rapor.
+    await expect(page.locator("[data-baca-rapor]")).toHaveCount(0);
     await page.getByLabel("Matematika semester 1").fill("85");
     await expect(page.getByLabel("Matematika semester 1")).toHaveValue("85");
   });

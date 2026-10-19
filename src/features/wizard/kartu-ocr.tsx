@@ -67,7 +67,7 @@ export function KartuIsianOcr({ judul, kunci, saran, suntingan, awal, peringatan
                   name={`ocr_${k}`}
                   value={nilai}
                   inputMode={k === "nik" || k === "no_kk" || k === "rt" || k === "rw" ? "numeric" : undefined}
-                  onChange={(e) => onUbah(k, e.target.value)}
+                  onChange={(e) => onUbah(k, e.target.value.toLocaleUpperCase("id-ID"))}
                 />
               </Field>
               {keyakinan && keyakinan !== "NOT_FOUND" && !diubah && <BadgeKeyakinan level={keyakinan === "HIGH" ? "HIGH" : "MEDIUM"} />}

@@ -56,6 +56,7 @@ export async function seedReferensi(prisma: PrismaClient) {
 }
 
 export async function seedFormField(prisma: PrismaClient) {
+  await prisma.formField.deleteMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun", "ayah_ttl", "ibu_ttl"] } } });
   for (const f of FORM_FIELDS) {
     const { opsi, ...sisa } = f;
     await prisma.formField.upsert({

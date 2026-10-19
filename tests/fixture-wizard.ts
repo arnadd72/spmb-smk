@@ -12,6 +12,10 @@ export function nilaiValid(f: DefinisiField): unknown {
     tanggal_lahir: "2011-05-17",
     nik: "3302010101010001",
     no_kk: "3302010101010002",
+    nik_ayah: "3302010101010003",
+    nik_ibu: "3302010101010004",
+    ayah_tanggal_lahir: "1980-03-03",
+    ibu_tanggal_lahir: "1983-07-12",
     jurusan_1: "AKL",
     jurusan_2: "TKR",
   };

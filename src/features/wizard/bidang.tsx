@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, useState } from "react";
 import { FileTextIcon, WarningCircleIcon } from "@phosphor-icons/react";
 import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
@@ -19,16 +19,99 @@ type Props = {
 };
 
 const teks = (v: unknown) => (v === undefined || v === null ? "" : String(v));
+const kapitalSemua = (nilai: string) => nilai.toLocaleUpperCase("id-ID");
 
 /** Satu field formulir sesuai tipenya (form builder dinamis, PRD 10.4). */
 export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Props) {
   const id = useId();
+  const [lainnyaDipilih, setLainnyaDipilih] = useState(false);
   const tandaDokumen = dariDokumen ? (
     <p className="flex items-center gap-1.5 text-sm font-medium text-info">
       <FileTextIcon aria-hidden weight="duotone" className="size-4 shrink-0" />
       Dari dokumen. Periksa kembali.
     </p>
   ) : null;
+
+  if (f.kunci === "referensi_pendaftar" && f.tipe === "text" && f.opsi?.length) {
+    const labelLainnya = "Lainnya (tulis sendiri)";
+    const pilihanLainnya = f.opsi.find((o) => o.nilai === labelLainnya);
+    const pilihanBiasa = f.opsi.filter((o) => o.nilai !== labelLainnya);
+    const nilaiSekarang = teks(nilai);
+    const nilaiPreset = pilihanBiasa.some((o) => o.nilai === nilaiSekarang);
+    const lainnyaAktif = lainnyaDipilih || (nilaiSekarang !== "" && !nilaiPreset);
+
+    return (
+      <fieldset className="sm:col-span-2" aria-describedby={galat ? `${id}-galat` : undefined}>
+        <legend className="text-sm font-semibold text-tinta">
+          {f.label}
+          {f.wajib && <span aria-hidden className="ml-0.5 text-bahaya">*</span>}
+          {f.wajib && <span className="sr-only"> (wajib diisi)</span>}
+        </legend>
+        {f.teksBantuan && <p className="mt-1 text-sm text-tinta-redup">{f.teksBantuan}</p>}
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {pilihanBiasa.map((o) => (
+            <label
+              key={o.nilai}
+              className={cn(
+                "flex min-h-11 cursor-pointer items-center gap-2 rounded-kontrol border px-3 py-2 text-sm font-medium",
+                nilaiSekarang === o.nilai ? "border-primer bg-mint text-ink" : "border-garis bg-permukaan text-tinta hover:bg-permukaan-alt",
+              )}
+            >
+              <input
+                type="radio"
+                name={f.kunci}
+                value={o.nilai}
+                checked={nilaiSekarang === o.nilai}
+                onChange={() => {
+                  setLainnyaDipilih(false);
+                  onChange(f.kunci, o.nilai);
+                }}
+                disabled={disabled}
+                className="size-4 shrink-0 accent-primer"
+              />
+              {o.label}
+            </label>
+          ))}
+          {pilihanLainnya && (
+            <label
+              className={cn(
+                "flex min-h-11 cursor-pointer items-center gap-2 rounded-kontrol border px-3 py-2 text-sm font-medium",
+                lainnyaAktif ? "border-primer bg-mint text-ink" : "border-garis bg-permukaan text-tinta hover:bg-permukaan-alt",
+              )}
+            >
+              <input
+                type="radio"
+                name={f.kunci}
+                value={labelLainnya}
+                checked={lainnyaAktif}
+                onChange={() => {
+                  setLainnyaDipilih(true);
+                  onChange(f.kunci, "");
+                }}
+                disabled={disabled}
+                className="size-4 shrink-0 accent-primer"
+              />
+              {pilihanLainnya.label}
+            </label>
+          )}
+        </div>
+        {lainnyaAktif && (
+          <label className="mt-3 flex max-w-xl flex-col gap-1.5 text-sm font-semibold text-tinta">
+            Tulis sumber lainnya
+            <Input
+              id={`${id}-lainnya`}
+              name={f.kunci}
+              value={nilaiPreset ? "" : nilaiSekarang}
+              onChange={(e) => onChange(f.kunci, kapitalSemua(e.target.value))}
+              disabled={disabled}
+              placeholder="Contoh: kunjungan ke sekolah"
+            />
+          </label>
+        )}
+        {galat && <PesanGalat id={`${id}-galat`} pesan={galat} />}
+      </fieldset>
+    );
+  }
 
   if (f.tipe === "checkbox") {
     return (
@@ -57,7 +140,12 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           {f.wajib && <span aria-hidden className="ml-0.5 text-bahaya">*</span>}
           {f.wajib && <span className="sr-only"> (wajib diisi)</span>}
         </legend>
-        <div className="mt-1.5 flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:gap-x-6">
+        <div
+          className={cn(
+            "mt-1.5 gap-x-6 gap-y-1",
+            f.kunci === "penghasilan" ? "grid grid-cols-1 sm:grid-cols-2" : "flex flex-col sm:flex-row sm:flex-wrap",
+          )}
+        >
           {f.opsi?.map((o) => (
             <label key={o.nilai} className="flex min-h-11 cursor-pointer items-center gap-3 text-base text-tinta">
               <input
@@ -92,7 +180,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           name={f.kunci}
         />
       ) : f.tipe === "textarea" ? (
-        <Textarea value={teks(nilai)} onChange={(e) => onChange(f.kunci, e.target.value)} disabled={disabled} name={f.kunci} />
+        <Textarea value={teks(nilai)} onChange={(e) => onChange(f.kunci, kapitalSemua(e.target.value))} disabled={disabled} name={f.kunci} />
       ) : (
         <Input
           name={f.kunci}
@@ -100,7 +188,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           inputMode={f.tipe === "number" ? "numeric" : f.kunci === "nisn" || f.kunci === "nik" || f.kunci === "no_kk" ? "numeric" : undefined}
           autoComplete={AUTOFILL[f.kunci]}
           value={teks(nilai)}
-          onChange={(e) => onChange(f.kunci, e.target.value)}
+          onChange={(e) => onChange(f.kunci, f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)}
           disabled={disabled}
           placeholder={f.placeholder ?? undefined}
           className={cn(f.tipe === "number" && "max-w-40")}

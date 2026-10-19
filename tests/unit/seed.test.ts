@@ -25,9 +25,10 @@ describe("seed referensi", () => {
     expect(j.map((x) => [x.kode, x.kuota])).toEqual([
       ["AKL", 72],
       ["MPLB", 72],
-      ["FKK", 72],
+      ["LPK3", 72],
       ["TKR", 108],
     ]);
+    expect(j.find((x) => x.kode === "LPK3")?.nama).toBe("Layanan Penunjang Kefarmasian Klinis dan Komunitas");
   });
 
   it("total bobot tiap jurusan tepat 1,00", async () => {
@@ -69,11 +70,23 @@ describe("seed referensi", () => {
 });
 
 describe("seed form field", () => {
-  it("nilai_rapor terkunci dan wajib (tidak bisa dimatikan selama rekomendasi aktif)", async () => {
+  it("nilai_rapor terkunci tetapi opsional", async () => {
     for (const kunci of ["nilai_rapor"]) {
       const f = await prisma.formField.findUniqueOrThrow({ where: { kunci } });
-      expect(f).toMatchObject({ terkunci: true, wajib: true, langkah: 3 });
+      expect(f).toMatchObject({ terkunci: true, wajib: false, langkah: 3 });
     }
+  });
+
+  it("sumber informasi pendaftar wajib dipilih", async () => {
+    const f = await prisma.formField.findUniqueOrThrow({ where: { kunci: "referensi_pendaftar" } });
+    expect(f.wajib).toBe(true);
+  });
+
+  it("tempat dan tanggal lahir ayah dan ibu terpisah", async () => {
+    const fields = await prisma.formField.findMany({ where: { kunci: { in: ["ayah_tempat_lahir", "ayah_tanggal_lahir", "ibu_tempat_lahir", "ibu_tanggal_lahir"] } } });
+    expect(fields).toHaveLength(4);
+    expect(fields.every((f) => f.wajib)).toBe(true);
+    expect(fields.filter((f) => f.tipe === "date").map((f) => f.kunci)).toEqual(expect.arrayContaining(["ayah_tanggal_lahir", "ibu_tanggal_lahir"]));
   });
 
   it("langkah 1 sampai 8 semuanya punya field, kunci unik, urutan terisi", async () => {
@@ -85,11 +98,27 @@ describe("seed form field", () => {
   it("opsi penghasilan berkode 01 sampai 05", async () => {
     const f = await prisma.formField.findUniqueOrThrow({ where: { kunci: "penghasilan" } });
     expect((f.opsi as { nilai: string }[]).map((o) => o.nilai)).toEqual(["01", "02", "03", "04", "05"]);
+    expect((f.opsi as { label: string }[]).map((o) => o.label)).toEqual([
+      "Kurang dari Rp500.000",
+      "Rp500.000–999.999",
+      "Rp1.000.000–1.999.999",
+      "Rp2.000.000–4.999.999",
+      "Rp5.000.000 atau lebih",
+    ]);
   });
 
-  it("field opsional sesuai lampiran: email, no_wa, no_ijazah tidak wajib", async () => {
-    const f = await prisma.formField.findMany({ where: { kunci: { in: ["email", "no_wa", "no_ijazah", "nik"] } } });
+  it("nomor ijazah tidak dipakai; email dan no_wa opsional, NIK wajib", async () => {
+    const f = await prisma.formField.findMany({ where: { kunci: { in: ["email", "no_wa", "nik"] } } });
     const wajib = Object.fromEntries(f.map((x) => [x.kunci, x.wajib]));
-    expect(wajib).toEqual({ email: false, no_wa: false, no_ijazah: false, nik: true });
+    expect(wajib).toEqual({ email: false, no_wa: false, nik: true });
+    expect(await prisma.formField.findMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun"] } } })).toHaveLength(0);
+  });
+
+  it("NIK ayah dan ibu wajib dengan petunjuk 16 digit", async () => {
+    const fields = await prisma.formField.findMany({ where: { kunci: { in: ["nik_ayah", "nik_ibu"] } }, orderBy: { kunci: "asc" } });
+    expect(fields.map((f) => [f.kunci, f.wajib, f.teksBantuan])).toEqual([
+      ["nik_ayah", true, "16 digit angka."],
+      ["nik_ibu", true, "16 digit angka."],
+    ]);
   });
 });

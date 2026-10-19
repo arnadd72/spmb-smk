@@ -3,13 +3,14 @@ import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/
 import { terdaftarPerJurusan } from "@/server/services/kuota";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
-import { hitungRekomendasi, mapelBerbobot, muatBobotJurusan, type HasilRekomendasi } from "@/server/services/rekomendasi";
+import { hitungRekomendasi, muatBobotJurusan, versiBobot, type HasilRekomendasi } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 import { KUNCI_INTI } from "@/server/validasi/formField";
 import { SUMBER_NILAI_RAPOR, bersihkanIsianOcr } from "@/server/validasi/ocr";
 import {
   KUNCI_FILE_KHUSUS,
   TOTAL_LANGKAH,
+  adaNilaiRapor,
   skemaLangkah,
   skemaNilaiRapor,
   skemaNilaiUjian,
@@ -149,7 +150,14 @@ async function wajibDraf(token: string | undefined): Promise<BarisDraf> {
 function bacaData(baris: BarisDraf): DataDraf {
   const mentah = baris.data as { v?: string } | null;
   if (!mentah?.v) return {};
-  return JSON.parse(dekripsi(mentah.v)) as DataDraf;
+  const data = JSON.parse(dekripsi(mentah.v)) as DataDraf;
+  const pilihan = data["4"];
+  if (pilihan) {
+    for (const kunci of ["jurusan_1", "jurusan_2"]) {
+      if (pilihan[kunci] === "FKK") pilihan[kunci] = "LPK3";
+    }
+  }
+  return data;
 }
 
 const bungkusData = (d: DataDraf) => ({ v: enkripsi(JSON.stringify(d)) });
@@ -320,8 +328,8 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
 }
 
 export async function konteksValidasi(): Promise<KonteksValidasi & { konfig: KonfigWizard }> {
-  const [fields, konfig, bobot] = await Promise.all([muatDefinisiField(), ambilKonfigWizard(), muatBobotJurusan()]);
-  return { fields, konfig, semester: konfig.semester, mapelWajib: mapelBerbobot(bobot).map((m) => m.kode) };
+  const [fields, konfig] = await Promise.all([muatDefinisiField(), ambilKonfigWizard()]);
+  return { fields, konfig, semester: konfig.semester, mapelWajib: [] };
 }
 
 export async function simpanLangkah(token: string | undefined, langkah: number, input: unknown): Promise<{ langkahTerakhir: number }> {
@@ -353,10 +361,8 @@ export async function simpanLangkah(token: string | undefined, langkah: number, 
 export async function rekomendasiDraf(token: string | undefined): Promise<HasilRekomendasi & { kuotaPenuh: string[] }> {
   const baris = await wajibDraf(token);
   const rapor = bacaData(baris)["3"]?.nilai_rapor as NilaiRapor | undefined;
-  if (!rapor) throw new GalatApi(409, "STEP_LOCKED", "Isi nilai rapor terlebih dahulu.");
-
   const bobot = await muatBobotJurusan();
-  const hasil = hitungRekomendasi(rapor, bobot);
+  const hasil = adaNilaiRapor(rapor) ? hitungRekomendasi(rapor, bobot) : { versi: versiBobot(bobot), peringkat: [] };
 
   // Info kuota (tidak memblokir, PRD 10.4 langkah 4): jurusan dengan pendaftar >= kuota.
   const jurusan = await prisma.jurusan.findMany({ where: { isActive: true }, select: { id: true, kode: true, kuota: true } });

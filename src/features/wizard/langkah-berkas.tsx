@@ -7,16 +7,14 @@ import { ArrowLeftIcon, FileIcon, TrashIcon, UploadSimpleIcon } from "@phosphor-
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api-client";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import { kompresGambar } from "@/lib/gambar";
 import type { Tahap } from "@/lib/ocr/mesin";
-import type { HasilParser, Keyakinan, MapelRef } from "@/lib/ocr/tipe";
-import type { HasilRapor } from "@/lib/ocr/parser/rapor";
+import type { HasilParser, MapelRef } from "@/lib/ocr/tipe";
 import { PesanGalat } from "./bidang";
 import { pecahGalat, simpanLangkahKlien } from "./api";
 import { KartuIsianOcr, StatusOcr, type StatusBaca } from "./kartu-ocr";
-import { bacaAkta, bacaKk, bacaRapor, pesanGagalOcr } from "./ocr";
+import { bacaAkta, bacaKk, pesanGagalOcr } from "./ocr";
 import { KUNCI_AKTA, KUNCI_KK, gabungSaran, nilaiAkhirOcr } from "./ocr-isian";
 import { rataMapel, skemaNilaiRapor, type NilaiRapor } from "./schema-client";
 
@@ -300,18 +298,7 @@ export function LangkahAkta({
 // ------------------------------------------------------------------ Langkah 3
 
 type Grid = Record<string, Record<string, string>>;
-type Asal = Record<string, { nilai: number; keyakinan: Keyakinan }>;
-type BerkasRapor = {
-  nama: string;
-  status: StatusBaca;
-  hasil?: HasilRapor;
-  /** Semester yang dipakai untuk berkas ini (terdeteksi atau dipilih pendaftar). */
-  semester: number | null;
-  /** Kunci sel (`kode|semester`) yang diisi dari berkas ini. */
-  diterapkan: string[];
-};
 
-const kunciSel = (kode: string, sem: number | string) => `${kode}|${sem}`;
 const angka = (v: string) => Number(v.trim().replace(",", "."));
 
 export function LangkahRapor({
@@ -324,82 +311,16 @@ export function LangkahRapor({
   awal?: NilaiRapor;
 }) {
   const router = useRouter();
-  const pilihFoto = useRef<HTMLInputElement>(null);
-  const nomorFoto = useRef(0);
   const [grid, setGrid] = useState<Grid>(() =>
     Object.fromEntries(mapel.map((m) => [m.kode, Object.fromEntries(semester.map((s) => [String(s), awal?.mapel[m.kode]?.[String(s)]?.toString() ?? ""]))])),
   );
-  const [asal, setAsal] = useState<Asal>({});
-  const [daftarOcr, setDaftarOcr] = useState<Record<string, BerkasRapor>>({});
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
-  const refMapel: MapelRef[] = mapel.map((m) => ({ kode: m.kode, nama: m.nama, alias: m.alias }));
 
   function ubah(kode: string, sem: number, v: string) {
     setGrid((g) => ({ ...g, [kode]: { ...g[kode], [sem]: v } }));
     setGalat((x) => ({ ...x, [kode]: "" }));
-  }
-
-  /** Isi sel dari hasil baca. Sel yang sudah diketik pendaftar tidak ditimpa; sel hasil baca sebelumnya boleh diganti. */
-  function terapkan(ref: string, hasil: HasilRapor, sem: number) {
-    const baru: string[] = [];
-    setGrid((g) => {
-      const salin: Grid = { ...g };
-      for (const [kode, sel] of Object.entries(hasil.nilai)) {
-        const k = kunciSel(kode, sem);
-        const sekarang = g[kode]?.[sem] ?? "";
-        const belumDisentuh = sekarang.trim() === "" || (asal[k] !== undefined && angka(sekarang) === asal[k].nilai);
-        if (!belumDisentuh) continue;
-        salin[kode] = { ...g[kode], [sem]: String(sel.nilai) };
-        baru.push(k);
-      }
-      return salin;
-    });
-    setAsal((a) => ({ ...a, ...Object.fromEntries(Object.entries(hasil.nilai).map(([kode, sel]) => [kunciSel(kode, sem), sel])) }));
-    setDaftarOcr((d) => (d[ref] ? { ...d, [ref]: { ...d[ref], semester: sem, diterapkan: baru } } : d));
-  }
-
-  /** Kosongkan sel yang diisi dari berkas ini dan belum diubah pendaftar. */
-  function lepaskan(entri: BerkasRapor) {
-    setGrid((g) => {
-      const salin: Grid = { ...g };
-      for (const k of entri.diterapkan) {
-        const [kode, sem] = k.split("|");
-        if (asal[k] && angka(g[kode]?.[sem] ?? "") === asal[k].nilai) salin[kode] = { ...g[kode], [sem]: "" };
-      }
-      return salin;
-    });
-    setAsal((a) => Object.fromEntries(Object.entries(a).filter(([k]) => !entri.diterapkan.includes(k))));
-  }
-
-  /** Foto rapor hanya dibaca di HP ini untuk mengisi nilai. Foto tidak diunggah dan tidak disimpan (PRD butir 40). */
-  async function jalankan(f: File) {
-    const ref = String(++nomorFoto.current);
-    setDaftarOcr((d) => ({ ...d, [ref]: { nama: f.name, status: { status: "membaca" }, semester: null, diterapkan: [] } }));
-    const r = await bacaRapor(f, { namaMurid: "", tanggalLahir: "", mapel: refMapel }, (tahap) =>
-      setDaftarOcr((d) => (d[ref] ? { ...d, [ref]: { ...d[ref], status: { status: "membaca", tahap } } } : d)),
-    );
-    if (!r.ok) {
-      setDaftarOcr((d) => (d[ref] ? { ...d, [ref]: { ...d[ref], status: { status: "gagal", pesan: pesanGagalOcr(r.kode, f.type === "application/pdf") } } } : d));
-      return;
-    }
-    const sem = r.hasil.semester !== null && semester.includes(r.hasil.semester) ? r.hasil.semester : null;
-    setDaftarOcr((d) => (d[ref] ? { ...d, [ref]: { ...d[ref], status: { status: "selesai" }, hasil: r.hasil, semester: sem } } : d));
-    if (sem !== null) terapkan(ref, r.hasil, sem);
-  }
-
-  function pilihSemester(ref: string, sem: number) {
-    const entri = daftarOcr[ref];
-    if (!entri?.hasil) return;
-    lepaskan(entri);
-    terapkan(ref, entri.hasil, sem);
-  }
-
-  function buangHasil(ref: string) {
-    const entri = daftarOcr[ref];
-    if (entri) lepaskan(entri);
-    setDaftarOcr((d) => Object.fromEntries(Object.entries(d).filter(([r]) => r !== ref)));
   }
 
   const rata = (kode: string) => {
@@ -411,32 +332,11 @@ export function LangkahRapor({
     return rataMapel(sel);
   };
 
-  /** Keadaan sel terhadap hasil baca: "periksa" (belum diubah, keyakinan sedang) atau "diubah". */
-  const keadaanSel = (kode: string, sem: number): "periksa" | "diubah" | null => {
-    const a = asal[kunciSel(kode, sem)];
-    if (!a) return null;
-    const v = grid[kode]?.[sem] ?? "";
-    if (angka(v) !== a.nilai || v.trim() === "") return "diubah";
-    return a.keyakinan === "HIGH" ? null : "periksa";
-  };
-
-  /** Asal nilai untuk panitia: manual, hasil baca utuh, atau hasil baca yang dikoreksi. */
-  function sumberNilai(): "manual" | "ocr" | "ocr_dikoreksi" {
-    const kunci = Object.keys(asal);
-    if (kunci.length === 0) return "manual";
-    const terisi = Object.entries(grid).flatMap(([kode, sel]) => Object.entries(sel).filter(([, v]) => v.trim() !== "").map(([s]) => kunciSel(kode, s)));
-    const utuh = terisi.length === kunci.length && kunci.every((k) => {
-      const [kode, sem] = k.split("|");
-      return angka(grid[kode]?.[sem] ?? "") === asal[k].nilai;
-    });
-    return utuh ? "ocr" : "ocr_dikoreksi";
-  }
-
   async function kirim(e: SyntheticEvent) {
     e.preventDefault();
     setGalatUmum(undefined);
     const isi = { semester, mapel: Object.fromEntries(Object.entries(grid).map(([k, s]) => [k, Object.fromEntries(Object.entries(s).map(([a, b]) => [a, b.replace(",", ".")]))])) };
-    const cek = skemaNilaiRapor(semester, mapel.map((m) => m.kode)).safeParse(isi);
+    const cek = skemaNilaiRapor(semester, []).safeParse(isi);
     if (!cek.success) {
       const peta: Record<string, string> = {};
       for (const i of cek.error.issues) peta[String(i.path[1] ?? "_")] ??= i.message;
@@ -446,7 +346,7 @@ export function LangkahRapor({
     }
     setMenyimpan(true);
     try {
-      await simpanLangkahKlien(3, { nilai_rapor: isi, sumber_nilai: sumberNilai() });
+      await simpanLangkahKlien(3, { nilai_rapor: isi, sumber_nilai: "manual" });
       router.push("/daftar/langkah/4");
     } catch (err) {
       const { umum, field } = pecahGalat(err);
@@ -458,88 +358,19 @@ export function LangkahRapor({
     }
   }
 
-  const entriOcr = Object.entries(daftarOcr);
-
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
-      <div className="flex flex-col items-start gap-2 rounded-kartu border-2 border-dashed border-garis p-4">
-        <p className="text-sm font-semibold text-tinta">Isi nilai dari foto rapor (opsional)</p>
-        <p className="text-sm text-tinta-redup">
-          Foto rapor hanya dibaca di HP Anda untuk mengisi tabel di bawah. Foto tidak diunggah dan tidak disimpan. Bisa beberapa halaman, satu per satu.
-        </p>
-        <Button type="button" varian="sekunder" onClick={() => pilihFoto.current?.click()}>
-          Ambil foto atau pilih foto rapor
-        </Button>
-        <input
-          ref={pilihFoto}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          capture="environment"
-          aria-label="Pilih foto rapor untuk dibaca"
-          data-baca-rapor
-          className="sr-only"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            if (f) void jalankan(f);
-            e.target.value = "";
-          }}
-        />
-      </div>
-
-      {entriOcr.map(([ref, e]) => (
-        <div key={ref} className="flex flex-col gap-2">
-          <StatusOcr s={e.status} />
-          {e.status.status === "gagal" && (
-            <Button type="button" varian="hantu" onClick={() => buangHasil(ref)} className="self-start">
-              Tutup pesan
-            </Button>
-          )}
-          {e.status.status === "selesai" && e.hasil && (
-            <div className="flex flex-col gap-2 rounded-kartu border border-garis bg-permukaan p-3 text-sm">
-              <p className="font-semibold text-tinta">
-                {e.nama}: <span className="angka">{Object.keys(e.hasil.nilai).length}</span> mata pelajaran terbaca
-              </p>
-              <label className="flex flex-wrap items-center gap-2 text-tinta">
-                <span>{e.semester === null ? "Semester berapa halaman rapor ini?" : "Semester halaman ini"}</span>
-                <select
-                  aria-label={`Semester untuk ${e.nama}`}
-                  value={e.semester ?? ""}
-                  onChange={(ev) => ev.target.value && pilihSemester(ref, Number(ev.target.value))}
-                  className="min-h-11 rounded-kontrol border border-garis bg-permukaan px-3 text-base"
-                >
-                  <option value="">Pilih semester</option>
-                  {semester.map((s) => (
-                    <option key={s} value={s}>
-                      Semester {s}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <Button type="button" varian="hantu" onClick={() => buangHasil(ref)} className="self-start">
-                Hapus hasil baca ini
-              </Button>
-              {e.hasil.tidakDikenali.length > 0 && (
-                <p className="text-tinta-redup">
-                  Tidak dikenali (isi manual bila perlu): {e.hasil.tidakDikenali.map((t) => `${t.nama} (${t.nilai})`).join(", ")}.
-                </p>
-              )}
-            </div>
-          )}
-        </div>
-      ))}
-
       <div>
         <h2 className="text-lg font-bold text-ink">Nilai rapor</h2>
         <p className="mt-1 text-tinta-redup">
-          Salin nilai dari rapor untuk setiap semester (0 sampai 100). Isi minimal satu semester untuk tiap mata pelajaran. Rata-rata dihitung otomatis.
-          Nilai yang terbaca otomatis tetap perlu Anda periksa.
+          Nilai rapor opsional. Isi nilai yang tersedia bila ingin mendapat saran jurusan; jika dikosongkan, Anda tetap bisa memilih jurusan sendiri.
+          Rata-rata dihitung otomatis.
         </p>
       </div>
 
       <ul className="flex flex-col gap-4">
         {mapel.map((m) => {
           const r = rata(m.kode);
-          const keadaan = semester.map((s) => keadaanSel(m.kode, s));
           return (
             <li key={m.kode} className="rounded-kartu border border-garis bg-permukaan p-3 sm:p-4">
               <div className="flex items-baseline justify-between gap-3">
@@ -548,14 +379,8 @@ export function LangkahRapor({
                   Rata-rata <span className="font-bold text-tinta">{r === null ? "-" : r.toFixed(1)}</span>
                 </p>
               </div>
-              {(keadaan.includes("periksa") || keadaan.includes("diubah")) && (
-                <div className="mt-1.5 flex flex-wrap gap-2">
-                  {keadaan.includes("periksa") && <Badge nada="peringatan">Perlu dicek</Badge>}
-                  {keadaan.includes("diubah") && <Badge nada="info">Diubah</Badge>}
-                </div>
-              )}
               <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${semester.length}, minmax(0, 1fr))` }}>
-                {semester.map((s, i) => (
+                {semester.map((s) => (
                   <label key={s} className="flex flex-col gap-1 text-center text-xs font-semibold text-tinta-redup">
                     <span>
                       Sem <span className="angka">{s}</span>
@@ -566,7 +391,7 @@ export function LangkahRapor({
                       aria-invalid={galat[m.kode] ? true : undefined}
                       value={grid[m.kode]?.[s] ?? ""}
                       onChange={(e) => ubah(m.kode, s, e.target.value)}
-                      className={cn("angka px-1 text-center", keadaan[i] === "periksa" && "bg-peringatan-latar")}
+                      className="angka px-1 text-center"
                     />
                   </label>
                 ))}
@@ -577,9 +402,7 @@ export function LangkahRapor({
         })}
       </ul>
 
-      <p className="rounded-kontrol bg-info-latar px-3 py-2.5 text-sm font-medium text-info">
-        Foto rapor tidak disimpan di sistem. Panitia dapat meminta rapor asli untuk dicocokkan dengan nilai ini saat verifikasi atau daftar ulang.
-      </p>
+      <p className="text-sm text-tinta-redup">Jika mengisi nilai, panitia dapat mencocokkannya dengan rapor asli saat verifikasi atau daftar ulang.</p>
 
       {galatUmum && <PesanGalat pesan={galatUmum} />}
       <Navigasi langkah={3} menyimpan={menyimpan} />

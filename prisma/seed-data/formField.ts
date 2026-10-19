@@ -24,11 +24,11 @@ const PEKERJAAN_AYAH = sama("Petani", "Buruh", "Wiraswasta", "PNS", "TNI/Polri",
 const PEKERJAAN_IBU = sama("Ibu Rumah Tangga", "Petani", "Buruh", "Wiraswasta", "PNS", "Guru", "Karyawan Swasta", "Lainnya");
 const AGAMA = sama("Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu");
 const PENGHASILAN: Opsi[] = [
-  { nilai: "01", label: "Kurang dari Rp 500.000" },
-  { nilai: "02", label: "Rp 500.000 - Rp 999.999" },
-  { nilai: "03", label: "Rp 1.000.000 - Rp 1.999.999" },
-  { nilai: "04", label: "Rp 2.000.000 - Rp 4.999.999" },
-  { nilai: "05", label: "Rp 5.000.000 atau lebih" },
+  { nilai: "01", label: "Kurang dari Rp500.000" },
+  { nilai: "02", label: "Rp500.000–999.999" },
+  { nilai: "03", label: "Rp1.000.000–1.999.999" },
+  { nilai: "04", label: "Rp2.000.000–4.999.999" },
+  { nilai: "05", label: "Rp5.000.000 atau lebih" },
 ];
 
 const f = (langkah: number, urutan: number, kunci: string, label: string, tipe: FieldSeed["tipe"], x: Partial<FieldSeed> = {}): FieldSeed => ({
@@ -54,7 +54,7 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(2, 20, "kk", "Kartu keluarga", "file", opsional),
 
   // Langkah 3: nilai rapor (terkunci selama rekomendasi aktif). Foto rapor tidak diunggah, hanya nilainya.
-  f(3, 20, "nilai_rapor", "Nilai rapor", "tabel", { terkunci: true }),
+  f(3, 20, "nilai_rapor", "Nilai rapor", "tabel", { ...opsional, terkunci: true }),
 
   // Langkah 4: pilihan jurusan
   f(4, 10, "jurusan_1", "Pilihan jurusan 1", "select", { opsi: { dinamis: "jurusan" } }),
@@ -70,7 +70,6 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(5, 71, "jumlah_saudara", "Jumlah saudara", "number"),
   f(5, 90, "asal_sekolah", "Asal sekolah", "text"),
   f(5, 100, "tamat_tahun", "Tahun tamat", "text"),
-  f(5, 101, "no_ijazah", "Nomor ijazah", "text", opsional),
   f(5, 110, "no_hp", "Nomor HP", "tel"),
   f(5, 111, "no_wa", "Nomor WhatsApp", "tel", opsional),
   f(5, 120, "email", "Email", "email", opsional),
@@ -82,18 +81,25 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(5, 134, "kabupaten", "Kabupaten atau kota", "text"),
   f(5, 135, "propinsi", "Provinsi", "text"),
   f(5, 140, "penghasilan", "Penghasilan orang tua per bulan", "radio", { opsi: PENGHASILAN }),
-  f(5, 150, "referensi_pendaftar", "Mengetahui sekolah ini dari", "text", opsional),
+  f(5, 150, "referensi_pendaftar", "Mengetahui sekolah ini dari", "text", {
+    teksBantuan: "Pilih sumber yang tersedia atau pilih Lainnya lalu tulis sendiri.",
+    opsi: sama("Teman/saudara/keluarga", "Sosmed", "Alumni", "Sosialisasi SPMB", "Lainnya (tulis sendiri)"),
+  }),
 
   // Langkah 6: data orang tua
   f(6, 10, "nama_ayah", "Nama ayah", "text"),
-  f(6, 11, "ayah_ttl", "Tempat dan tanggal lahir ayah", "text"),
-  f(6, 12, "ayah_pendidikan", "Pendidikan terakhir ayah", "select", { opsi: PENDIDIKAN }),
-  f(6, 13, "pekerjaan_ayah", "Pekerjaan ayah", "select", { opsi: PEKERJAAN_AYAH }),
+  f(6, 11, "ayah_tempat_lahir", "Tempat lahir ayah", "text"),
+  f(6, 12, "ayah_tanggal_lahir", "Tanggal lahir ayah", "date"),
+  f(6, 13, "ayah_pendidikan", "Pendidikan terakhir ayah", "select", { opsi: PENDIDIKAN }),
+  f(6, 14, "pekerjaan_ayah", "Pekerjaan ayah", "select", { opsi: PEKERJAAN_AYAH }),
+  f(6, 15, "nik_ayah", "NIK ayah", "text", { teksBantuan: "16 digit angka." }),
   f(6, 20, "nama_ibu", "Nama ibu", "text"),
-  f(6, 21, "ibu_ttl", "Tempat dan tanggal lahir ibu", "text"),
-  f(6, 22, "ibu_pendidikan", "Pendidikan terakhir ibu", "select", { opsi: PENDIDIKAN }),
-  f(6, 23, "pekerjaan_ibu", "Pekerjaan ibu", "select", { opsi: PEKERJAAN_IBU }),
-  f(6, 25, "alamat_ortu", "Alamat orang tua", "text", { teksBantuan: "Nama jalan atau dusun." }),
+  f(6, 21, "ibu_tempat_lahir", "Tempat lahir ibu", "text"),
+  f(6, 22, "ibu_tanggal_lahir", "Tanggal lahir ibu", "date"),
+  f(6, 23, "ibu_pendidikan", "Pendidikan terakhir ibu", "select", { opsi: PENDIDIKAN }),
+  f(6, 24, "pekerjaan_ibu", "Pekerjaan ibu", "select", { opsi: PEKERJAAN_IBU }),
+  f(6, 25, "nik_ibu", "NIK ibu", "text", { teksBantuan: "16 digit angka." }),
+  f(6, 26, "alamat_ortu", "Alamat orang tua", "text", { teksBantuan: "Nama jalan atau dusun." }),
   f(6, 30, "no_hp_ortu", "Nomor HP orang tua", "tel"),
   f(6, 31, "ortu_rt", "RT", "text"),
   f(6, 32, "ortu_rw", "RW", "text"),
@@ -106,7 +112,6 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(7, 1, "smp_kecamatan", "Kecamatan sekolah asal", "text"),
   f(7, 2, "smp_kabupaten", "Kabupaten atau kota sekolah asal", "text"),
   f(7, 3, "smp_propinsi", "Provinsi sekolah asal", "text"),
-  f(7, 4, "ijazah_nomor_tahun", "Nomor dan tahun ijazah", "text", opsional),
   f(7, 5, "lama_belajar", "Lama belajar", "text"),
   f(7, 6, "nilai_ujian", "Nilai ujian", "tabel", { teksBantuan: "Bahasa Indonesia, Bahasa Inggris, Matematika, IPA." }),
   f(7, 10, "golongan_darah", "Golongan darah", "select", { opsi: sama("A", "B", "AB", "O", "Tidak Tahu") }),

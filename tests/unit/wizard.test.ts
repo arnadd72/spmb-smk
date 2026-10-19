@@ -7,8 +7,8 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 process.env.DRAF_TEMP_DIR = mkdtempSync(path.join(os.tmpdir(), "spmb-draf-"));
 
 import { prisma } from "@/server/db/client";
-import { ambilDraf, buatDraf, hapusDraf, muatDefinisiField, rekomendasiDraf, simpanLangkah, unggahBerkas } from "@/server/services/draf";
-import { dekripsi } from "@/server/services/kripto";
+import { ambilDraf, bacaData, buatDraf, hapusDraf, muatDefinisiField, rekomendasiDraf, simpanLangkah, unggahBerkas } from "@/server/services/draf";
+import { dekripsi, enkripsi } from "@/server/services/kripto";
 import { cekStatus, kirimPendaftaran, ambilRingkasanSukses } from "@/server/services/pendaftaran";
 import { formulirDariToken } from "@/server/services/pdf/formulir";
 import { simpanPengaturan } from "@/server/services/pengaturan";
@@ -48,6 +48,23 @@ const galat = async (p: Promise<unknown>) => {
 };
 
 describe("rekomendasi jurusan (PRD 12.4)", () => {
+  it("membaca pilihan FKK dari draf lama sebagai LPK3", () => {
+    const baris = {
+      data: { v: enkripsi(JSON.stringify({ "4": { jurusan_1: "FKK", jurusan_2: "AKL" } })) },
+    } as unknown as Parameters<typeof bacaData>[0];
+    expect(bacaData(baris)["4"]).toEqual({ jurusan_1: "LPK3", jurusan_2: "AKL" });
+  });
+
+  it("tanpa nilai rapor, rekomendasi kosong dan pilihan jurusan tetap manual", async () => {
+    const { token } = await buatDraf();
+    await simpanLangkah(token, 1, { nama_lengkap: "Siti Aminah", nisn: "1234567890", tanggal_lahir: "2011-02-03", setuju: true });
+    await simpanLangkah(token, 2, {});
+    await simpanLangkah(token, 3, { nilai_rapor: { mapel: {} }, sumber_nilai: "manual" });
+    expect((await rekomendasiDraf(token)).peringkat).toEqual([]);
+    await simpanLangkah(token, 4, { jurusan_1: "AKL", jurusan_2: "" });
+    expect((await ambilDraf(token))?.data["4"]?.jurusan_1).toBe("AKL");
+  });
+
   it("Matematika dan IPS tinggi menjadikan AKL paling sesuai", async () => {
     const bobot = await muatBobotJurusan();
     const dasar = { "1": 75 };
@@ -65,7 +82,7 @@ describe("rekomendasi jurusan (PRD 12.4)", () => {
     expect(r.peringkat[0].label).toBe("Paling Sesuai");
   });
 
-  it("IPA dan Matematika tinggi menempatkan FKK atau TKR di peringkat 1-2, bukan AKL", async () => {
+  it("IPA dan Matematika tinggi menempatkan LPK3 atau TKR di peringkat 1-2, bukan AKL", async () => {
     const bobot = await muatBobotJurusan();
     const dasar = { "1": 75 };
     const r = hitungRekomendasi(
@@ -75,7 +92,7 @@ describe("rekomendasi jurusan (PRD 12.4)", () => {
       },
       bobot,
     );
-    expect(["FKK", "TKR"]).toContain(r.peringkat[0].kode);
+    expect(["LPK3", "TKR"]).toContain(r.peringkat[0].kode);
     expect(r.peringkat[0].kode).not.toBe("AKL");
   });
 
@@ -94,7 +111,7 @@ describe("rekomendasi jurusan (PRD 12.4)", () => {
   it("jurusan dengan lebih dari 50% bobot tanpa data diberi label Data Kurang", async () => {
     const bobot = await muatBobotJurusan();
     const r = hitungRekomendasi({ semester: [1], mapel: { matematika: { "1": 80 } } }, bobot);
-    expect(r.peringkat.find((p) => p.kode === "FKK")?.label).toBe("Data Kurang");
+    expect(r.peringkat.find((p) => p.kode === "LPK3")?.label).toBe("Data Kurang");
   });
 
   it("versi berubah saat bobot diubah", async () => {

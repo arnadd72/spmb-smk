@@ -65,6 +65,8 @@ function skemaPerKunci(kunci: string): z.ZodType | null {
     case "nisn":
       return z.string().regex(/^\d{10}$/, "NISN harus 10 digit angka.");
     case "nik":
+    case "nik_ayah":
+    case "nik_ibu":
     case "no_kk":
       return z.string().regex(/^\d{16}$/, "Harus 16 digit angka.");
     case "tanggal_lahir":
@@ -150,6 +152,10 @@ export type NilaiRapor = {
   /** kode mapel -> { "1": 82, "2": 84, ... } */
   mapel: Record<string, Record<string, number>>;
 };
+
+export function adaNilaiRapor(nilai: NilaiRapor | undefined): nilai is NilaiRapor {
+  return Object.values(nilai?.mapel ?? {}).some((semester) => Object.values(semester).some((n) => Number.isFinite(n)));
+}
 
 const nilai0sampai100 = z.coerce.number({ error: "Isi dengan angka." }).min(0, "Minimal 0.").max(100, "Maksimal 100.");
 

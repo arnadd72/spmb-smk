@@ -3,7 +3,13 @@
 import { useRef } from "react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 
-const KODE = ["AKL", "MPLB", "FKK", "TKR"];
+const KODE = ["AKL", "MPLB", "LPK3", "TKR"];
+const WARNA_KODE: Record<string, string> = {
+  AKL: "text-primer",
+  MPLB: "text-ink",
+  LPK3: "text-jurusan-lpk3",
+  TKR: "text-jurusan-tkr",
+};
 
 // Satu-satunya marquee di halaman. Laju dan kemiringannya mengikuti kecepatan gulir pengguna.
 export function MarqueeJurusan() {
@@ -46,7 +52,7 @@ export function MarqueeJurusan() {
                 className={
                   t === "/"
                     ? "font-display text-[clamp(1.5rem,3.6vw,3rem)] font-medium leading-none text-ink/40"
-                    : "font-display text-[clamp(2rem,5.5vw,4.5rem)] font-bold leading-none tracking-[-0.015em]"
+                    : `font-display text-[clamp(2rem,5.5vw,4.5rem)] font-bold leading-none tracking-[-0.015em] ${WARNA_KODE[t] ?? "text-ink"}`
                 }
               >
                 {t}

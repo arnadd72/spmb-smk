@@ -107,13 +107,16 @@ describe("ekspor XLSX", () => {
     expect(sel("NIK")).toBe("3302010101010001"); // teks, bukan angka
     expect(typeof sel("NIK")).toBe("string");
     expect(baris.getCell(kolom("NIK")).numFmt).toBe("@");
+    expect(sel("NIK Ayah")).toBe("3302010101010003");
+    expect(sel("NIK Ibu")).toBe("3302010101010004");
+    expect(baris.getCell(kolom("NIK Ayah")).numFmt).toBe("@");
     expect(sel("NISN")).toBe("1234567890");
     expect(sel("Nama Lengkap")).toBe("Ahmad Fauzi");
     expect(sel("Jenis Kelamin")).toBe("Laki-laki");
-    expect(sel("Penghasilan Orang Tua")).toBe("Kurang dari Rp 500.000");
+    expect(sel("Penghasilan Orang Tua")).toBe("Kurang dari Rp500.000");
     expect(sel("Rata-rata Matematika")).toBe(81); // fixture: semester 1 = 80, semester 2 = 82
     expect(typeof sel("Skor AKL")).toBe("number");
-    expect(["AKL", "MPLB", "FKK", "TKR"]).toContain(sel("Saran Jurusan"));
+    expect(["AKL", "MPLB", "LPK3", "TKR"]).toContain(sel("Saran Jurusan"));
     expect(sel("Status Verifikasi")).toBe("Menunggu");
     expect(sel("Ukuran sepatu")).toBe("42");
     expect(ws.autoFilter).toBeTruthy();

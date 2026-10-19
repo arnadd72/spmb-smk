@@ -7,14 +7,14 @@ import { dekripsi, enkripsi, hashPencarian } from "@/server/services/kripto";
 export const KOLOM_DIKENAL = new Set([
   "nama_lengkap", "tempat_lahir", "tanggal_lahir", "nisn", "nik", "no_kk", "jenis_kelamin", "agama", "anak_ke",
   "jumlah_saudara", "asal_sekolah", "tamat_tahun", "no_ijazah", "no_hp", "no_wa", "email", "alamat", "rt", "rw",
-  "desa", "kecamatan", "kabupaten", "propinsi", "nama_ayah", "ayah_ttl", "ayah_pendidikan", "pekerjaan_ayah",
-  "nama_ibu", "ibu_ttl", "ibu_pendidikan", "pekerjaan_ibu", "alamat_ortu", "ortu_rt", "ortu_rw", "ortu_desa",
+  "desa", "kecamatan", "kabupaten", "propinsi", "nama_ayah", "nik_ayah", "ayah_tempat_lahir", "ayah_tanggal_lahir", "ayah_ttl", "ayah_pendidikan", "pekerjaan_ayah",
+  "nama_ibu", "nik_ibu", "ibu_tempat_lahir", "ibu_tanggal_lahir", "ibu_ttl", "ibu_pendidikan", "pekerjaan_ibu", "alamat_ortu", "ortu_rt", "ortu_rw", "ortu_desa",
   "ortu_kecamatan", "ortu_kabupaten", "ortu_propinsi", "no_hp_ortu", "penghasilan", "referensi_pendaftar",
   "smp_kecamatan", "smp_kabupaten", "smp_propinsi", "ijazah_nomor_tahun", "lama_belajar", "nilai_ujian",
   "golongan_darah", "tinggi_badan", "berat_badan", "penyakit_pernah_diderita", "hobi_olahraga", "hobi_kesenian",
   "hobi_organisasi", "hobi_prestasi", "hobi_lain", "ukuran_seragam",
 ]);
-export const KOLOM_TERENKRIPSI = new Set(["nik", "no_kk", "no_hp", "no_wa", "no_hp_ortu"]);
+export const KOLOM_TERENKRIPSI = new Set(["nik", "nik_ayah", "nik_ibu", "no_kk", "no_hp", "no_wa", "no_hp_ortu"]);
 /** Field yang tidak masuk kolom: ditangani terpisah. */
 /** `ocr` dan `sumber_nilai` hanya pembawa data wizard (saran OCR dan asal nilai rapor), bukan isian pendaftar. */
 export const KUNCI_DILEWATI = new Set(["setuju", "konfirmasi_final", "jurusan_1", "jurusan_2", "nilai_rapor", "ocr", "sumber_nilai"]);
@@ -42,7 +42,7 @@ export function susunKolom(semua: Record<string, unknown>): { kolom: Record<stri
       kustom[k] = v;
       continue;
     }
-    if (k === "tanggal_lahir") kolom[camel(k)] = new Date(`${v}T00:00:00Z`);
+    if (k === "tanggal_lahir" || k === "ayah_tanggal_lahir" || k === "ibu_tanggal_lahir") kolom[camel(k)] = new Date(`${v}T00:00:00Z`);
     else if (KOLOM_TERENKRIPSI.has(k)) kolom[camel(k)] = enkripsi(String(v));
     else kolom[camel(k)] = typeof v === "number" || typeof v === "object" ? v : String(v);
   }

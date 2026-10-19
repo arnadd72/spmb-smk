@@ -116,7 +116,7 @@ describe("API publik JSON", () => {
     expect((await getBeritaSlug(req(), { params: Promise.resolve({ slug: "tidak-ada" }) })).status).toBe(404);
 
     const j = await json(await H(getJurusan)(req()));
-    expect(j.data.map((x: { kode: string }) => x.kode)).toEqual(["AKL", "MPLB", "FKK", "TKR"]);
+    expect(j.data.map((x: { kode: string }) => x.kode)).toEqual(["AKL", "MPLB", "LPK3", "TKR"]);
     expect((await getJurusanKode(req(), { params: Promise.resolve({ kode: "akl" }) })).status).toBe(200);
     expect((await getJurusanKode(req(), { params: Promise.resolve({ kode: "ZZZ" }) })).status).toBe(404);
   });
@@ -143,7 +143,6 @@ describe("API publik JSON", () => {
   });
 
   it("form-schema memuat isian yang tampil per langkah dan mengikuti pengaturan jadwal", async () => {
-    await prisma.formField.update({ where: { kunci: "no_ijazah" }, data: { tampil: false } });
     await simpanPengaturan("tahun_ajaran", "2027/2028");
     await simpanPengaturan("gelombang_tutup", "2000-01-01");
     const s = await json(await H(getFormSchema)(req()));
@@ -153,8 +152,18 @@ describe("API publik JSON", () => {
     const kunci = s.langkah.flatMap((l: { field: { kunci: string }[] }) => l.field.map((f) => f.kunci));
     expect(kunci).toContain("nik");
     expect(kunci).not.toContain("no_ijazah");
+    expect(kunci).not.toContain("ijazah_nomor_tahun");
     const j1 = s.langkah[3].field.find((f: { kunci: string }) => f.kunci === "jurusan_1");
     expect(j1.opsi.map((o: { nilai: string }) => o.nilai)).toContain("AKL");
+    const referensi = s.langkah[4].field.find((f: { kunci: string }) => f.kunci === "referensi_pendaftar");
+    expect(referensi.opsi.map((o: { nilai: string }) => o.nilai)).toEqual([
+      "Teman/saudara/keluarga",
+      "Sosmed",
+      "Alumni",
+      "Sosialisasi SPMB",
+      "Lainnya (tulis sendiri)",
+    ]);
+    expect(referensi.wajib).toBe(true);
     expect(s.langkah[0].field[0]).not.toHaveProperty("id");
   });
 });

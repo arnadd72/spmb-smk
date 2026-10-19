@@ -24,6 +24,9 @@
   --mint: #c5d89d;
   --hijau-terang: #a3c960;
   --hijau-hutan: #1b4630;
+  --kunyit: #f2c94c;
+  --jurusan-lpk3: #9b1e57;
+  --jurusan-tkr: #24558a;
 
   /* Semantik: tema terang (wizard, admin, PDF, email selalu terang) */
   --latar: var(--kertas);
@@ -93,6 +96,9 @@
   --color-mint: var(--mint);
   --color-hijau-terang: var(--hijau-terang);
   --color-hijau-hutan: var(--hijau-hutan);
+  --color-kunyit: var(--kunyit);
+  --color-jurusan-lpk3: var(--jurusan-lpk3);
+  --color-jurusan-tkr: var(--jurusan-tkr);
   --color-sukses: var(--sukses);
   --color-sukses-latar: var(--sukses-latar);
   --color-info: var(--info);

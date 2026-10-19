@@ -32,8 +32,11 @@ Turunan:
 | `primer-tua` (`hijau-tua`) | `#2C5A1C` | Hover tombol utama, judul di atas terang |
 | `hijau-gelap` | `#0D271B` | Footer, latar paling pekat |
 | `hijau-hutan` | `#1B4630` | Latar bagian pernyataan ("Di bawah naungan LP Ma'arif NU...") |
-| `mint` | `#C5D89D` | Latar bagian saran jurusan, marquee jurusan, panel MPLB, sorotan teks di latar gelap |
+| `mint` | `#C5D89D` | Latar tes minat-bakat landing, marquee jurusan, panel MPLB, sorotan teks di latar gelap |
 | `hijau-terang` | `#A3C960` | Sorotan teks di latar `hijau-hutan` |
+| `kunyit` | `#F2C94C` | Aksen kode AKL |
+| `jurusan-lpk3` | `#9B1E57` | Panel dan aksen LPK3 |
+| `jurusan-tkr` | `#24558A` | Panel dan aksen TKR |
 | `primer-tinta` | `#FFFFFF` | Teks di atas tombol utama |
 | `fokus` | `#0B5FB3` | Cincin fokus keyboard |
 | `sukses`, `info`, `peringatan`, `bahaya` (+ `-latar`) | lihat CSS | Status, kontras AA di atas krem |
@@ -45,17 +48,18 @@ Pasangan warna di tiap bagian landing:
 | Hero, alur daftar, FAQ | `latar` (krem) | `ink` |
 | Marquee jurusan | `mint` | `ink` |
 | Pernyataan | `hijau-hutan` | `kertas`; sorotan "empat program keahlian" `hijau-terang`, "akhlak" `mint` |
-| Saran jurusan | `mint` | `ink` |
+| Tes minat-bakat | `mint` | `ink` |
 | Kehidupan sekolah, testimoni | `permukaan` | `ink` |
 | Penutup | `ink` | `kertas` |
-| Panel jurusan | AKL `kuning`, MPLB `mint`, FKK `primer`, TKR `ink` | Kode jurusan: AKL/MPLB `ink`, FKK/TKR `kertas` |
+| Panel jurusan | AKL `primer`, MPLB `mint`, LPK3 `jurusan-lpk3`, TKR `jurusan-tkr` | Kode jurusan: AKL `kunyit`, MPLB `ink`, LPK3/TKR `kertas` |
 
 Tema gelap disiapkan lewat atribut `data-tema="gelap"` untuk situs publik (nilainya belum disesuaikan dengan palet baru). Wizard dan admin tetap terang.
 
 ### Kontras (WCAG 2.1 AA, diukur 12 Okt 2026)
 
 - Teks `ink` di atas krem: 11,70. Teks krem di atas `ink`: 11,70.
-- Teks putih di atas `primer` (tombol utama): 5,76. Teks krem di atas `primer` (panel FKK, kartu alur): 5,01. Teks `primer` di atas krem: 5,01.
+- Teks putih di atas `primer` (tombol utama): 5,76. Teks krem di atas `primer` (panel AKL, kartu alur): 5,01. Teks `primer` di atas krem: 5,01.
+- Teks krem di atas `jurusan-lpk3`: 6,72; di atas `jurusan-tkr`: 6,66. Aksen `kunyit` di atas `primer`: 3,63 (dipakai untuk kode AKL berukuran besar).
 - Teks `ink` di atas `kuning`/`aksen`: 4,98. Di atas `mint`: 8,77.
 - Di bagian pernyataan (`hijau-hutan`): krem 9,29, `hijau-terang` 5,64, `mint` 6,96.
 - **Teks yang diredupkan animasi ikut dihitung axe.** Kata di bagian pernyataan mulai dari opacity 0,65 (bukan 0,5) dan tahap redup di panel cek status 0,7 (bukan 0,55), agar tetap lolos AA di latar hijau yang lebih terang dari tinta lama. Jangan menurunkannya lagi tanpa menghitung ulang.
@@ -108,8 +112,8 @@ Aturan:
 
 - Warna asli, tanpa filter, duotone, atau overlay (PRD 1.3 butir 19). Foto kecil tidak diperbesar melebihi ukuran aslinya.
 - Sumber mentah di `.local/aset-mentah` (tidak di-commit), diolah ke `public/images/sekolah` oleh `scripts/olah-gambar.mjs` (WebP kualitas 86; opsi `potong` untuk memotong bagian tertentu).
-- Foto jurusan: AKL `praktik-akl.webp`, MPLB `praktik-mplb.webp`, FKK `praktik-farmasi.webp`, TKR `praktik-tkr.webp`. AKL dan FKK kiriman pihak sekolah, MPLB dan TKR dari situs sekolah. Data foto ada di `TAMPIL` (`features/landing/program-keahlian.tsx`) dan `TAMPIL_JURUSAN` (`features/jurusan/tampil.ts`); keduanya harus diubah bersama.
-- Bingkai foto panel jurusan hampir kotak sementara fotonya lebar. Titik fokus diatur dengan kolom opsional `posisi` (kelas `object-[x%_y%]`): FKK `0% 50%` (siswi kiri yang meracik), TKR `18% 50%` (guru dan siswa di roda).
+- Foto jurusan: AKL `praktik-akl.webp`, MPLB `praktik-mplb.webp`, LPK3 `praktik-farmasi.webp`, TKR `praktik-tkr.webp`. AKL dan LPK3 kiriman pihak sekolah, MPLB dan TKR dari situs sekolah. Data foto dan warna ada di `TAMPIL` (`features/landing/program-keahlian.tsx`) dan `TAMPIL_JURUSAN` (`features/jurusan/tampil.ts`); keduanya harus diubah bersama.
+- Bingkai foto panel jurusan hampir kotak sementara fotonya lebar. Titik fokus diatur dengan kolom opsional `posisi` (kelas `object-[x%_y%]`): LPK3 `0% 50%` (siswi kiri yang meracik), TKR `18% 50%` (guru dan siswa di roda).
 - Bila foto diganti dengan isi berbeda, pakai **nama berkas baru**: `next/image` menyimpan cache hasil optimasi berdasarkan alamat, sehingga nama lama bisa menampilkan foto lama.
 - Logo: `logo-sekolah.png` (dari `logo.png`, latar transparan, ruang kosong dipotong). Dipakai di navbar, hero, tirai pembuka, dan hiasan latar penutup.
 

@@ -80,9 +80,13 @@ export function LangkahJurusan({
 
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
-      <p className="text-tinta-redup">
-        Saran ini dihitung dari nilai rapor Anda dengan rumus rata-rata tertimbang. Ini hanya saran, Anda bebas memilih jurusan lain.
-      </p>
+      {kartu.length > 0 ? (
+        <p className="text-tinta-redup">Saran ini dihitung dari nilai rapor Anda dengan rumus rata-rata tertimbang. Ini hanya saran, Anda bebas memilih jurusan lain.</p>
+      ) : (
+        <p className="rounded-kontrol bg-info-latar px-3 py-2.5 text-sm font-medium text-info">
+          Nilai rapor tidak diisi, jadi tidak ada skor rekomendasi. Silakan pilih jurusan secara mandiri.
+        </p>
+      )}
 
       <ol className="flex flex-col gap-4">
         {kartu.map((k, i) => (

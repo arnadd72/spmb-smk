@@ -9,7 +9,7 @@ import { ambilDaftarJurusan, type JurusanDetail } from "@/server/actions/ambilPu
 export const revalidate = 300;
 export const metadata = {
   title: "Program keahlian",
-  description: "Empat program keahlian SMK Ma'arif NU 1 Wangon: AKL, MPLB, FKK, dan TKR.",
+  description: "Empat program keahlian SMK Ma'arif NU 1 Wangon: AKL, MPLB, LPK3, dan TKR.",
 };
 
 async function muat(): Promise<JurusanDetail[]> {

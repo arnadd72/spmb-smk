@@ -107,7 +107,7 @@ export function nilaiPendaftar(p: Record<string, unknown>, jurusan: { j1?: strin
   const hasil: Record<string, unknown> = {};
   for (const kunci of KOLOM_DIKENAL) {
     const nilai = p[camel(kunci)];
-    if (kunci === "tanggal_lahir") hasil[kunci] = ISO(nilai as Date | null);
+    if (kunci === "tanggal_lahir" || kunci === "ayah_tanggal_lahir" || kunci === "ibu_tanggal_lahir") hasil[kunci] = ISO(nilai as Date | null);
     else if (KOLOM_TERENKRIPSI.has(kunci)) hasil[kunci] = bukaAman(nilai as string | null) ?? "";
     else hasil[kunci] = nilai === null || nilai === undefined ? "" : nilai;
   }

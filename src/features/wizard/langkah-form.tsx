@@ -7,6 +7,7 @@ import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { formatTanggal } from "@/lib/format";
 import { Bidang } from "./bidang";
 import { pecahGalat, simpanLangkahKlien, type PetaGalat } from "./api";
 import { KUNCI_NILAI_UJIAN, fieldBiasa, skemaLangkah, skemaNilaiUjian, type DefinisiField } from "./schema-client";
@@ -28,6 +29,8 @@ type Props = {
   dariDokumen?: Record<string, string>;
   /** Konten tambahan di atas form (mis. persyaratan dan teks persetujuan). */
   pembuka?: ReactNode;
+  /** Tanggal lahir dari langkah 1, ditampilkan baca-saja agar tidak perlu diisi ulang. */
+  tanggalLahirTampilan?: string;
   labelLanjut?: string;
 };
 
@@ -39,7 +42,7 @@ const LABEL_UJIAN: Record<string, string> = {
 };
 
 /** Form generik untuk langkah 1, 5, 6, dan 7: field dari form builder + validasi sama dengan server. */
-export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembuka, labelLanjut = "Simpan dan lanjut" }: Props) {
+export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembuka, tanggalLahirTampilan, labelLanjut = "Simpan dan lanjut" }: Props) {
   const router = useRouter();
   const daftar = fieldBiasa(fields, langkah);
   const adaUjian = fields.some((f) => f.kunci === "nilai_ujian");
@@ -124,6 +127,11 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
       )}
 
       <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">
+        {tanggalLahirTampilan && (
+          <Field label="Tanggal lahir" bantuan="Diisi pada langkah pertama; tidak perlu diisi ulang.">
+            <Input value={formatTanggal(tanggalLahirTampilan)} readOnly aria-readonly="true" />
+          </Field>
+        )}
         {daftar.map((f) =>
           salinan && f.kunci === Object.keys(salinan.peta)[0] ? (
             <div key={`salin-${f.kunci}`} className="contents">

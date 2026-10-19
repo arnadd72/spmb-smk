@@ -4,8 +4,8 @@ import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
 
 // Alur wizard pendaftaran lengkap secara manual (tanpa OCR) di layar HP, lalu cek status.
-// Data uji memakai nama "Uji E2E Wizard" dan dibersihkan setelahnya.
-const NAMA = "Uji E2E Wizard";
+// Data uji memakai nama "UJI E2E WIZARD" dan dibersihkan setelahnya.
+const NAMA = "UJI E2E WIZARD";
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(64, 7)]);
 
 async function axe(page: Page) {
@@ -21,6 +21,10 @@ async function isiFormLangkah(page: Page) {
   const nilaiNama: Record<string, string> = {
     nik: "3302010101010001",
     no_kk: "3302010101010002",
+    nik_ayah: "3302010101010003",
+    nik_ibu: "3302010101010004",
+    ayah_tanggal_lahir: "1980-03-03",
+    ibu_tanggal_lahir: "1983-07-12",
     anak_ke: "2",
     jumlah_saudara: "3",
     tinggi_badan: "160",
@@ -29,6 +33,7 @@ async function isiFormLangkah(page: Page) {
     no_wa: "081234567891",
     no_hp_ortu: "081298765432",
     email: "uji@contoh.id",
+    referensi_pendaftar: "Kunjungan ke sekolah",
   };
   for (const el of await page.locator("input[name]:not([type=radio]):not([type=hidden]):not([disabled])").all()) {
     const nama = (await el.getAttribute("name")) ?? "";
@@ -73,7 +78,8 @@ test.describe("wizard pendaftaran manual", () => {
     // Langkah 1: validasi inline lalu isi
     await lanjut(page);
     await expect(page.getByRole("alert").filter({ hasText: "wajib diisi" }).first()).toBeVisible();
-    await page.getByLabel("Nama lengkap").fill(NAMA);
+    await page.getByLabel("Nama lengkap").fill("uji E2E Wizard");
+    await expect(page.getByLabel("Nama lengkap")).toHaveValue(NAMA);
     await page.getByLabel("NISN").fill("12345");
     await page.getByLabel("Tanggal lahir").fill("2011-05-17");
     await page.getByRole("checkbox").check();
@@ -90,26 +96,35 @@ test.describe("wizard pendaftaran manual", () => {
     await axe(page);
     await lanjut(page);
 
-    // Langkah 3: rapor wajib, tabel nilai
+    // Langkah 3: nilai rapor opsional
     await expect(page).toHaveURL(/\/langkah\/3$/);
     await lanjut(page);
-    await expect(page.getByText("Isi minimal satu semester.").first()).toBeVisible();
-    for (const sel of await page.locator("input[aria-label$='semester 1']").all()) await sel.fill("82");
-    await axe(page);
-    await lanjut(page);
-
-    // Langkah 4: rekomendasi
     await expect(page).toHaveURL(/\/langkah\/4$/);
-    await expect(page.getByText("Paling Sesuai").first()).toBeVisible();
+
+    // Tanpa nilai rapor, tidak ada skor palsu; pilih jurusan secara mandiri.
+    await expect(page.getByText(/tidak ada skor rekomendasi/i)).toBeVisible();
+    await page.getByRole("combobox").first().click();
+    await page.getByRole("option", { name: /AKL/ }).click();
     await axe(page);
     await lanjut(page);
 
     // Langkah 5, 6, 7
     for (const n of [5, 6, 7]) {
       await expect(page).toHaveURL(new RegExp(`/langkah/${n}$`));
+      if (n === 5) {
+        await expect(page.getByLabel("Tanggal lahir")).toHaveValue("17 Mei 2011");
+        await expect(page.getByText("Diisi pada langkah pertama; tidak perlu diisi ulang.")).toBeVisible();
+        await page.getByRole("radio", { name: "Lainnya (tulis sendiri)" }).check();
+        await expect(page.getByLabel("Tulis sumber lainnya")).toBeVisible();
+      }
       await isiFormLangkah(page);
       if (n === 7) {
         for (const kotak of await page.getByRole("group", { name: /Nilai ujian/ }).locator("input").all()) await kotak.fill("80");
+      }
+      if (n === 5) {
+        await page.getByRole("radio", { name: "Lainnya (tulis sendiri)" }).check();
+        await page.getByLabel("Tulis sumber lainnya").fill("kunjungan ke sekolah");
+        await expect(page.getByLabel("Tulis sumber lainnya")).toHaveValue("KUNJUNGAN KE SEKOLAH");
       }
       if (n === 5) await axe(page);
       await lanjut(page);

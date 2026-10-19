@@ -221,13 +221,13 @@ describe("pemeriksaan dan koreksi nilai", () => {
     };
     expect(awal.mapel.ipa["1"]).toBe(80);
 
-    // IPA dan Matematika tinggi: saran bergeser ke FKK atau TKR
+    // IPA dan Matematika tinggi: saran bergeser ke LPK3 atau TKR
     const tinggi = structuredClone(awal.mapel);
     for (const k of ["ipa", "matematika"])
       for (const s of awal.semester)
         if (tinggi[k][String(s)] !== undefined) tinggi[k][String(s)] = 98;
     const h1 = await periksaNilai(p.id.toString(), { aksi: "koreksi", mapel: tinggi }, ctx);
-    expect(["FKK", "TKR"]).toContain(
+    expect(["LPK3", "TKR"]).toContain(
       h1.statusNilai === "dikoreksi" ? (h1 as { saran: string | null }).saran : "",
     );
 

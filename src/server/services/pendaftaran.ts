@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/client";
 import {
   TOTAL_LANGKAH,
+  adaNilaiRapor,
   type NilaiRapor,
   type InputCekStatus,
 } from "@/server/validasi/wizard";
@@ -19,7 +20,7 @@ import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/
 import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
-import { hitungRekomendasi, muatBobotJurusan } from "@/server/services/rekomendasi";
+import { hitungRekomendasi, muatBobotJurusan, versiBobot } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 
 // Submit pendaftaran (PRD v3.1 10.5-10.7), halaman sukses, dan cek status (10.9).
@@ -68,7 +69,7 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
   // 2. Hitung ulang rekomendasi di server.
   const bobot = await muatBobotJurusan();
   const rapor = semua.nilai_rapor as NilaiRapor;
-  const rekom = hitungRekomendasi(rapor, bobot);
+  const rekom = adaNilaiRapor(rapor) ? hitungRekomendasi(rapor, bobot) : { versi: versiBobot(bobot), peringkat: [] };
   const idJurusan = (kode: unknown) => bobot.find((j) => j.kode === kode)?.id;
   const jurusan1 = idJurusan(semua.jurusan_1);
   if (!jurusan1) throw GalatApi.validasi({ jurusan_1: ["Pilihan jurusan tidak valid."] });

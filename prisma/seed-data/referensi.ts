@@ -21,8 +21,8 @@ export const JURUSAN = [
     urutan: 2,
   },
   {
-    kode: "FKK",
-    nama: "Farmasi Klinis dan Komunitas",
+    kode: "LPK3",
+    nama: "Layanan Penunjang Kefarmasian Klinis dan Komunitas",
     deskripsi: "Ilmu farmasi, pengelolaan obat, dan pelayanan kesehatan di apotek, klinik, dan rumah sakit.",
     prospekKarir: ["Asisten Tenaga Kefarmasian", "Staf Apotek atau Klinik", "Wirausaha Apotek"],
     keunggulan: ["Laboratorium farmasi"],
@@ -66,7 +66,7 @@ export const MAPEL: Mapel[] = [
 export const BOBOT: Record<string, Record<string, number>> = {
   AKL: { matematika: 0.4, ips: 0.25, b_indonesia: 0.15, informatika: 0.1, b_inggris: 0.1 },
   MPLB: { b_indonesia: 0.3, ips: 0.25, b_inggris: 0.2, informatika: 0.15, matematika: 0.1 },
-  FKK: { ipa: 0.45, matematika: 0.2, b_indonesia: 0.15, b_inggris: 0.1, pai: 0.1 },
+  LPK3: { ipa: 0.45, matematika: 0.2, b_indonesia: 0.15, b_inggris: 0.1, pai: 0.1 },
   TKR: { ipa: 0.35, matematika: 0.3, prakarya: 0.2, informatika: 0.15 },
 };
 
@@ -79,13 +79,13 @@ export const FAQ = [
   },
   {
     pertanyaan: "Dokumen apa yang harus disiapkan?",
-    jawaban: "Siapkan foto atau pindaian Akta Kelahiran dan Kartu Keluarga untuk diunggah, serta rapor SMP/MTs untuk dibaca nilainya (foto rapor tidak disimpan). Pada saat verifikasi, bawa berkas fisik sesuai daftar di halaman sukses.",
+    jawaban: "Ijazah fisik tidak wajib dan tidak perlu diunggah. Akta Kelahiran dan Kartu Keluarga dapat diunggah bila tersedia. Nilai rapor SMP/MTs juga opsional; jika diisi, nilainya dapat dimasukkan manual atau dibaca dari foto di HP (foto rapor tidak disimpan). Saat verifikasi, bawa berkas yang tersedia sesuai arahan panitia.",
     keywords: ["dokumen", "berkas", "persyaratan", "syarat", "akta", "kk", "rapor", "upload"],
     kategori: "Persyaratan",
   },
   {
     pertanyaan: "Bagaimana cara mengunggah rapor?",
-    jawaban: "Pada Langkah 3, Anda bisa memotret halaman rapor agar nilainya dibaca otomatis di HP Anda, atau mengisi tabel nilai sendiri. Foto rapor tidak diunggah dan tidak disimpan. Periksa dan perbaiki tabel nilainya sebelum lanjut.",
+    jawaban: "Pada Langkah 3, pengisian nilai rapor bersifat opsional. Jika ingin mendapat saran jurusan, Anda bisa memotret halaman rapor agar dibaca di HP atau mengisi tabel sendiri. Foto rapor tidak diunggah atau disimpan. Jika nilai tidak diisi, Anda tetap dapat memilih jurusan sendiri.",
     keywords: ["rapor", "nilai", "upload", "unggah", "foto", "pdf"],
     kategori: "Cara Upload",
   },

@@ -1,6 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-// AES-256-GCM untuk data sensitif (NIK, no KK, no HP, refresh token Drive). PRD v4 Bagian 8 dan 17.
+// AES-256-GCM untuk data sensitif (NIK murid/orang tua, no KK, no HP, refresh token Drive). PRD v4 Bagian 8 dan 17.
 // Format tersimpan: "v1:<iv>.<tag>.<cipher>" (base64url), jadi versi kunci bisa diganti kelak.
 
 const VERSI = "v1";

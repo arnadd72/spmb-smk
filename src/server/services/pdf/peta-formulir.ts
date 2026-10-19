@@ -126,11 +126,11 @@ export const KOTAK_PENGHASILAN: [Kotak, Kotak] = [
   { x0: 236.3, y0: 773.7, x1: 252.8, y1: 785.7 },
   { x0: 254.8, y0: 773.7, x1: 271.3, y1: 785.7 },
 ];
-/** Kode jurusan sistem -> kotak. FKK tercetak "LPKKK" di template. */
+/** Kode jurusan sistem -> kotak. LPK3 memakai kotak jurusan kefarmasian pada template. */
 export const KOTAK_JURUSAN: Record<string, Kotak> = {
   AKL: { x0: 236.3, y0: 808.7, x1: 252.8, y1: 820.7 },
   MPLB: { x0: 236.3, y0: 826.7, x1: 252.8, y1: 838.7 },
-  FKK: { x0: 236.3, y0: 844.7, x1: 252.8, y1: 856.7 },
+  LPK3: { x0: 236.3, y0: 844.7, x1: 252.8, y1: 856.7 },
   TKR: { x0: 236.3, y0: 862.7, x1: 252.8, y1: 874.7 },
 };
 export const KOTAK_SERAGAM: Record<string, Kotak> = {

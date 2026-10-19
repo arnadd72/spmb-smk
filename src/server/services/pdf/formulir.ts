@@ -51,7 +51,11 @@ export type DataFormulir = {
   ayahPendidikan?: string | null;
   pekerjaanAyah?: string | null;
   namaIbu?: string | null;
+  ibuTempatLahir?: string | null;
+  ibuTanggalLahir?: Date | null;
   ibuTtl?: string | null;
+  ayahTempatLahir?: string | null;
+  ayahTanggalLahir?: Date | null;
   ibuPendidikan?: string | null;
   pekerjaanIbu?: string | null;
   ortuRt?: string | null;
@@ -93,6 +97,8 @@ const tanggalPanjang = (d: Date) =>
   new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }).format(d).toUpperCase();
 
 const bagi = (periode: string) => (/^(\d{4})\/(\d{4})$/.exec(periode) ?? []).slice(1);
+const ttlOrangTua = (tempat: string | null | undefined, tanggal: Date | null | undefined, lama: string | null | undefined) =>
+  [tempat, tanggal ? tanggalPanjang(tanggal) : ""].filter(Boolean).join(", ") || lama || "";
 
 /** Nilai teks tiap slot dari data pendaftar. String kosong = dilewati. */
 export function nilaiSlot(d: DataFormulir): Record<string, string> {
@@ -135,11 +141,11 @@ export function nilaiSlot(d: DataFormulir): Record<string, string> {
     noHp: s(d.noHp),
     email: s(d.email),
     ayahNama: s(d.namaAyah),
-    ayahTtl: s(d.ayahTtl),
+    ayahTtl: ttlOrangTua(d.ayahTempatLahir, d.ayahTanggalLahir, d.ayahTtl),
     ayahPendidikan: s(d.ayahPendidikan),
     ayahPekerjaan: s(d.pekerjaanAyah),
     ibuNama: s(d.namaIbu),
-    ibuTtl: s(d.ibuTtl),
+    ibuTtl: ttlOrangTua(d.ibuTempatLahir, d.ibuTanggalLahir, d.ibuTtl),
     ibuPendidikan: s(d.ibuPendidikan),
     ibuPekerjaan: s(d.pekerjaanIbu),
     ortuRt: s(d.ortuRt),
@@ -315,7 +321,11 @@ export function dataFormulirDari(p: BarisPendaftar, tanggalVerifikasi: string | 
     ayahPendidikan: p.ayahPendidikan,
     pekerjaanAyah: p.pekerjaanAyah,
     namaIbu: p.namaIbu,
+    ayahTempatLahir: p.ayahTempatLahir,
+    ayahTanggalLahir: p.ayahTanggalLahir,
     ibuTtl: p.ibuTtl,
+    ibuTempatLahir: p.ibuTempatLahir,
+    ibuTanggalLahir: p.ibuTanggalLahir,
     ibuPendidikan: p.ibuPendidikan,
     pekerjaanIbu: p.pekerjaanIbu,
     ortuRt: p.ortuRt,

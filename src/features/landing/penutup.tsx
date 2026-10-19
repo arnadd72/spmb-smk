@@ -54,7 +54,7 @@ export function Penutup() {
           data-judul-penutup
           className="max-w-[14ch] text-[clamp(2.1rem,5.4vw,4.75rem)] font-bold leading-[0.92] tracking-[-0.02em]"
         >
-          Siapkan rapor dan akta, <span className="text-kuning">mulai</span> hari ini.
+          Siapkan data diri, <span className="text-kuning">mulai</span> hari ini.
         </h2>
         <p data-aksi className="mt-6 max-w-[46ch] text-base text-kertas/80 lg:text-lg">
           Sudah mendaftar? Masukkan nomor pendaftaran dan tanggal lahir untuk melihat status verifikasi.

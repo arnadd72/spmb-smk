@@ -140,12 +140,20 @@ describe("detail dan ubah data pendaftar", () => {
   it("ubah nama dan NIK: tersimpan, hash pencarian ikut berubah, audit mencatat lama dan baru tanpa NIK utuh", async () => {
     const p = await pendaftarDariWizard();
     const d = await ambilPeserta(p.id.toString());
-    const hasil = await ubahPeserta(p.id.toString(), { ...d.nilai, nama_lengkap: "Nama Baru", nik: "3302010101010077" }, ctx);
-    expect(hasil.berubah.sort()).toEqual(["nama_lengkap", "nik"]);
+    const hasil = await ubahPeserta(p.id.toString(), {
+      ...d.nilai,
+      nama_lengkap: "Nama Baru",
+      nik: "3302010101010077",
+      nik_ayah: "3302010101010088",
+      nik_ibu: "3302010101010099",
+    }, ctx);
+    expect(hasil.berubah.sort()).toEqual(["nama_lengkap", "nik", "nik_ayah", "nik_ibu"]);
 
     const baru = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
     expect(baru.namaLengkap).toBe("Nama Baru");
     expect(dekripsi(baru.nik as string)).toBe("3302010101010077");
+    expect(dekripsi(baru.nikAyah as string)).toBe("3302010101010088");
+    expect(dekripsi(baru.nikIbu as string)).toBe("3302010101010099");
     expect(baru.nikHash).not.toBe(p.nikHash);
     expect(await nomorDari({ q: "3302010101010077" })).toEqual([p.nomorPendaftaran]);
     expect(await nomorDari({ q: "3302010101010001" })).toEqual([]);
@@ -157,6 +165,8 @@ describe("detail dan ubah data pendaftar", () => {
     const mentah = JSON.stringify(audit, (_k, v) => (typeof v === "bigint" ? v.toString() : v));
     expect(mentah).not.toContain("3302010101010077");
     expect(mentah).not.toContain("3302010101010001");
+    expect(mentah).not.toContain("3302010101010088");
+    expect(mentah).not.toContain("3302010101010099");
   });
 
   it("tanpa perubahan tidak membuat audit; data tidak valid ditolak dan tidak mengubah apa pun", async () => {

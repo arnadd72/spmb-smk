@@ -69,9 +69,9 @@ describe("ubah isian bawaan", () => {
   });
 
   it("isian yang disembunyikan hilang dari wizard dan tidak lagi wajib", async () => {
-    const f = (await daftarFieldAdmin()).find((x) => x.kunci === "no_ijazah")!;
-    await ubahField("no_ijazah", { ...dasar(f), tampil: false, wajib: false }, ctx);
-    expect((await muatDefinisiField()).some((x) => x.kunci === "no_ijazah")).toBe(false);
+    const f = (await daftarFieldAdmin()).find((x) => x.kunci === "no_wa")!;
+    await ubahField("no_wa", { ...dasar(f), tampil: false, wajib: false }, ctx);
+    expect((await muatDefinisiField()).some((x) => x.kunci === "no_wa")).toBe(false);
 
     const { token } = await buatDraf();
     await isiLengkap(token);

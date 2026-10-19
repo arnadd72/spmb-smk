@@ -18,14 +18,15 @@ export type DataEmailKode = {
 };
 
 const BERKAS_FISIK = [
-  "Akte asli atau ijazah SD/MI (1 lembar)",
+  "Akta asli (1 lembar)",
+  "Ijazah SD/MI (1 lembar, opsional)",
   "Fotokopi akte kelahiran (1 lembar)",
   "Fotokopi kartu keluarga (1 lembar)",
   "Fotokopi KIP/KIS/PKH (1 lembar, bila ada)",
   "Fotokopi KTP orang tua (2 lembar)",
   "Pas foto 3 x 4 (2 lembar)",
   "Surat Keterangan Lulus (SKL) (1 lembar)",
-  "Fotokopi ijazah MTs/SMP (1 lembar)",
+  "Fotokopi ijazah MTs/SMP (1 lembar, opsional)",
 ];
 
 const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

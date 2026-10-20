@@ -1,4 +1,3 @@
-import { KETERANGAN_PAS_FOTO } from "@/lib/berkas-fisik";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Stepper } from "@/components/ui/stepper";
@@ -73,19 +72,13 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       .filter((f) => f.tipe === "file")
       .map((f) => ({ kunci: f.kunci, label: f.label, wajib: f.wajib, bantuan: f.teksBantuan ?? undefined }));
     isi = (
-      <>
-        <div className="mb-6 rounded-kartu bg-permukaan-alt p-4 text-sm text-tinta">
-          <p className="font-semibold">Pas foto (opsional, dibawa langsung)</p>
-          <p className="mt-1">{KETERANGAN_PAS_FOTO}</p>
-        </div>
         <LangkahAkta
         slot={slot}
         berkas={Object.fromEntries(slot.map((s) => [s.kunci, daftarBerkas(draf.berkas[s.kunci])]))}
         namaMurid={String(draf.data["1"]?.nama_lengkap ?? "")}
         tanggalLahir={String(draf.data["1"]?.tanggal_lahir ?? "")}
         awalOcr={(awal.ocr ?? {}) as Record<string, string>}
-        />
-      </>
+      />
     );
   } else if (n === 3) {
     const [konfig, bobot] = await Promise.all([ambilKonfigWizard(), muatBobotJurusan()]);
@@ -126,6 +119,7 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       baris: [
         { label: "Akta kelahiran", nilai: draf.berkas.akta ? "Terunggah" : "Tidak diunggah" },
         { label: "Kartu keluarga", nilai: draf.berkas.kk ? "Terunggah" : "Tidak diunggah" },
+        { label: "Pas foto", nilai: draf.berkas.pas_foto ? "Terunggah" : "Tidak diunggah" },
         ...mapelBerbobot(bobot).map((m) => {
           const r = rataMapel(rapor?.mapel[m.kode]);
           return { label: `Rata-rata ${m.nama}`, nilai: r === null ? "" : r.toFixed(1) };

@@ -239,6 +239,7 @@ export async function unggahBerkas(token: string | undefined, kunci: string, isi
   if (isi.length > MAKS_UKURAN_BYTE) throw GalatApi.validasi({ berkas: ["Ukuran berkas melebihi 5 MB."] });
   const jenis = deteksiMime(isi);
   if (!jenis) throw GalatApi.validasi({ berkas: ["Format berkas harus JPG, PNG, WebP, atau PDF."] });
+  if (kunci === "pas_foto" && !jenis.mime.startsWith("image/")) throw GalatApi.validasi({ berkas: ["Pas foto harus berupa gambar JPG, PNG, atau WebP."] });
 
   const berkas = bacaBerkas(baris);
   const lama = berkas[kunci];

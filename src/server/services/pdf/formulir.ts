@@ -1,8 +1,10 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import sharp from "sharp";
+import { PDFDocument, StandardFonts, clip, endPath, popGraphicsState, pushGraphicsState, rectangle, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { prisma } from "@/server/db/client";
 import { dekripsi, hashToken } from "@/server/services/kripto";
+import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import {
   KOTAK_GENDER,
@@ -72,6 +74,8 @@ export type DataFormulir = {
   smpPropinsi?: string | null;
   ijazahNomorTahun?: string | null;
   lamaBelajar?: string | null;
+  /** Pas foto pendaftar (gambar apa pun); ditempel di kotak "Pas photo 3 x 4" halaman 2. */
+  pasFoto?: Uint8Array | null;
   nilaiUjian?: { b_indonesia?: number; b_inggris?: number; matematika?: number; ipa?: number } | null;
   golonganDarah?: string | null;
   tinggiBadan?: number | null;
@@ -208,6 +212,9 @@ export function pas(font: PDFFont, teks: string, ukuranAwal: number, maks: numbe
 
 const Y = (y: number) => TINGGI_HALAMAN - y;
 
+/** Kotak pas foto di template-dasar.pdf halaman 2 (koordinat PDF, sumbu Y dari bawah). */
+const KOTAK_PAS_FOTO = { x: 286, bawah: 273.57, w: 68.5, h: 75 };
+
 function tandai(page: PDFPage, k: Kotak, teks?: string, font?: PDFFont) {
   const tengahX = (k.x0 + k.x1) / 2;
   if (teks && font) {
@@ -276,6 +283,19 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
   if (d.jurusan1 && KOTAK_JURUSAN[d.jurusan1.kode]) tandai(p1, KOTAK_JURUSAN[d.jurusan1.kode], "1", tebal);
   if (d.jurusan2 && KOTAK_JURUSAN[d.jurusan2.kode]) tandai(p1, KOTAK_JURUSAN[d.jurusan2.kode], "2", tebal);
   if (d.ukuranSeragam && KOTAK_SERAGAM[d.ukuranSeragam]) tandai(p2, KOTAK_SERAGAM[d.ukuranSeragam]);
+
+  // Pas foto: isi kotak "Pas photo 3 x 4" di template halaman 2 (kotak 68,5 x 75 pt; garis kotak tetap milik template).
+  if (d.pasFoto && d.pasFoto.length > 0) {
+    const jpeg = await sharp(Buffer.from(d.pasFoto)).rotate().resize({ height: 600, withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
+    const gambar = await doc.embedJpg(jpeg);
+    const k = KOTAK_PAS_FOTO;
+    const skala = Math.max(k.w / gambar.width, k.h / gambar.height);
+    const lebar = gambar.width * skala;
+    const tinggi = gambar.height * skala;
+    p2.pushOperators(pushGraphicsState(), rectangle(k.x + 0.8, k.bawah + 0.8, k.w - 1.6, k.h - 1.6), clip(), endPath());
+    p2.drawImage(gambar, { x: k.x + (k.w - lebar) / 2, y: k.bawah + (k.h - tinggi) / 2, width: lebar, height: tinggi });
+    p2.pushOperators(popGraphicsState());
+  }
 
   return { pdf: await doc.save(), jejak };
 }
@@ -358,6 +378,26 @@ export function dataFormulirDari(p: BarisPendaftar, tanggalVerifikasi: string | 
   };
 }
 
+/** Baca pas foto pendaftar dari Drive (bila sudah tersinkron) atau penyimpanan sementara. Gagal baca = formulir tanpa foto. */
+async function muatPasFoto(p: BarisPendaftar): Promise<Uint8Array | null> {
+  try {
+    const meta = (p.berkasMeta ?? {}) as Record<string, { ref?: string } | undefined>;
+    const idDrive = ((p.kustomFileIds ?? {}) as Record<string, unknown>).pas_foto;
+    let aliran: AsyncIterable<Buffer | string> | null = null;
+    if (typeof idDrive === "string" && idDrive) aliran = await (await penyimpananDokumen()).ambilStream(idDrive);
+    else if (meta.pas_foto?.ref) {
+      const temp = penyimpananTemp();
+      if (await temp.ada(meta.pas_foto.ref)) aliran = await temp.ambilStream(meta.pas_foto.ref);
+    }
+    if (!aliran) return null;
+    const potongan: Buffer[] = [];
+    for await (const c of aliran) potongan.push(Buffer.from(c));
+    return Buffer.concat(potongan);
+  } catch {
+    return null;
+  }
+}
+
 async function formatTanggalVerifikasi(): Promise<string | null> {
   const v = await ambilPengaturan("tanggal_verifikasi_fisik");
   return v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? tanggalPanjang(new Date(`${v}T00:00:00+07:00`)) : null;
@@ -368,7 +408,7 @@ export async function formulirDariToken(aksesToken: string): Promise<{ pdf: Uint
   if (!/^[A-Za-z0-9_-]{20,80}$/.test(aksesToken)) return null;
   const p = await cari({ aksesTokenHash: hashToken(aksesToken) });
   if (!p) return null;
-  const { pdf } = await buatFormulirPdf(dataFormulirDari(p, await formatTanggalVerifikasi()));
+  const { pdf } = await buatFormulirPdf({ ...dataFormulirDari(p, await formatTanggalVerifikasi()), pasFoto: await muatPasFoto(p) });
   return { pdf, nomor: p.nomorPendaftaran };
 }
 
@@ -376,6 +416,6 @@ export async function formulirDariToken(aksesToken: string): Promise<{ pdf: Uint
 export async function formulirDariNomor(nomor: string): Promise<{ pdf: Uint8Array; nomor: string } | null> {
   const p = await cari({ nomorPendaftaran: nomor });
   if (!p) return null;
-  const { pdf } = await buatFormulirPdf(dataFormulirDari(p, await formatTanggalVerifikasi()));
+  const { pdf } = await buatFormulirPdf({ ...dataFormulirDari(p, await formatTanggalVerifikasi()), pasFoto: await muatPasFoto(p) });
   return { pdf, nomor: p.nomorPendaftaran };
 }

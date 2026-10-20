@@ -25,7 +25,7 @@ export type DeskripsiBerkas = {
 };
 
 const MIME_AMAN = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
-const LABEL: Record<string, string> = { akta: "Akta kelahiran", kk: "Kartu keluarga", rapor: "Rapor" };
+const LABEL: Record<string, string> = { akta: "Akta kelahiran", kk: "Kartu keluarga", rapor: "Rapor", pas_foto: "Pas foto" };
 
 type Baris = {
   berkasMeta: unknown;

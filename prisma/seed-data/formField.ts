@@ -53,6 +53,10 @@ export const FORM_FIELDS: FieldSeed[] = [
   // Langkah 2: akta dan KK
   f(2, 10, "akta", "Akta kelahiran", "file", opsional),
   f(2, 20, "kk", "Kartu keluarga", "file", opsional),
+  f(2, 30, "pas_foto", "Pas foto 3 x 4", "file", {
+    ...opsional,
+    teksBantuan: "Foto tampak depan berlatar merah, memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG.",
+  }),
 
   // Langkah 3: nilai rapor (terkunci selama rekomendasi aktif). Foto rapor tidak diunggah, hanya nilainya.
   f(3, 20, "nilai_rapor", "Nilai rapor", "tabel", { ...opsional, terkunci: true }),

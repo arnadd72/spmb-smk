@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import sharp from "sharp";
 import { PDFArray, PDFDocument, PDFRawStream, decodePDFRawStream } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { buatFormulirPdf, nilaiSlot, type DataFormulir } from "@/server/services/pdf/formulir";
@@ -133,6 +134,15 @@ describe("PDF formulir (PRD 15.1)", () => {
     const h3 = await isiHalaman(pdf, 3);
     expect(h3.split(tampil("2027 / 2028")).length - 1).toBe(2);
     expect(h3).toContain(tampil("SPMB-2027-0001"));
+  });
+
+  it("pas foto ditempel di kotak halaman 2 tanpa mengubah jumlah halaman", async () => {
+    const foto = await sharp({ create: { width: 300, height: 400, channels: 3, background: { r: 200, g: 20, b: 20 } } }).png().toBuffer();
+    const { pdf } = await buatFormulirPdf({ ...contoh, pasFoto: foto });
+    const { pdf: tanpa } = await buatFormulirPdf(contoh);
+    const doc = await PDFDocument.load(pdf);
+    expect(doc.getPageCount()).toBe(3);
+    expect(pdf.length).toBeGreaterThan(tanpa.length);
   });
 
   it("karakter di luar WinAnsi diganti aman, tidak melempar galat", async () => {

@@ -24,7 +24,7 @@ const BERKAS_FISIK = [
   "Fotokopi kartu keluarga (1 lembar)",
   "Fotokopi KIP/KIS/PKH (1 lembar, bila ada)",
   "Fotokopi KTP orang tua (2 lembar)",
-  "Pas foto 3 x 4 (2 lembar), latar merah, memakai seragam sekolah asal",
+  "Pas foto 3 x 4 (2 lembar)",
   "Surat Keterangan Lulus (SKL) (1 lembar)",
   "Fotokopi ijazah MTs/SMP (1 lembar, opsional)",
 ];

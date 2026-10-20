@@ -81,12 +81,8 @@ export function FormCekStatus() {
           <p className="font-semibold text-tinta">{hasil.nama}</p>
           <dl className="mt-3 grid gap-3 sm:grid-cols-2">
             <div>
-              <dt className="text-sm text-tinta-redup">Pilihan jurusan 1</dt>
+              <dt className="text-sm text-tinta-redup">Pilihan jurusan</dt>
               <dd className="font-medium text-tinta">{hasil.jurusan1 ?? "-"}</dd>
-            </div>
-            <div>
-              <dt className="text-sm text-tinta-redup">Pilihan jurusan 2</dt>
-              <dd className="font-medium text-tinta">{hasil.jurusan2 ?? "-"}</dd>
             </div>
           </dl>
           {hasil.catatan && (

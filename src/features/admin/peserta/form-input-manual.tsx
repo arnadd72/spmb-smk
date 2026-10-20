@@ -3,14 +3,12 @@
 import { useRef, useState, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
 import { Input, kontrolDasar } from "@/components/ui/input";
 import { Bidang } from "@/features/wizard/bidang";
-import { KUNCI_NILAI_UJIAN, NAMA_LANGKAH, fieldBiasa, skemaLangkah, skemaNilaiRapor, skemaNilaiUjian, type DefinisiField } from "@/features/wizard/schema-client";
+import { NAMA_LANGKAH, fieldBiasa, skemaLangkah, skemaNilaiRapor, type DefinisiField } from "@/features/wizard/schema-client";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 
-const LABEL_UJIAN: Record<string, string> = { b_indonesia: "Bahasa Indonesia", b_inggris: "Bahasa Inggris", matematika: "Matematika", ipa: "IPA" };
 const TANPA = "-";
 
 type Props = { fields: DefinisiField[]; mapel: { kode: string; nama: string }[]; semester: number[] };
@@ -27,7 +25,6 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
     for (const f of fields) if (f.tipe !== "tabel") d[f.kunci] = f.kunci === "jurusan_2" ? TANPA : f.tipe === "checkbox" ? false : "";
     return d;
   });
-  const [ujian, setUjian] = useState<Record<string, string>>(Object.fromEntries(KUNCI_NILAI_UJIAN.map((k) => [k, ""])));
   const [rapor, setRapor] = useState<Record<string, Record<string, string>>>(Object.fromEntries(mapel.map((m) => [m.kode, Object.fromEntries(semester.map((s) => [String(s), ""]))])));
   const [statusAwal, setStatusAwal] = useState<"approved" | "pending">("approved");
   const [galat, setGalat] = useState<Record<string, string>>({});
@@ -47,7 +44,7 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
   async function kirim(e: SyntheticEvent) {
     e.preventDefault();
     setGalatUmum(undefined);
-    const isi: Record<string, unknown> = { ...nilai, nilai_ujian: ujian, nilai_rapor: muatanRapor(), status_awal: statusAwal };
+    const isi: Record<string, unknown> = { ...nilai, nilai_rapor: muatanRapor(), status_awal: statusAwal };
     if (isi.jurusan_2 === TANPA) isi.jurusan_2 = "";
 
     const peta: Record<string, string> = {};
@@ -55,8 +52,6 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
       const r = skemaLangkah([...fields], n).safeParse({ ...isi, setuju: true });
       if (!r.success) for (const i of r.error.issues) peta[i.path.join(".")] ??= i.message;
     }
-    const u = skemaNilaiUjian().safeParse(ujian);
-    if (!u.success) for (const i of u.error.issues) peta[`nilai_ujian.${i.path.join(".")}`] ??= i.message;
     const r = skemaNilaiRapor(semester, []).safeParse(muatanRapor());
     if (!r.success) for (const i of r.error.issues) peta[`nilai_rapor.${i.path.slice(1).join(".")}`] ??= i.message;
 
@@ -85,7 +80,6 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
   return (
     <form ref={formRef} onSubmit={kirim} noValidate className="flex flex-col gap-8">
       {langkahAda.map((l) => {
-        const adaUjian = fields.some((f) => f.langkah === l && f.kunci === "nilai_ujian");
         return (
           <section key={l} aria-labelledby={`bagian-${l}`}>
             <h2 id={`bagian-${l}`} className="border-b border-garis pb-2 text-lg font-bold text-ink">
@@ -96,26 +90,6 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
                 <Bidang key={f.kunci} f={f} nilai={nilai[f.kunci]} onChange={ubah} galat={galat[f.kunci] || undefined} />
               ))}
             </div>
-            {adaUjian && (
-              <fieldset className="mt-5 rounded-kartu border border-garis p-4">
-                <legend className="px-1 text-sm font-semibold text-tinta">Nilai ujian (0 sampai 100)</legend>
-                <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                  {KUNCI_NILAI_UJIAN.map((k) => (
-                    <Field key={k} label={LABEL_UJIAN[k]} wajib galat={galat[`nilai_ujian.${k}`]}>
-                      <Input
-                        inputMode="decimal"
-                        value={ujian[k]}
-                        onChange={(e) => {
-                          setUjian((x) => ({ ...x, [k]: e.target.value }));
-                          setGalat((g) => ({ ...g, [`nilai_ujian.${k}`]: "" }));
-                        }}
-                        className="max-w-40"
-                      />
-                    </Field>
-                  ))}
-                </div>
-              </fieldset>
-            )}
           </section>
         );
       })}

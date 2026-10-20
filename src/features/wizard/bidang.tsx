@@ -46,6 +46,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           {f.label}
           {f.wajib && <span aria-hidden className="ml-0.5 text-bahaya">*</span>}
           {f.wajib && <span className="sr-only"> (wajib diisi)</span>}
+          {!f.wajib && <span className="ml-1 font-normal text-tinta-redup">(opsional)</span>}
         </legend>
         {f.teksBantuan && <p className="mt-1 text-sm text-tinta-redup">{f.teksBantuan}</p>}
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
@@ -139,6 +140,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           {f.label}
           {f.wajib && <span aria-hidden className="ml-0.5 text-bahaya">*</span>}
           {f.wajib && <span className="sr-only"> (wajib diisi)</span>}
+          {!f.wajib && <span className="ml-1 font-normal text-tinta-redup">(opsional)</span>}
         </legend>
         <div
           className={cn(
@@ -170,7 +172,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
 
   const lebar = f.tipe === "textarea" ? "sm:col-span-2" : undefined;
   return (
-    <Field label={f.label} wajib={f.wajib} bantuan={f.teksBantuan ?? undefined} galat={galat} className={lebar}>
+    <Field label={f.label} wajib={f.wajib} opsional={!f.wajib} bantuan={f.teksBantuan ?? undefined} galat={galat} className={lebar}>
       {f.tipe === "select" ? (
         <Select
           opsi={f.opsi ?? []}

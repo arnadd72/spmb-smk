@@ -16,7 +16,7 @@ import { ambilDataLanding } from "@/server/actions/ambilLanding";
 export const revalidate = 300;
 
 export const metadata = {
-  title: { absolute: "SPMB SMK Ma'arif NU 1 Wangon | Penerimaan Murid Baru" },
+  title: { absolute: "SPMB SMK Ma'arif NU 1 Wangon | Pendaftaran Murid Baru SPMB" },
   description:
     "Pendaftaran murid baru SMK Ma'arif NU 1 Wangon, Banyumas: AKL, MPLB, LPK3, dan TKR. Daftar tanpa akun, isi nilai rapor, dapatkan saran jurusan.",
 };

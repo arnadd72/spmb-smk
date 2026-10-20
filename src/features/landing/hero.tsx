@@ -131,7 +131,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
         </div>
         {tahunAjaran && (
           <p data-masuk className="angka mt-4 text-sm font-semibold text-ink/60">
-            Penerimaan murid baru tahun ajaran {tahunAjaran}
+            Pendaftaran murid baru SPMB tahun ajaran {tahunAjaran}
           </p>
         )}
       </div>

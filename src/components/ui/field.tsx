@@ -20,12 +20,14 @@ type FieldProps = {
   bantuan?: string;
   galat?: string;
   wajib?: boolean;
+  /** Tampilkan keterangan "(opsional)" di samping label. */
+  opsional?: boolean;
   children: ReactNode;
   className?: string;
 };
 
 /** Label di atas, bantuan di bawah, galat dekat field (PRD 16.6). Tanpa placeholder sebagai label. */
-export function Field({ label, bantuan, galat, wajib, children, className }: FieldProps) {
+export function Field({ label, bantuan, galat, wajib, opsional, children, className }: FieldProps) {
   const id = useId();
   const idBantuan = bantuan ? `${id}-bantuan` : undefined;
   const idGalat = galat ? `${id}-galat` : undefined;
@@ -42,6 +44,7 @@ export function Field({ label, bantuan, galat, wajib, children, className }: Fie
             </span>
           )}
           {wajib && <span className="sr-only"> (wajib diisi)</span>}
+          {opsional && !wajib && <span className="ml-1 font-normal text-tinta-redup">(opsional)</span>}
         </label>
         {children}
         {bantuan && (

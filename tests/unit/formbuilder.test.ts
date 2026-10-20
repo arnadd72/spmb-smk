@@ -106,10 +106,10 @@ describe("ubah isian bawaan", () => {
   });
 
   it("pilihan jurusan (dinamis) tidak bisa diubah lewat form builder", async () => {
-    const j2 = (await daftarFieldAdmin()).find((x) => x.kunci === "jurusan_2")!;
-    expect(j2.opsiDinamis).toBe(true);
-    await ubahField("jurusan_2", { ...dasar(j2), opsi: [{ nilai: "X", label: "X" }, { nilai: "Y", label: "Y" }] }, ctx);
-    const opsi = (await muatDefinisiField()).find((x) => x.kunci === "jurusan_2")!.opsi!;
+    const j1 = (await daftarFieldAdmin()).find((x) => x.kunci === "jurusan_1")!;
+    expect(j1.opsiDinamis).toBe(true);
+    await ubahField("jurusan_1", { ...dasar(j1), opsi: [{ nilai: "X", label: "X" }, { nilai: "Y", label: "Y" }] }, ctx);
+    const opsi = (await muatDefinisiField()).find((x) => x.kunci === "jurusan_1")!.opsi!;
     expect(opsi.map((o) => o.nilai)).toContain("AKL");
   });
 });

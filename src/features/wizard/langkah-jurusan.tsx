@@ -47,12 +47,11 @@ export function LangkahJurusan({
   kartu: KartuRekomendasi[];
   kuotaPenuh: string[];
   opsi: { nilai: string; label: string }[];
-  awal: { jurusan_1?: string; jurusan_2?: string };
+  awal: { jurusan_1?: string };
 }) {
   const router = useRouter();
   const reduce = useReducedMotion();
   const [j1, setJ1] = useState(awal.jurusan_1 ?? kartu.find((k) => k.label === "Paling Sesuai")?.kode ?? "");
-  const [j2, setJ2] = useState(awal.jurusan_2 || "-");
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
@@ -61,12 +60,12 @@ export function LangkahJurusan({
     e.preventDefault();
     setGalatUmum(undefined);
     if (!j1) {
-      setGalat({ jurusan_1: "Pilih jurusan pilihan 1." });
+      setGalat({ jurusan_1: "Pilih jurusan." });
       return;
     }
     setMenyimpan(true);
     try {
-      await simpanLangkahKlien(4, { jurusan_1: j1, jurusan_2: j2 === "-" || j2 === j1 ? "" : j2 });
+      await simpanLangkahKlien(4, { jurusan_1: j1 });
       router.push("/daftar/langkah/5");
     } catch (err) {
       const { umum, field } = pecahGalat(err);
@@ -76,7 +75,7 @@ export function LangkahJurusan({
     }
   }
 
-  const penuh = [j1, j2].filter((k) => kuotaPenuh.includes(k));
+  const penuh = [j1].filter((k) => kuotaPenuh.includes(k));
 
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
@@ -129,19 +128,9 @@ export function LangkahJurusan({
         ))}
       </ol>
 
-      <div className="grid gap-5 sm:grid-cols-2">
-        <Field label="Pilihan jurusan 1" wajib galat={galat.jurusan_1}>
-          <Select opsi={opsi} nilai={j1} onChange={setJ1} name="jurusan_1" />
-        </Field>
-        <Field label="Pilihan jurusan 2" galat={galat.jurusan_2}>
-          <Select
-            opsi={[{ nilai: "-", label: "Tidak ada pilihan kedua" }, ...opsi.filter((o) => o.nilai !== j1)]}
-            nilai={j2}
-            onChange={setJ2}
-            name="jurusan_2"
-          />
-        </Field>
-      </div>
+      <Field label="Pilihan jurusan" wajib bantuan="Pilih satu jurusan." galat={galat.jurusan_1} className="max-w-md">
+        <Select opsi={opsi} nilai={j1} onChange={setJ1} name="jurusan_1" />
+      </Field>
 
       {penuh.length > 0 && (
         <p className="rounded-kontrol bg-peringatan-latar px-3 py-2.5 text-sm font-medium text-peringatan">

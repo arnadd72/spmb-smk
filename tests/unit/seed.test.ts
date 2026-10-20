@@ -117,8 +117,27 @@ describe("seed form field", () => {
   it("NIK ayah dan ibu wajib dengan petunjuk 16 digit", async () => {
     const fields = await prisma.formField.findMany({ where: { kunci: { in: ["nik_ayah", "nik_ibu"] } }, orderBy: { kunci: "asc" } });
     expect(fields.map((f) => [f.kunci, f.wajib, f.teksBantuan])).toEqual([
-      ["nik_ayah", true, "16 digit angka."],
-      ["nik_ibu", true, "16 digit angka."],
+      ["nik_ayah", true, "16 digit angka sesuai KTP. Contoh: 3302012003800001."],
+      ["nik_ibu", true, "16 digit angka sesuai KTP. Contoh: 3302011208820001."],
     ]);
+  });
+
+  it("revisi sekolah: tanpa jurusan 2 dan nilai ujian, tinggi dan berat tanpa satuan, ada contoh penulisan", async () => {
+    const semua = await prisma.formField.findMany();
+    const kunci = semua.map((f) => f.kunci);
+    expect(kunci).not.toContain("jurusan_2");
+    expect(kunci).not.toContain("nilai_ujian");
+    const label = Object.fromEntries(semua.map((f) => [f.kunci, f.label]));
+    expect(label.jurusan_1).toBe("Pilihan jurusan");
+    expect(label.tinggi_badan).toBe("Tinggi badan");
+    expect(label.berat_badan).toBe("Berat badan");
+    expect(semua.find((f) => f.kunci === "tempat_lahir")?.teksBantuan).toMatch(/Contoh/);
+    expect(semua.find((f) => f.kunci === "asal_sekolah")?.placeholder).toBeTruthy();
+    expect(semua.find((f) => f.kunci === "asal_sekolah")?.langkah).toBe(7);
+  });
+
+  it("FKK diganti menjadi LPK3, bukan jurusan tambahan", async () => {
+    const kode = (await prisma.jurusan.findMany()).map((j) => j.kode).sort();
+    expect(kode).toEqual(["AKL", "LPK3", "MPLB", "TKR"]);
   });
 });

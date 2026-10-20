@@ -106,7 +106,6 @@ describe("input manual pendaftar luring", () => {
     const fields = fieldEdit(await muatDefinisiField());
     const isi: Record<string, unknown> = {};
     for (const f of fields) if (f.tipe !== "tabel") isi[f.kunci] = nilaiValid(f);
-    isi.nilai_ujian = { b_indonesia: 80, b_inggris: 75, matematika: 90, ipa: 70 };
     isi.nama_lengkap = "Peserta Luring";
     return isi;
   }

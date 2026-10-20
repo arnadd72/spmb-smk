@@ -50,7 +50,6 @@ export async function isiLengkap(token: string, tanpaJurusan2 = false) {
     for (const f of fields.filter((x) => x.langkah === n && x.tipe !== "file" && x.tipe !== "tabel")) isi[f.kunci] = nilaiValid(f);
     if (n === 3) isi.nilai_rapor = { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80, "2": 82 }])) };
     if (n === 4 && tanpaJurusan2) delete isi.jurusan_2;
-    if (n === 7) isi.nilai_ujian = { b_indonesia: 80, b_inggris: 75, matematika: 90, ipa: 70 };
     await simpanLangkah(token, n, isi);
   }
 }

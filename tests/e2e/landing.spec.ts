@@ -55,27 +55,30 @@ for (const lebar of [360, 1440]) {
 test.describe("interaksi landing (desktop)", () => {
   test.use({ viewport: { width: 1440, height: 900 } });
 
-  test("program keahlian: halaman tetap vertikal dan deretan kartu dapat digulir mendatar", async ({ page }) => {
+  test("program keahlian: gulir vertikal menggeser panel ke samping (scroll horizontal GSAP)", async ({ page }) => {
     await page.goto("/");
-    await page.locator("#jurusan").scrollIntoViewIfNeeded();
+    await page.waitForTimeout(1500); // GSAP dan Lenis dimuat lazy setelah hidrasi
+
     const jalur = page.locator("#jurusan [data-jalur]");
-    const status = await jalur.evaluate((e) => {
-      e.scrollLeft = 0;
-      const sebelum = e.scrollLeft;
-      e.scrollLeft += Math.round(e.clientWidth / 2);
-      return {
-        sebelum,
-        sesudah: e.scrollLeft,
-        lebarIsi: e.scrollWidth,
-        lebarTampil: e.clientWidth,
-        posisiBagian: getComputedStyle(document.querySelector("#jurusan") as HTMLElement).position,
-        halamanVertikal: document.documentElement.scrollHeight > innerHeight,
-      };
-    });
-    expect(status.lebarIsi).toBeGreaterThan(status.lebarTampil);
-    expect(status.sesudah).toBeGreaterThan(status.sebelum);
-    expect(status.posisiBagian).toBe("static");
-    expect(status.halamanVertikal).toBe(true);
+    const sebelum = await jalur.evaluate((e) => new DOMMatrixReadOnly(getComputedStyle(e).transform).m41);
+
+    const atas = await page.locator("#jurusan").evaluate((e) => e.getBoundingClientRect().top + window.scrollY);
+    await page.evaluate((y) => window.scrollTo(0, y + 64 + 1400), atas);
+    await page.waitForTimeout(900);
+
+    const sesudah = await jalur.evaluate((e) => new DOMMatrixReadOnly(getComputedStyle(e).transform).m41);
+    expect(sesudah, "panel harus bergeser ke kiri").toBeLessThan(sebelum - 300);
+    await page.screenshot({ path: "docs/design/landing-1440-program.png" });
+    await expect(page.getByRole("heading", { name: "Teknik Kendaraan Ringan" })).toBeAttached();
+  });
+
+  test("galeri kehidupan sekolah: foto dapat digeser dengan tombol", async ({ page }) => {
+    await page.goto("/");
+    const slider = page.locator("[data-slider-galeri]");
+    await slider.scrollIntoViewIfNeeded();
+    await expect(slider).toBeVisible();
+    await page.getByRole("button", { name: "Foto berikutnya" }).click();
+    await expect.poll(() => slider.evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
   });
 
   test("tes minat bakat memetakan jawaban dan menampilkan jurusan seri setara", async ({ page }) => {
@@ -121,25 +124,39 @@ test("prefers-reduced-motion: konten tetap tampil tanpa animasi", async ({ brows
   await ctx.close();
 });
 
-// Uji bahwa scroller native tetap berfungsi dan bagian tidak dipin di beberapa ukuran laptop umum.
+// Regresi: bagian jurusan pernah terlempar ke bawah layar karena di-pin dua kali (tween kedua memakai ulang
+// scrollTrigger yang punya pin: true). Selama rentang pin, bagian harus menempel di bawah navbar dan
+// minimal satu panel terlihat, di beberapa ukuran laptop umum.
 for (const [lebar, tinggi] of [
   [1280, 720],
   [1366, 768],
   [1536, 864],
 ] as const) {
-  test(`kartu jurusan dapat digulir mendatar tanpa pin pada laptop ${lebar}x${tinggi}`, async ({ page }) => {
+  test(`jurusan tidak kosong saat digulir di laptop ${lebar}x${tinggi}`, async ({ page }) => {
     await page.setViewportSize({ width: lebar, height: tinggi });
     await page.goto("/");
-    const jalur = page.locator("#jurusan [data-jalur]");
-    const status = await jalur.evaluate((e) => {
-      e.scrollLeft = 0;
-      e.scrollLeft = e.clientWidth;
-      return {
-        bergeser: e.scrollLeft > 0,
-        meluap: e.scrollWidth > e.clientWidth,
-        posisi: getComputedStyle(document.querySelector("#jurusan") as HTMLElement).position,
-      };
-    });
-    expect(status).toEqual({ bergeser: true, meluap: true, posisi: "static" });
+    await page.waitForTimeout(2200);
+
+    const awal = await page.locator("#jurusan").evaluate((e) => e.getBoundingClientRect().top + window.scrollY);
+    // Panjang rentang pin = padding pin-spacer yang dipasang GSAP; uji di awal, tengah, dan dekat akhir.
+    const panjang = await page.locator("#jurusan").evaluate((e) => parseFloat(getComputedStyle(e.parentElement as HTMLElement).paddingBottom));
+    expect(panjang, "rentang pin terpasang").toBeGreaterThan(1000);
+    for (const offset of [100, Math.round(panjang * 0.4), Math.round(panjang * 0.85)]) {
+      await page.evaluate((y) => window.scrollTo(0, y), awal - 64 + offset);
+      await page.waitForTimeout(500);
+      const r = await page.evaluate(() => {
+        const s = document.querySelector("#jurusan") as HTMLElement;
+        const t = s.getBoundingClientRect();
+        const terlihat = [...s.querySelectorAll("[data-panel]")].some((p) => {
+          const b = p.getBoundingClientRect();
+          return b.right > 40 && b.left < innerWidth - 40;
+        });
+        return { atas: Math.round(t.top), terlihat, geserY: new DOMMatrixReadOnly(getComputedStyle(s).transform).m42 };
+      });
+      expect(r.atas, `bagian jurusan menempel di bawah navbar pada offset ${offset}`).toBeGreaterThanOrEqual(60);
+      expect(r.atas).toBeLessThanOrEqual(70);
+      expect(r.terlihat, `ada panel terlihat pada offset ${offset}`).toBe(true);
+      expect(r.geserY, "tidak ada geseran translateY ekstra (pin ganda)").toBe(0);
+    }
   });
 }

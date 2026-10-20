@@ -1,3 +1,4 @@
+import { KETERANGAN_PAS_FOTO } from "@/lib/berkas-fisik";
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Stepper } from "@/components/ui/stepper";
@@ -72,13 +73,19 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       .filter((f) => f.tipe === "file")
       .map((f) => ({ kunci: f.kunci, label: f.label, wajib: f.wajib, bantuan: f.teksBantuan ?? undefined }));
     isi = (
-      <LangkahAkta
+      <>
+        <div className="mb-6 rounded-kartu bg-permukaan-alt p-4 text-sm text-tinta">
+          <p className="font-semibold">Pas foto (opsional, dibawa langsung)</p>
+          <p className="mt-1">{KETERANGAN_PAS_FOTO}</p>
+        </div>
+        <LangkahAkta
         slot={slot}
         berkas={Object.fromEntries(slot.map((s) => [s.kunci, daftarBerkas(draf.berkas[s.kunci])]))}
         namaMurid={String(draf.data["1"]?.nama_lengkap ?? "")}
         tanggalLahir={String(draf.data["1"]?.tanggal_lahir ?? "")}
         awalOcr={(awal.ocr ?? {}) as Record<string, string>}
-      />
+        />
+      </>
     );
   } else if (n === 3) {
     const [konfig, bobot] = await Promise.all([ambilKonfigWizard(), muatBobotJurusan()]);
@@ -100,7 +107,7 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
         kartu={rekom.peringkat.map((p) => ({ kode: p.kode, nama: p.nama, skor: p.skor, label: p.label, penjelasan: p.penjelasan, rincian: p.rincian }))}
         kuotaPenuh={rekom.kuotaPenuh}
         opsi={opsi}
-        awal={{ jurusan_1: awal.jurusan_1 as string | undefined, jurusan_2: awal.jurusan_2 as string | undefined }}
+        awal={{ jurusan_1: awal.jurusan_1 as string | undefined }}
       />
     );
   } else if (n === 8) {
@@ -125,12 +132,6 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
         }),
       ],
     });
-    const ujian = draf.data["7"]?.nilai_ujian as Record<string, number> | undefined;
-    if (ujian) {
-      bagian[bagian.length - 1].baris.push(
-        ...Object.entries(ujian).map(([k, v]) => ({ label: `Nilai ujian ${k.replace("_", " ")}`, nilai: String(v) })),
-      );
-    }
     isi = <LangkahTinjau bagian={bagian} />;
   } else {
     const dataMurid = draf.data["5"] ?? {};

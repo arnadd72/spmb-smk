@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { formatTanggal } from "@/lib/format";
 import { Bidang } from "./bidang";
 import { pecahGalat, simpanLangkahKlien, type PetaGalat } from "./api";
-import { KUNCI_NILAI_UJIAN, fieldBiasa, skemaLangkah, skemaNilaiUjian, type DefinisiField } from "./schema-client";
+import { fieldBiasa, skemaLangkah, type DefinisiField } from "./schema-client";
 
 export type Salinan = {
   label: string;
@@ -34,27 +34,15 @@ type Props = {
   labelLanjut?: string;
 };
 
-const LABEL_UJIAN: Record<string, string> = {
-  b_indonesia: "Bahasa Indonesia",
-  b_inggris: "Bahasa Inggris",
-  matematika: "Matematika",
-  ipa: "IPA",
-};
-
 /** Form generik untuk langkah 1, 5, 6, dan 7: field dari form builder + validasi sama dengan server. */
 export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembuka, tanggalLahirTampilan, labelLanjut = "Simpan dan lanjut" }: Props) {
   const router = useRouter();
   const daftar = fieldBiasa(fields, langkah);
-  const adaUjian = fields.some((f) => f.kunci === "nilai_ujian");
 
   const [nilai, setNilai] = useState<Record<string, unknown>>(() => {
     const dasar: Record<string, unknown> = {};
     for (const f of daftar) dasar[f.kunci] = awal[f.kunci] ?? (f.tipe === "checkbox" ? false : "");
     return dasar;
-  });
-  const [ujian, setUjian] = useState<Record<string, string>>(() => {
-    const a = (awal.nilai_ujian ?? {}) as Record<string, unknown>;
-    return Object.fromEntries(KUNCI_NILAI_UJIAN.map((k) => [k, a[k] === undefined ? "" : String(a[k])]));
   });
   const [sama, setSama] = useState(false);
   const [galat, setGalat] = useState<PetaGalat>({});
@@ -74,7 +62,6 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
     if (sama && salinan) {
       for (const [tujuan, sumber] of Object.entries(salinan.peta)) hasil[tujuan] = (salinan.sumber ?? nilai)[sumber] ?? "";
     }
-    if (adaUjian) hasil.nilai_ujian = ujian;
     return hasil;
   }
 
@@ -93,10 +80,6 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
     const peta: PetaGalat = {};
     const biasa = skemaLangkah(fields, langkah).safeParse(isi);
     if (!biasa.success) for (const i of biasa.error.issues) peta[i.path.join(".")] ??= i.message;
-    if (adaUjian) {
-      const u = skemaNilaiUjian().safeParse(ujian);
-      if (!u.success) for (const i of u.error.issues) peta[`nilai_ujian.${i.path.join(".")}`] ??= i.message;
-    }
     if (Object.keys(peta).length > 0) {
       setGalat(peta);
       fokusGalatPertama();
@@ -146,27 +129,6 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
           ),
         )}
       </div>
-
-      {adaUjian && (
-        <fieldset className="rounded-kartu border border-garis p-4">
-          <legend className="px-1 text-sm font-semibold text-tinta">Nilai ujian (0 sampai 100)</legend>
-          <div className="mt-2 grid gap-4 sm:grid-cols-2">
-            {KUNCI_NILAI_UJIAN.map((k) => (
-              <Field key={k} label={LABEL_UJIAN[k]} wajib galat={galat[`nilai_ujian.${k}`]}>
-                <Input
-                  inputMode="decimal"
-                  value={ujian[k]}
-                  onChange={(e) => {
-                    setUjian((u) => ({ ...u, [k]: e.target.value }));
-                    setGalat((g) => ({ ...g, [`nilai_ujian.${k}`]: "" }));
-                  }}
-                  className="max-w-40"
-                />
-              </Field>
-            ))}
-          </div>
-        </fieldset>
-      )}
 
       <div className="flex flex-col-reverse gap-3 border-t border-garis pt-5 sm:flex-row sm:items-center sm:justify-between">
         {langkah > 1 ? (

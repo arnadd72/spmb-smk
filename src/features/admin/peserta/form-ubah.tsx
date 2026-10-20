@@ -4,13 +4,10 @@ import { useRef, useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Field } from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
 import { Bidang } from "@/features/wizard/bidang";
-import { KUNCI_NILAI_UJIAN, NAMA_LANGKAH, fieldBiasa, skemaLangkah, skemaNilaiUjian, type DefinisiField } from "@/features/wizard/schema-client";
+import { NAMA_LANGKAH, fieldBiasa, skemaLangkah, type DefinisiField } from "@/features/wizard/schema-client";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
-const LABEL_UJIAN: Record<string, string> = { b_indonesia: "Bahasa Indonesia", b_inggris: "Bahasa Inggris", matematika: "Matematika", ipa: "IPA" };
 const TANPA = "-";
 
 type Props = { id: string; fields: DefinisiField[]; nilai: Record<string, unknown> };
@@ -35,8 +32,6 @@ export function FormUbahPeserta({ id, fields, nilai: awal }: Props) {
     }
     return dasar;
   });
-  const u0 = (awal.nilai_ujian ?? {}) as Record<string, unknown>;
-  const [ujian, setUjian] = useState<Record<string, string>>(Object.fromEntries(KUNCI_NILAI_UJIAN.map((k) => [k, u0[k] === undefined ? "" : String(u0[k])])));
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [berhasil, setBerhasil] = useState<string>();
@@ -49,7 +44,7 @@ export function FormUbahPeserta({ id, fields, nilai: awal }: Props) {
   }
 
   function muatan(): Record<string, unknown> {
-    const hasil: Record<string, unknown> = { ...nilai, nilai_ujian: ujian };
+    const hasil: Record<string, unknown> = { ...nilai };
     if (hasil.jurusan_2 === TANPA) hasil.jurusan_2 = "";
     return hasil;
   }
@@ -65,8 +60,6 @@ export function FormUbahPeserta({ id, fields, nilai: awal }: Props) {
       const r = skemaLangkah([...fields], n).safeParse({ ...isi, setuju: true });
       if (!r.success) for (const i of r.error.issues) peta[i.path.join(".")] ??= i.message;
     }
-    const u = skemaNilaiUjian().safeParse(ujian);
-    if (!u.success) for (const i of u.error.issues) peta[`nilai_ujian.${i.path.join(".")}`] ??= i.message;
     if (Object.keys(peta).length > 0) {
       setGalat(peta);
       requestAnimationFrame(() => formRef.current?.querySelector<HTMLElement>("[aria-invalid=true]")?.focus());
@@ -100,7 +93,6 @@ export function FormUbahPeserta({ id, fields, nilai: awal }: Props) {
     <form ref={formRef} onSubmit={kirim} noValidate className="flex flex-col gap-8">
       {langkahAda.map((l) => {
         const daftar = fieldBiasa(fieldTampil, l);
-        const adaUjian = fields.some((f) => f.langkah === l && f.kunci === "nilai_ujian");
         return (
           <section key={l} aria-labelledby={`bagian-${l}`}>
             <h2 id={`bagian-${l}`} className="border-b border-garis pb-2 text-lg font-bold text-ink">
@@ -111,26 +103,6 @@ export function FormUbahPeserta({ id, fields, nilai: awal }: Props) {
                 <Bidang key={f.kunci} f={f} nilai={nilai[f.kunci]} onChange={ubah} galat={galat[f.kunci] || undefined} />
               ))}
             </div>
-            {adaUjian && (
-              <fieldset className="mt-5 rounded-kartu border border-garis p-4">
-                <legend className="px-1 text-sm font-semibold text-tinta">Nilai ujian (0 sampai 100)</legend>
-                <div className="mt-2 grid gap-4 sm:grid-cols-2">
-                  {KUNCI_NILAI_UJIAN.map((k) => (
-                    <Field key={k} label={LABEL_UJIAN[k]} wajib galat={galat[`nilai_ujian.${k}`]}>
-                      <Input
-                        inputMode="decimal"
-                        value={ujian[k]}
-                        onChange={(e) => {
-                          setUjian((x) => ({ ...x, [k]: e.target.value }));
-                          setGalat((g) => ({ ...g, [`nilai_ujian.${k}`]: "" }));
-                        }}
-                        className="max-w-40"
-                      />
-                    </Field>
-                  ))}
-                </div>
-              </fieldset>
-            )}
           </section>
         );
       })}

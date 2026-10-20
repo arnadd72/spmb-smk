@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useRef } from "react";
 import { ArrowRightIcon, CalculatorIcon, PillIcon } from "@phosphor-icons/react";
+import { useGsapPublik } from "@/components/motion/use-gsap";
 import { cn } from "@/lib/cn";
 import type { JurusanLanding } from "@/server/actions/ambilLanding";
 
@@ -49,7 +51,7 @@ function Panel({ j }: { j: JurusanLanding }) {
     <article
       data-panel
       className={cn(
-        "relative flex w-[min(86vw,48rem)] shrink-0 snap-start flex-col gap-5 overflow-hidden rounded-kartu p-5 sm:p-7 lg:min-h-[min(25rem,58dvh)] lg:w-[min(48rem,58vw)] lg:flex-row lg:gap-6 lg:p-7",
+        "relative flex shrink-0 flex-col gap-5 overflow-hidden rounded-kartu p-5 sm:p-7 lg:h-[min(25rem,58dvh)] lg:w-[min(48rem,58vw)] lg:flex-row lg:gap-6 lg:p-7",
         t.warna,
       )}
     >
@@ -99,13 +101,54 @@ function Panel({ j }: { j: JurusanLanding }) {
 }
 
 export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
+  const akar = useRef<HTMLElement>(null);
+
+  // Desktop: bagian ini di-pin dan gulir vertikal menggeser panel ke samping. Di bawah 1024 px atau
+  // dengan reduced motion, panel tersusun vertikal biasa.
+  useGsapPublik(akar, {
+    minLebar: 1024,
+    animasi: ({ gsap, akar: el }) => {
+      const jalur = el.querySelector<HTMLElement>("[data-jalur]");
+      const bar = el.querySelector<HTMLElement>("[data-progres]");
+      if (!jalur) return;
+
+      const jarak = () => Math.max(0, jalur.scrollWidth - window.innerWidth);
+      gsap.to(jalur, {
+        x: () => -jarak(),
+        ease: "none",
+        scrollTrigger: {
+          trigger: el,
+          start: "top 64px",
+          end: () => `+=${jarak()}`,
+          pin: true,
+          scrub: 0.8,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      // Jangan meneruskan `geser.scrollTrigger` ke tween lain: GSAP menyalinnya termasuk `pin: true`,
+      // sehingga elemen yang sama di-pin dua kali dan terlempar keluar layar.
+      const rentang = { trigger: el, start: "top 64px", end: () => `+=${jarak()}`, scrub: true, invalidateOnRefresh: true };
+      if (bar) gsap.fromTo(bar, { scaleX: 0 }, { scaleX: 1, ease: "none", scrollTrigger: rentang });
+
+      // Foto dan bentuk di tiap panel bergerak sedikit berlawanan arah (kedalaman).
+      el.querySelectorAll<HTMLElement>("[data-foto-panel]").forEach((f) => {
+        gsap.fromTo(f, { xPercent: -5 }, { xPercent: 5, ease: "none", scrollTrigger: { trigger: el, start: "top 64px", end: () => `+=${jarak()}`, scrub: true } });
+      });
+      el.querySelectorAll<HTMLElement>("[data-bentuk]").forEach((b, i) => {
+        gsap.to(b, { rotate: i % 2 ? -25 : 25, ease: "none", scrollTrigger: { trigger: el, start: "top 64px", end: () => `+=${jarak()}`, scrub: true } });
+      });
+    },
+  });
+
   if (jurusan.length === 0) return null;
 
   return (
     <section
+      ref={akar}
       id="jurusan"
       aria-labelledby="judul-jurusan"
-      className="overflow-hidden bg-latar py-16"
+      className="overflow-hidden bg-latar py-16 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:justify-center lg:py-0"
     >
       <div className="wadah w-full">
         <h2
@@ -116,16 +159,16 @@ export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
         </h2>
       </div>
 
-      <div
-        data-jalur
-        role="region"
-        aria-label="Daftar program keahlian"
-        tabIndex={0}
-        className="sejajar-wadah mt-7 flex w-full snap-x snap-mandatory gap-5 overflow-x-auto overflow-y-hidden overscroll-x-contain pb-4 focus-visible:outline-offset-4 lg:mt-8 lg:gap-6"
-      >
+      <div data-jalur className="sejajar-wadah mt-7 flex flex-col gap-5 lg:mt-8 lg:w-max lg:flex-row lg:gap-6">
         {jurusan.map((j) => (
           <Panel key={j.kode} j={j} />
         ))}
+      </div>
+
+      <div aria-hidden className="wadah mt-8 hidden lg:block">
+        <div className="h-1 overflow-hidden rounded-full bg-ink/10">
+          <div data-progres className="h-full origin-left scale-x-0 bg-ink" />
+        </div>
       </div>
     </section>
   );

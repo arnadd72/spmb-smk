@@ -60,7 +60,7 @@ test.describe("admin: input manual dan kelola berkas", () => {
     await expect(page.getByText("Ada isian yang perlu diperbaiki.")).toBeVisible();
 
     const nama = `Uji E2E Peserta Luring ${Date.now()}`;
-    const nilai: Record<string, string> = { nama_lengkap: nama, nisn: "9876543210", tanggal_lahir: "2011-04-02", nik: "3302010101010009", no_kk: "3302010101010008", anak_ke: "1", jumlah_saudara: "2", tinggi_badan: "158", berat_badan: "48", no_hp: "081200000001", no_wa: "081200000002", no_hp_ortu: "081200000003", email: "luring@contoh.id" };
+    const nilai: Record<string, string> = { nama_lengkap: nama, nisn: "9876543210", tanggal_lahir: "2011-04-02", nik: "3302010101010009", no_kk: "3302010101010008", anak_ke: "1", jumlah_saudara: "2", tinggi_badan: "158", berat_badan: "48", no_hp: "081200000001", no_wa: "081200000002", no_hp_ortu: "081200000003", email: "luring@contoh.id", nik_ayah: "3302010101010003", nik_ibu: "3302010101010004", ayah_tanggal_lahir: "1980-03-03", ibu_tanggal_lahir: "1983-07-12" };
     for (const el of await page.locator("input[name]:not([type=radio]):not([type=hidden]):not([disabled])").all()) {
       const n = (await el.getAttribute("name")) ?? "";
       await el.fill(nilai[n] ?? "Contoh");

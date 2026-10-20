@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import type { PrismaClient } from "../src/generated/prisma/client";
+import { Prisma, type PrismaClient } from "../src/generated/prisma/client";
 import { FORM_FIELDS } from "./seed-data/formField";
 import { BOBOT, FAQ, JURUSAN, MAPEL } from "./seed-data/referensi";
 
@@ -21,7 +21,34 @@ export async function seedSuperadmin(prisma: PrismaClient, username: string, pas
   return true;
 }
 
+/**
+ * Jurusan FKK berganti nama menjadi LPK3 (bukan jurusan tambahan). Basis data lama: baris FKK diubah jadi LPK3 agar
+ * pendaftar dan bobotnya ikut. Bila LPK3 sudah terlanjur dibuat berdampingan dengan FKK, rujukan dipindah lalu FKK dihapus.
+ */
+export async function gantiFkkJadiLpk3(prisma: PrismaClient) {
+  const fkk = await prisma.jurusan.findUnique({ where: { kode: "FKK" } });
+  if (!fkk) return;
+  const baru = JURUSAN.find((x) => x.kode === "LPK3");
+  if (!baru) throw new Error("Seed LPK3 tidak ditemukan.");
+  const lpk3 = await prisma.jurusan.findUnique({ where: { kode: "LPK3" } });
+
+  if (!lpk3) {
+    await prisma.jurusan.update({
+      where: { id: fkk.id },
+      data: { kode: baru.kode, nama: baru.nama, deskripsi: baru.deskripsi, prospekKarir: [...baru.prospekKarir], keunggulan: [...baru.keunggulan] },
+    });
+    return;
+  }
+  await prisma.$transaction([
+    prisma.pendaftar.updateMany({ where: { jurusan1Id: fkk.id }, data: { jurusan1Id: lpk3.id } }),
+    prisma.pendaftar.updateMany({ where: { jurusan2Id: fkk.id }, data: { jurusan2Id: lpk3.id } }),
+    prisma.pendaftar.updateMany({ where: { rekomendasiJurusanId: fkk.id }, data: { rekomendasiJurusanId: lpk3.id } }),
+    prisma.jurusan.delete({ where: { id: fkk.id } }), // bobot FKK ikut terhapus (onDelete: Cascade)
+  ]);
+}
+
 export async function seedReferensi(prisma: PrismaClient) {
+  await gantiFkkJadiLpk3(prisma);
   for (const j of JURUSAN) {
     await prisma.jurusan.upsert({
       where: { kode: j.kode },
@@ -56,7 +83,7 @@ export async function seedReferensi(prisma: PrismaClient) {
 }
 
 export async function seedFormField(prisma: PrismaClient) {
-  await prisma.formField.deleteMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun", "ayah_ttl", "ibu_ttl"] } } });
+  await prisma.formField.deleteMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun", "ayah_ttl", "ibu_ttl", "jurusan_2", "nilai_ujian"] } } });
   for (const f of FORM_FIELDS) {
     const { opsi, ...sisa } = f;
     await prisma.formField.upsert({
@@ -64,6 +91,22 @@ export async function seedFormField(prisma: PrismaClient) {
       create: { ...sisa, opsi: opsi ?? undefined, wajib: f.wajib ?? false, terkunci: f.terkunci ?? false },
       update: {},
     });
+    // Basis data lama: lengkapi keterangan dan contoh yang masih kosong tanpa menimpa suntingan panitia.
+    if (f.teksBantuan) await prisma.formField.updateMany({ where: { kunci: f.kunci, teksBantuan: null }, data: { teksBantuan: f.teksBantuan } });
+    if (f.placeholder) await prisma.formField.updateMany({ where: { kunci: f.kunci, placeholder: null }, data: { placeholder: f.placeholder } });
+    if (Array.isArray(f.opsi)) await prisma.formField.updateMany({ where: { kunci: f.kunci, opsi: { equals: Prisma.DbNull } }, data: { opsi: f.opsi } });
+  }
+  // Label yang berubah karena revisi sekolah (hanya bila belum disunting panitia).
+  const labelBaru: Record<string, [string, string]> = {
+    jurusan_1: ["Pilihan jurusan 1", "Pilihan jurusan"],
+    asal_sekolah: ["Asal sekolah", "Nama sekolah asal"],
+    tinggi_badan: ["Tinggi badan (cm)", "Tinggi badan"],
+    berat_badan: ["Berat badan (kg)", "Berat badan"],
+  };
+  // Nama sekolah asal pindah dari langkah 5 ke langkah 7 (revisi sekolah), hanya bila belum dipindah panitia.
+  await prisma.formField.updateMany({ where: { kunci: "asal_sekolah", langkah: 5 }, data: { langkah: 7, urutan: 0 } });
+  for (const [kunci, [lama, baru]] of Object.entries(labelBaru)) {
+    await prisma.formField.updateMany({ where: { kunci, label: lama }, data: { label: baru } });
   }
 }
 

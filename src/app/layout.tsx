@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: "%s | SPMB SMK Ma'arif NU 1 Wangon",
   },
   description:
-    "Portal Sistem Penerimaan Murid Baru SMK Ma'arif NU 1 Wangon, Banyumas, Jawa Tengah.",
+    "Portal Pendaftaran Murid Baru SPMB SMK Ma'arif NU 1 Wangon, Banyumas, Jawa Tengah.",
 };
 
 export const viewport: Viewport = {

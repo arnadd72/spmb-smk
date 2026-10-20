@@ -30,13 +30,30 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         Simpan nomor pendaftaran dan tautan halaman ini. Nomor dipakai untuk cek status bersama tanggal lahir.
       </p>
 
+      {konfig.waGroup.startsWith("https://") && (
+        <div className="mt-5 rounded-kartu border-2 border-primer bg-mint p-5 print:hidden" data-wajib-wa>
+          <p className="font-bold text-ink">Wajib bergabung ke grup WhatsApp pendaftar</p>
+          <p className="mt-1 text-sm text-ink">
+            Pengumuman jadwal verifikasi, berkas yang dibawa, dan hasil seleksi disampaikan lewat grup ini. Pendaftar yang belum bergabung
+            bisa tertinggal informasi.
+          </p>
+          <a
+            href={konfig.waGroup}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex min-h-11 items-center rounded-kontrol bg-primer px-4 text-sm font-semibold text-primer-tinta hover:bg-primer-tua"
+          >
+            Gabung grup WhatsApp sekarang
+          </a>
+        </div>
+      )}
+
       <dl className="mt-8 grid gap-x-6 gap-y-4 sm:grid-cols-2">
         <Baris judul="Nama" nilai={r.nama} />
         <Baris judul="NISN" nilai={r.nisn ?? "-"} />
         <Baris judul="Tahun ajaran" nilai={r.periode} />
         <Baris judul="Dikirim pada" nilai={formatTanggal(r.dikirimPada)} />
-        <Baris judul="Pilihan jurusan 1" nilai={r.jurusan1 ? `${r.jurusan1.kode} · ${r.jurusan1.nama}` : "-"} />
-        <Baris judul="Pilihan jurusan 2" nilai={r.jurusan2 ? `${r.jurusan2.kode} · ${r.jurusan2.nama}` : "-"} />
+        <Baris judul="Pilihan jurusan" nilai={r.jurusan1 ? `${r.jurusan1.kode} · ${r.jurusan1.nama}` : "-"} />
         <Baris judul="Saran jurusan dari nilai rapor" nilai={r.rekomendasi ? `${r.rekomendasi.kode} · ${r.rekomendasi.nama}` : "Tidak dihitung (nilai rapor kosong)"} />
       </dl>
 
@@ -49,16 +66,6 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
           <li>Bawa akta dan kartu keluarga saat verifikasi. Rapor dapat dibawa bila tersedia, terutama jika Anda mengisi nilai rapor.</li>
           <li>Pantau hasilnya lewat halaman Cek Status.</li>
         </ol>
-        {konfig.waGroup.startsWith("https://") && (
-          <a
-            href={konfig.waGroup}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="mt-5 mr-2 inline-flex min-h-11 items-center rounded-kontrol bg-primer px-4 text-sm font-semibold text-primer-tinta hover:bg-primer-tua print:hidden"
-          >
-            Gabung grup WhatsApp pendaftar
-          </a>
-        )}
         <Link
           href="/cek-status"
           className="mt-5 inline-flex min-h-11 items-center rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt print:hidden"

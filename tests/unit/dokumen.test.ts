@@ -65,7 +65,6 @@ afterAll(async () => {
 async function isianManual(): Promise<Record<string, unknown>> {
   const isi: Record<string, unknown> = {};
   for (const f of fieldEdit(await muatDefinisiField())) if (f.tipe !== "tabel") isi[f.kunci] = nilaiValid(f);
-  isi.nilai_ujian = { b_indonesia: 80, b_inggris: 75, matematika: 90, ipa: 70 };
   return isi;
 }
 

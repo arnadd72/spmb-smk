@@ -24,7 +24,7 @@ const BERKAS_FISIK = [
   "Fotokopi kartu keluarga (1 lembar)",
   "Fotokopi KIP/KIS/PKH (1 lembar, bila ada)",
   "Fotokopi KTP orang tua (2 lembar)",
-  "Pas foto 3 x 4 (2 lembar)",
+  "Pas foto 3 x 4 (2 lembar), latar merah, memakai seragam sekolah asal",
   "Surat Keterangan Lulus (SKL) (1 lembar)",
   "Fotokopi ijazah MTs/SMP (1 lembar, opsional)",
 ];
@@ -43,7 +43,6 @@ export function emailKodePendaftaran(d: DataEmailKode): { subjek: string; html: 
     ...(d.nisn ? ([["NISN", d.nisn]] as [string, string][]) : []),
     ["Tahun ajaran", d.periode],
     ["Pilihan jurusan 1", d.jurusan1 || "-"],
-    ["Pilihan jurusan 2", d.jurusan2 || "-"],
   ];
 
   const tombol = (href: string, label: string, utama = false) =>
@@ -56,7 +55,7 @@ export function emailKodePendaftaran(d: DataEmailKode): { subjek: string; html: 
 <body style="margin:0;background:#f5f1ea;font-family:Arial,Helvetica,sans-serif;color:#1c1c1c;">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f5f1ea;padding:24px 12px;"><tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border-radius:14px;overflow:hidden;">
-<tr><td style="background:#057a3c;padding:18px 24px;color:#ffffff;font-size:15px;font-weight:700;">SMK Ma'arif NU 1 Wangon<br><span style="font-weight:400;font-size:13px;">Seleksi Penerimaan Murid Baru</span></td></tr>
+<tr><td style="background:#057a3c;padding:18px 24px;color:#ffffff;font-size:15px;font-weight:700;">SMK Ma'arif NU 1 Wangon<br><span style="font-weight:400;font-size:13px;">Pendaftaran Murid Baru SPMB</span></td></tr>
 <tr><td style="padding:28px 24px 8px;">
 <p style="margin:0 0 6px;font-size:16px;">Halo, <strong>${esc(d.nama)}</strong>. Pendaftaran Anda sudah kami terima. Simpan nomor ini:</p>
 <p style="margin:14px 0;padding:18px 12px;background:#e8f3ec;border-radius:10px;text-align:center;font-size:28px;font-weight:800;letter-spacing:1px;color:#046a33;">${esc(d.nomor)}</p>

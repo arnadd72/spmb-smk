@@ -134,10 +134,11 @@ describe("validasi langkah", () => {
     expect(peta.setuju).toBeTruthy();
   });
 
-  it("jurusan 2 tidak boleh sama dengan jurusan 1", async () => {
+  it("langkah 4 hanya meminta satu pilihan jurusan", async () => {
     const fields = await muatDefinisiField();
-    const r = skemaLangkah(fields, 4).safeParse({ jurusan_1: "AKL", jurusan_2: "AKL" });
-    expect(r.success).toBe(false);
+    expect(fields.filter((f) => f.langkah === 4).map((f) => f.kunci)).toEqual(["jurusan_1"]);
+    expect(skemaLangkah(fields, 4).safeParse({ jurusan_1: "AKL" }).success).toBe(true);
+    expect(skemaLangkah(fields, 4).safeParse({}).success).toBe(false);
   });
 });
 

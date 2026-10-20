@@ -3,7 +3,7 @@
 import { useRef } from "react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { GambarKonten } from "@/features/berita/gambar-konten";
-import { cn } from "@/lib/cn";
+import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 // Foto asli dari situs sekolah, warna asli. Keterangan di bawah foto, bukan menimpanya.
 // Tata letak layar lebar: dua baris berpasangan (7/5 lalu 5/7) bertepi sejajar, lalu satu foto lebar penuh.
@@ -13,36 +13,26 @@ const FOTO = [
     src: "/images/sekolah/p5-karya.webp",
     alt: "Siswa dan guru menunjukkan tempat sampah hasil karya kelas di halaman sekolah",
     ket: "Gelar karya: tempat sampah daur ulang buatan siswa kelas XI.",
-    kelas: "lg:col-span-7",
-    rasio: "aspect-[16/10]",
   },
   {
     src: "/images/sekolah/istighotsah.webp",
     alt: "Siswa berkumpul untuk istighotsah di aula sekolah",
     ket: "Istighotsah bersama sebelum kunjungan industri.",
-    kelas: "lg:col-span-5",
-    rasio: "aspect-[4/3] lg:aspect-auto lg:flex-1",
   },
   {
     src: "/images/sekolah/kelas-otkp.webp",
     alt: "Siswa makan bersama di kelas Otomatisasi dan Tata Kelola Perkantoran",
     ket: "Makan bergizi bersama di kelas perkantoran.",
-    kelas: "lg:col-span-5",
-    rasio: "aspect-[4/3] lg:aspect-auto lg:flex-1",
   },
   {
     src: "/images/sekolah/p5-kostum.webp",
     alt: "Siswi memakai kostum dari bahan daur ulang pada Projek Penguatan Profil Pelajar Pancasila",
     ket: "Pawai karya Projek Penguatan Profil Pelajar Pancasila.",
-    kelas: "lg:col-span-7",
-    rasio: "aspect-[2/1]",
   },
   {
     src: "/images/sekolah/kultum.webp",
     alt: "Siswa mendengarkan kultum di musala sekolah",
     ket: "Kultum bersama di musala.",
-    kelas: "lg:col-span-12",
-    rasio: "aspect-[16/9] lg:aspect-[21/8]",
   },
 ];
 
@@ -50,19 +40,25 @@ type FotoDb = { id: string; judul: string | null; gambar: string };
 
 export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
   const akar = useRef<HTMLElement>(null);
-  // Galeri dari admin menggantikan foto bawaan bila minimal tiga foto aktif; tata letak tetap memakai lima slot yang sama.
+  const jalur = useRef<HTMLDivElement>(null);
+  // Galeri dari admin menggantikan foto bawaan bila minimal tiga foto aktif.
   const daftar =
     galeri.length >= 3
-      ? galeri.slice(0, FOTO.length).map((g, i) => ({
+      ? galeri.map((g) => ({
           src: g.gambar,
           alt: g.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon",
           ket: g.judul ?? "",
-          kelas: FOTO[i].kelas,
-          rasio: FOTO[i].rasio,
         }))
       : FOTO;
 
-  // Tiap foto terbuka dengan klip dari bawah, isinya bergeser pelan (parallax), lalu redup saat keluar layar.
+  function geser(arah: 1 | -1) {
+    const el = jalur.current;
+    if (!el) return;
+    const kurangiGerak = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    el.scrollBy({ left: arah * el.clientWidth * 0.8, behavior: kurangiGerak ? "auto" : "smooth" });
+  }
+
+  // Hanya judul yang beranimasi; foto digeser pengguna lewat swipe atau tombol.
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-hidup]");
@@ -77,27 +73,6 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
         });
       }
 
-      gsap.utils.toArray<HTMLElement>("[data-bingkai]", el).forEach((bingkai) => {
-        const gambar = bingkai.querySelector<HTMLElement>("[data-gambar]");
-        gsap.fromTo(
-          bingkai,
-          { clipPath: "inset(100% 0% 0% 0% round 14px)" },
-          {
-            clipPath: "inset(0% 0% 0% 0% round 14px)",
-            duration: 1.1,
-            ease: "expo.out",
-            scrollTrigger: { trigger: bingkai, start: "top 88%", once: true },
-          },
-        );
-        if (gambar) {
-          gsap.fromTo(gambar, { yPercent: -9, scale: 1.12 }, { yPercent: 9, scale: 1.12, ease: "none", scrollTrigger: { trigger: bingkai, start: "top bottom", end: "bottom top", scrub: true } });
-        }
-        gsap.to(bingkai, {
-          opacity: 0.4,
-          ease: "none",
-          scrollTrigger: { trigger: bingkai, start: "bottom 30%", end: "bottom top", scrub: true },
-        });
-      });
 
       return () => split?.revert();
     },
@@ -114,17 +89,48 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
           Belajar, berkarya, dan beribadah bersama.
         </h2>
 
-        <div className="mt-10 grid gap-x-5 gap-y-8 lg:mt-14 lg:grid-cols-12">
+        <div className="mt-10 flex items-center justify-between gap-4 lg:mt-14">
+          <p className="text-sm text-tinta-redup">Geser ke samping untuk melihat foto lainnya.</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => geser(-1)}
+              aria-label="Foto sebelumnya"
+              className="grid size-11 place-items-center rounded-full border border-garis bg-latar text-ink hover:bg-permukaan-alt"
+            >
+              <ArrowLeftIcon aria-hidden weight="bold" className="size-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => geser(1)}
+              aria-label="Foto berikutnya"
+              className="grid size-11 place-items-center rounded-full border border-garis bg-latar text-ink hover:bg-permukaan-alt"
+            >
+              <ArrowRightIcon aria-hidden weight="bold" className="size-5" />
+            </button>
+          </div>
+        </div>
+
+        <div
+          ref={jalur}
+          data-slider-galeri
+          role="region"
+          aria-label="Galeri foto kegiatan sekolah"
+          tabIndex={0}
+          className="mt-4 overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory focus-visible:outline-offset-4 [&::-webkit-scrollbar]:hidden"
+        >
+        <ul className="flex w-max gap-5">
           {daftar.map((f) => (
-            <figure key={f.src} className={cn("flex flex-col gap-3", f.kelas)}>
-              <div data-bingkai className={cn("relative w-full overflow-hidden rounded-kartu bg-permukaan-alt", f.rasio)}>
-                <div data-gambar className="absolute inset-0 will-change-transform">
-                  <GambarKonten src={f.src} alt={f.alt} sizes="(min-width: 1024px) 60vw, 100vw" />
+            <li key={f.src} className="w-[78vw] shrink-0 snap-start sm:w-[52vw] lg:w-[min(44vw,40rem)]">
+              <figure className="flex flex-col gap-3">
+                <div className="relative aspect-[4/3] w-full overflow-hidden rounded-kartu bg-permukaan-alt">
+                  <GambarKonten src={f.src} alt={f.alt} sizes="(min-width: 1024px) 44vw, 85vw" />
                 </div>
-              </div>
-              {f.ket && <figcaption className="text-sm text-tinta-redup">{f.ket}</figcaption>}
-            </figure>
+                {f.ket && <figcaption className="text-sm text-tinta-redup">{f.ket}</figcaption>}
+              </figure>
+            </li>
           ))}
+        </ul>
         </div>
       </div>
     </section>

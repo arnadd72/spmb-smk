@@ -5,6 +5,7 @@ const tautanCepat: Array<[string, string]> = [
   ["/#alur-daftar", "Alur pendaftaran"],
   ["/berita", "Berita dan agenda"],
   ["/cek-status", "Cek status pendaftaran"],
+  ["/kebijakan-privasi", "Kebijakan privasi"],
 ];
 
 export function Footer() {

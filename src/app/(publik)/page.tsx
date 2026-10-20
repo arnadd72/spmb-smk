@@ -1,6 +1,7 @@
 import { AlurDaftar } from "@/features/landing/alur-daftar";
 import { FaqLanding } from "@/features/landing/faq-landing";
 import { Hero } from "@/features/landing/hero";
+import { JadwalGelombang } from "@/features/landing/jadwal-gelombang";
 import { KabarTerbaru } from "@/features/landing/kabar-terbaru";
 import { KehidupanSekolah } from "@/features/landing/kehidupan-sekolah";
 import { MarqueeJurusan } from "@/features/landing/marquee-jurusan";
@@ -31,6 +32,7 @@ export default async function Beranda() {
       <MarqueeJurusan />
       <ProgramKeahlian jurusan={data.jurusan} />
       <AlurDaftar />
+      <JadwalGelombang gelombang={data.gelombang} />
       <KehidupanSekolah galeri={data.galeri} />
       <KabarTerbaru berita={data.berita} agenda={data.agenda} />
       <SaranJurusan />

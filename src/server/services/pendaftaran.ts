@@ -1,3 +1,4 @@
+import { tetapkanGelombang } from "@/server/services/gelombang";
 import { prisma } from "@/server/db/client";
 import {
   TOTAL_LANGKAH,
@@ -90,10 +91,13 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
     if (ulang) return { ...ulang, baru: false as const };
 
     const nomor = await nomorBerikut(tx, tahun);
+    // Kunci advisory nomor sudah dipegang: hitung kuota gelombang aman dari kirim bersamaan.
+    const gelombangId = await tetapkanGelombang(tx, konfig.tahunAjaran, { blokir: true });
 
     await tx.pendaftar.create({
       data: {
         nomorPendaftaran: nomor,
+        gelombangId,
         aksesTokenHash: hashToken(aksesToken),
         periode: konfig.tahunAjaran,
         namaLengkap: String(semua.nama_lengkap),
@@ -213,6 +217,7 @@ export type RingkasanSukses = {
   jurusan1: { kode: string; nama: string } | null;
   jurusan2: { kode: string; nama: string } | null;
   rekomendasi: { kode: string; nama: string } | null;
+  gelombang: string | null;
   dikirimPada: Date;
 };
 
@@ -220,7 +225,7 @@ export async function ambilRingkasanSukses(aksesToken: string): Promise<Ringkasa
   if (!/^[A-Za-z0-9_-]{20,80}$/.test(aksesToken)) return null;
   const p = await prisma.pendaftar.findUnique({
     where: { aksesTokenHash: hashToken(aksesToken) },
-    include: { jurusan1: true, jurusan2: true, rekomendasi: true },
+    include: { jurusan1: true, jurusan2: true, rekomendasi: true, gelombang: true },
   });
   if (!p) return null;
   const ringkas = (j: { kode: string; nama: string } | null) => (j ? { kode: j.kode, nama: j.nama } : null);
@@ -232,6 +237,7 @@ export async function ambilRingkasanSukses(aksesToken: string): Promise<Ringkasa
     jurusan1: ringkas(p.jurusan1),
     jurusan2: ringkas(p.jurusan2),
     rekomendasi: ringkas(p.rekomendasi),
+    gelombang: p.gelombang?.nama ?? null,
     dikirimPada: p.createdAt,
   };
 }

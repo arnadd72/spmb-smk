@@ -1,4 +1,6 @@
 import { prisma } from "@/server/db/client";
+import { ambilKonfigWizard } from "@/server/services/draf";
+import { daftarGelombang } from "@/server/services/gelombang";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { ambilAgendaMendatang, ambilDaftarBerita, type BeritaRingkas, type EventRingkas } from "./ambilPublik";
 
@@ -13,6 +15,8 @@ export type JurusanLanding = {
   mapelUtama: string[];
 };
 
+export type GelombangLanding = { id: string; nama: string; buka: string; tutup: string; kuota: number | null; sisa: number | null; status: "belum" | "buka" | "tutup" | "penuh" };
+
 export type FaqLanding = { id: string; pertanyaan: string; jawaban: string };
 
 export type FotoGaleri = { id: string; judul: string | null; gambar: string };
@@ -25,6 +29,7 @@ export type DataLanding = {
   agenda: EventRingkas[];
   galeri: FotoGaleri[];
   testimoni: TestimoniLanding[];
+  gelombang: GelombangLanding[];
   /** Mis. "2027/2028". Null bila panitia belum mengisi pengaturan. */
   tahunAjaran: string | null;
 };
@@ -37,7 +42,7 @@ const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is s
  */
 export async function ambilDataLanding(): Promise<DataLanding> {
   try {
-    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, testimoni] = await Promise.all([
+    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, testimoni, konfig] = await Promise.all([
       prisma.jurusan.findMany({
         where: { isActive: true },
         orderBy: { urutan: "asc" },
@@ -49,7 +54,9 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       ambilAgendaMendatang(3),
       prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 5 }),
       prisma.testimoni.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 4 }),
+      ambilKonfigWizard(),
     ]);
+    const gelombang = await daftarGelombang(konfig.tahunAjaran);
 
     return {
       tahunAjaran,
@@ -67,9 +74,10 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       agenda,
       galeri: galeri.map((g) => ({ id: g.id.toString(), judul: g.judul, gambar: g.gambar })),
       testimoni: testimoni.map((t) => ({ id: t.id.toString(), nama: t.nama, keterangan: t.keterangan, isi: t.isi, foto: t.foto })),
+      gelombang: gelombang.map((g) => ({ id: g.id, nama: g.nama, buka: g.buka, tutup: g.tutup, kuota: g.kuota, sisa: g.sisa, status: g.status })),
     };
   } catch (e) {
     console.error("[landing] gagal membaca data:", e instanceof Error ? e.message : "tidak diketahui");
-    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], testimoni: [], tahunAjaran: null };
+    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], testimoni: [], gelombang: [], tahunAjaran: null };
   }
 }

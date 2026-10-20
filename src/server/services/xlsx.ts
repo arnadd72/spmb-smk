@@ -22,7 +22,7 @@ const ambilBatch = (where: ReturnType<typeof kondisiPeserta>, ambil: number, set
     where: { AND: [where, ...(setelah ? [{ id: { gt: setelah } }] : [])] },
     orderBy: { id: "asc" },
     take: ambil,
-    include: { jurusan1: true, jurusan2: true, rekomendasi: true },
+    include: { jurusan1: true, jurusan2: true, rekomendasi: true, gelombang: true },
   });
 
 const str = (v: unknown): string => (v === null || v === undefined ? "" : String(v));
@@ -59,6 +59,7 @@ export async function buatXlsx(filter: FilterPeserta, periodeAktif: string): Pro
     { header: "No. Pendaftaran", lebar: 18, nilai: (p) => p.nomorPendaftaran },
     { header: "Tanggal Daftar", lebar: 18, format: "dd/mm/yyyy hh:mm", nilai: (p) => p.createdAt },
     { header: "Periode", lebar: 11, nilai: (p) => p.periode },
+    { header: "Gelombang", lebar: 14, nilai: (p) => p.gelombang?.nama ?? "" },
     { header: "Sumber", lebar: 9, nilai: (p) => p.sumber },
     { header: "Status Verifikasi", lebar: 16, nilai: (p) => ({ pending: "Menunggu", approved: "Diterima", revision: "Perlu revisi", rejected: "Ditolak" })[p.statusVerifikasi] },
     { header: "Catatan Panitia", lebar: 28, nilai: (p) => p.catatanPenolakan ?? p.catatanVerifikasi ?? "" },

@@ -1,3 +1,4 @@
+import { daftarGelombang, keadaanDariGelombang, pesanTutup, type KeadaanPendaftaran } from "@/server/services/gelombang";
 import { prisma } from "@/server/db/client";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
 import { terdaftarPerJurusan } from "@/server/services/kuota";
@@ -48,6 +49,8 @@ export type KonfigWizard = {
   buka: string | null;
   tutup: string | null;
   status: "buka" | "belum" | "tutup";
+  /** Gelombang pendaftaran (butir 44): keadaan dihitung dari tabel Gelombang; kosong = aturan lama dari Pengaturan. */
+  keadaan: KeadaanPendaftaran;
   kontak: string;
   persyaratan: string;
   persetujuan: string;
@@ -75,18 +78,21 @@ export async function ambilKonfigWizard(): Promise<KonfigWizard> {
     ambilPengaturan("wa_group_url"),
   ]);
   const hari = wibSekarang();
-  const status = buka && hari < buka ? "belum" : tutup && hari > tutup ? "tutup" : "buka";
+  const tahunAjaran = tahun ?? tahunAjaranBawaan();
+  const keadaan = keadaanDariGelombang(await daftarGelombang(tahunAjaran));
+  const status = keadaan.adaGelombang ? keadaan.status : buka && hari < buka ? "belum" : tutup && hari > tutup ? "tutup" : "buka";
   const sem = (semester ?? "1,2,3,4,5")
     .split(",")
     .map((x) => Number(x.trim()))
     .filter((x) => Number.isInteger(x) && x >= 1 && x <= 6);
 
   return {
-    tahunAjaran: tahun ?? tahunAjaranBawaan(),
+    tahunAjaran,
     semester: sem.length > 0 ? sem : [1, 2, 3, 4, 5],
-    buka: buka || null,
-    tutup: tutup || null,
+    buka: keadaan.adaGelombang ? (keadaan.saatIni?.buka ?? null) : buka || null,
+    tutup: keadaan.adaGelombang ? (keadaan.saatIni?.tutup ?? null) : tutup || null,
     status,
+    keadaan,
     kontak: kontak ?? "",
     persyaratan: persyaratan ?? "",
     persetujuan: persetujuan ?? "",
@@ -96,6 +102,7 @@ export async function ambilKonfigWizard(): Promise<KonfigWizard> {
 
 export async function pastikanPendaftaranBuka(): Promise<KonfigWizard> {
   const k = await ambilKonfigWizard();
+  if (k.keadaan.adaGelombang && k.status !== "buka") throw pesanTutup(k.keadaan);
   if (k.status === "belum") throw new GalatApi(403, "PENDAFTARAN_BELUM_BUKA", `Pendaftaran dibuka pada ${k.buka}.`);
   if (k.status === "tutup") throw new GalatApi(403, "PENDAFTARAN_TUTUP", "Pendaftaran sudah ditutup.");
   return k;

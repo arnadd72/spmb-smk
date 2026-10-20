@@ -53,6 +53,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         <Baris judul="NISN" nilai={r.nisn ?? "-"} />
         <Baris judul="Tahun ajaran" nilai={r.periode} />
         <Baris judul="Dikirim pada" nilai={formatTanggal(r.dikirimPada)} />
+        {r.gelombang && <Baris judul="Gelombang" nilai={r.gelombang} />}
         <Baris judul="Pilihan jurusan" nilai={r.jurusan1 ? `${r.jurusan1.kode} · ${r.jurusan1.nama}` : "-"} />
         <Baris judul="Saran jurusan dari nilai rapor" nilai={r.rekomendasi ? `${r.rekomendasi.kode} · ${r.rekomendasi.nama}` : "Tidak dihitung (nilai rapor kosong)"} />
       </dl>

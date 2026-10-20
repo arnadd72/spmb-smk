@@ -28,6 +28,7 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
   {
     nama: "Aksi",
     item: [
+      { label: "Gelombang", href: "/admin/gelombang", peran: PENDAFTAR, siap: true },
       { label: "Kuota", href: "/admin/kuota", peran: PENDAFTAR, siap: true },
       { label: "Input Manual", href: "/admin/input-manual", peran: PENDAFTAR, siap: true },
       { label: "Ekspor Data", href: "/admin/ekspor", peran: PENDAFTAR, siap: true },

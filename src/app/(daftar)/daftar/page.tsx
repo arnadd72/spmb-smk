@@ -32,8 +32,10 @@ export default async function HalamanDaftar() {
         <p role="status" className="mt-8 flex items-start gap-3 rounded-kartu bg-peringatan-latar p-4 font-medium text-peringatan">
           <ClockIcon aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0" />
           {konfig.status === "belum" && konfig.buka
-            ? `Pendaftaran dibuka pada ${formatTanggal(konfig.buka)}. Silakan kembali pada tanggal tersebut.`
-            : "Pendaftaran sudah ditutup."}
+            ? `${konfig.keadaan.adaGelombang && konfig.keadaan.saatIni ? konfig.keadaan.saatIni.nama : "Pendaftaran"} dibuka pada ${formatTanggal(konfig.buka)}. Silakan kembali pada tanggal tersebut.`
+            : konfig.keadaan.alasanTutup === "penuh" && konfig.keadaan.saatIni
+              ? `Kuota ${konfig.keadaan.saatIni.nama} sudah penuh.${konfig.keadaan.berikut ? ` ${konfig.keadaan.berikut.nama} dibuka pada ${formatTanggal(konfig.keadaan.berikut.buka)}.` : ""}`
+              : "Pendaftaran sudah ditutup."}
           {konfig.kontak ? ` Hubungi panitia: ${konfig.kontak}` : ""}
         </p>
       ) : (
@@ -59,6 +61,12 @@ export default async function HalamanDaftar() {
                   </p>
                 ))}
               </div>
+            )}
+            {konfig.keadaan.adaGelombang && konfig.keadaan.saatIni && konfig.status === "buka" && (
+              <p className="mt-2 text-sm font-semibold text-primer-tua">
+                {konfig.keadaan.saatIni.nama}
+                {konfig.keadaan.saatIni.sisa !== null ? `, sisa ${konfig.keadaan.saatIni.sisa} kursi` : ""}.
+              </p>
             )}
             {konfig.tutup && (
               <p className="mt-4 text-sm text-tinta-redup">

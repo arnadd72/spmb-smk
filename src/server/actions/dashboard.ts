@@ -42,7 +42,7 @@ export async function ambilDashboard(): Promise<DataDashboard> {
     terdaftarPerJurusan(periode),
     prisma.pendaftar.groupBy({ by: ["rekomendasiJurusanId"], where, _count: { _all: true } }),
     prisma.$queryRaw<{ d: string; n: number }[]>`
-      SELECT to_char(("createdAt" AT TIME ZONE 'Asia/Jakarta')::date, 'YYYY-MM-DD') AS d, count(*)::int AS n
+      SELECT to_char((("createdAt" AT TIME ZONE 'UTC') AT TIME ZONE 'Asia/Jakarta')::date, 'YYYY-MM-DD') AS d, count(*)::int AS n
       FROM "Pendaftar"
       WHERE "periode" = ${periode} AND "createdAt" >= now() - interval '31 days'
       GROUP BY 1`,

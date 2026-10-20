@@ -1,3 +1,4 @@
+import { tetapkanGelombang } from "@/server/services/gelombang";
 import { randomBytes } from "node:crypto";
 import { prisma } from "@/server/db/client";
 import { catatAudit } from "@/server/services/audit";
@@ -56,9 +57,12 @@ export async function buatPendaftarManual(masukan: unknown, ctx: KonteksAksi) {
 
   const baru = await prisma.$transaction(async (tx) => {
     const nomor = await nomorBerikut(tx, tahun);
+    // Input luring ikut gelombang berjalan dan tidak diblokir kuota (keputusan panitia).
+    const gelombangId = await tetapkanGelombang(tx, periode, { blokir: false });
     return tx.pendaftar.create({
       data: {
         nomorPendaftaran: nomor,
+        gelombangId,
         aksesTokenHash: hashToken(randomBytes(32).toString("hex")),
         periode,
         sumber: "luring",

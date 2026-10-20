@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/client";
 import { ambilKonfigWizard } from "@/server/services/draf";
 import { adaGemini, tanyaGemini } from "@/server/services/gemini";
+import { daftarGelombang } from "@/server/services/gelombang";
 import { terdaftarPerJurusan } from "@/server/services/kuota";
 import { GalatApi } from "@/server/types/galat";
 
@@ -91,6 +92,7 @@ async function muatKonteks() {
     konfig,
     faq: faq.map((f) => ({ id: f.id.toString(), pertanyaan: f.pertanyaan, jawaban: f.jawaban, keywords: Array.isArray(f.keywords) ? (f.keywords as string[]) : [] })),
     jurusan: jurusan.map((j) => ({ kode: j.kode, nama: j.nama, deskripsi: j.deskripsi ?? "", kuota: j.kuota, sisa: Math.max(0, j.kuota - (terpakai.get(String(j.id)) ?? 0)) })),
+    gelombang: await daftarGelombang(konfig.tahunAjaran),
     tanggalVerifikasi: await prisma.pengaturan.findUnique({ where: { key: "tanggal_verifikasi_fisik" } }).then((x) => x?.value || null),
   };
 }
@@ -157,6 +159,7 @@ function instruksiSistem(k: Konteks): string {
     `Sekolah: SMK Ma'arif NU 1 Wangon, ${KONTAK_BAWAAN}.`,
     `Tahun ajaran: ${konfig.tahunAjaran}. Status pendaftaran: ${konfig.status === "buka" ? "dibuka" : konfig.status === "belum" ? "belum dibuka" : "ditutup"}.`,
     konfig.buka || konfig.tutup ? `Jadwal: ${konfig.buka ? `buka ${tanggal(konfig.buka)}` : ""}${konfig.buka && konfig.tutup ? ", " : ""}${konfig.tutup ? `tutup ${tanggal(konfig.tutup)}` : ""}.` : "Jadwal belum ditetapkan.",
+    ...(konfig.keadaan.adaGelombang ? [`Gelombang: ${konfig.keadaan.alasanTutup === "penuh" && konfig.keadaan.saatIni ? `kuota ${konfig.keadaan.saatIni.nama} sudah penuh. ` : ""}${k.gelombang.map((g) => `${g.nama} ${tanggal(g.buka)} sampai ${tanggal(g.tutup)}${g.sisa !== null ? ` (sisa ${g.sisa} kursi)` : ""}`).join("; ")}.`] : []),
     k.tanggalVerifikasi ? `Verifikasi berkas fisik: ${tanggal(k.tanggalVerifikasi)}.` : "",
     konfig.kontak ? `Kontak panitia: ${konfig.kontak}.` : "",
     konfig.persyaratan ? `Persyaratan: ${konfig.persyaratan.slice(0, 1200)}` : "",

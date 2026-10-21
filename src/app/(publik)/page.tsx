@@ -8,7 +8,7 @@ import { MarqueeJurusan } from "@/features/landing/marquee-jurusan";
 import { Pernyataan } from "@/features/landing/pernyataan";
 import { Penutup } from "@/features/landing/penutup";
 import { ProgramKeahlian } from "@/features/landing/program-keahlian";
-import { SaranJurusan } from "@/features/landing/saran-jurusan";
+import { TesMinat } from "@/features/landing/tes-minat";
 import { TestimoniLanding } from "@/features/landing/testimoni-landing";
 import { ambilDataLanding } from "@/server/actions/ambilLanding";
 
@@ -35,7 +35,7 @@ export default async function Beranda() {
       <JadwalGelombang gelombang={data.gelombang} />
       <KehidupanSekolah galeri={data.galeri} />
       <KabarTerbaru berita={data.berita} agenda={data.agenda} />
-      <SaranJurusan />
+      <TesMinat />
       <TestimoniLanding testimoni={data.testimoni} />
       <FaqLanding faq={data.faq} />
       <Penutup />

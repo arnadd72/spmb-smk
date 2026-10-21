@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 const tautan = [
   { href: "/", label: "Beranda" },
   { href: "/jurusan", label: "Jurusan" },
+  { href: "/tes-minat-bakat", label: "Tes Minat Bakat" },
   { href: "/#alur-daftar", label: "Alur Daftar" },
   { href: "/berita", label: "Berita" },
   { href: "/#faq", label: "FAQ" },

@@ -151,7 +151,7 @@ const PERTANYAAN = [
 
 const HURUF = ["A", "B", "C", "D"] as const;
 
-export function SaranJurusan() {
+export function TesMinatBakat() {
   const [langkah, setLangkah] = useState(0);
   const [jawaban, setJawaban] = useState<(number | null)[]>(() => Array(PERTANYAAN.length).fill(null));
   const [lihatHasil, setLihatHasil] = useState(false);
@@ -176,22 +176,7 @@ export function SaranJurusan() {
   }
 
   return (
-    <section id="tes-minat-bakat" aria-labelledby="judul-saran" className="bg-mint py-16 text-ink lg:py-24">
-      <div className="wadah grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
-        <div>
-          <h2
-            id="judul-saran"
-            className="max-w-[16ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[1.08] tracking-[-0.015em]"
-          >
-            Tes minat dan bakat calon siswa SMK
-          </h2>
-          <p className="mt-5 max-w-[48ch] text-base text-ink/80 lg:text-lg">
-            Pilih jawaban yang paling sesuai dengan minat, kebiasaan, atau cara kamu menyelesaikan masalah. Tidak ada jawaban benar atau salah.
-          </p>
-          <p className="mt-3 max-w-[48ch] text-sm font-semibold text-ink/80">Tes ini hanya memberi gambaran awal dan tidak menentukan penerimaan atau pilihan jurusanmu.</p>
-        </div>
-
-        <div className="rounded-kartu bg-permukaan p-5 shadow-kartu sm:p-8">
+        <div id="tes-minat-bakat" className="rounded-kartu bg-permukaan p-5 text-ink shadow-kartu sm:p-8">
           {lihatHasil ? (
             <div aria-live="polite">
               <h3 className="text-xl font-bold text-ink">Hasil minatmu</h3>
@@ -281,7 +266,5 @@ export function SaranJurusan() {
             </>
           )}
         </div>
-      </div>
-    </section>
   );
 }

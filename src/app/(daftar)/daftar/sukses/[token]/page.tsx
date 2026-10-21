@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr";
-import { AksiSukses } from "@/features/wizard/aksi-sukses";
+import { CheckCircleIcon, WhatsappLogoIcon } from "@phosphor-icons/react/dist/ssr";
+import { AksiFormulir, SalinNomor } from "@/features/wizard/aksi-sukses";
 import { formatTanggal } from "@/lib/format";
 import { ambilKonfigWizard } from "@/server/services/draf";
 import { ambilRingkasanSukses } from "@/server/services/pendaftaran";
@@ -24,7 +24,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
       <p className="angka mt-4 break-all rounded-kartu bg-primer px-5 py-6 text-center font-display text-[clamp(1.75rem,8vw,3rem)] font-bold text-primer-tinta" data-nomor>
         {r.nomor}
       </p>
-      <AksiSukses nomor={r.nomor} token={token} />
+      <SalinNomor nomor={r.nomor} />
 
       <p className="mt-6 rounded-kontrol bg-peringatan-latar px-3 py-2.5 text-sm font-medium text-peringatan">
         Simpan nomor pendaftaran dan tautan halaman ini. Nomor dipakai untuk cek status bersama tanggal lahir.
@@ -37,16 +37,26 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
             Pengumuman jadwal verifikasi, berkas yang dibawa, dan hasil seleksi disampaikan lewat grup ini. Pendaftar yang belum bergabung
             bisa tertinggal informasi.
           </p>
+          <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-ink">
+            <li>
+              Tekan tombol hijau <strong>Gabung grup WhatsApp sekarang</strong> di bawah ini.
+            </li>
+            <li>WhatsApp akan terbuka. Tekan <strong>Gabung grup</strong> di aplikasi WhatsApp.</li>
+            <li>Bila WhatsApp tidak terbuka, pastikan aplikasinya sudah terpasang di HP Anda.</li>
+          </ol>
           <a
             href={konfig.waGroup}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-4 inline-flex min-h-11 items-center rounded-kontrol bg-primer px-4 text-sm font-semibold text-primer-tinta hover:bg-primer-tua"
+            className="mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-kontrol bg-primer px-4 text-sm font-semibold text-primer-tinta hover:bg-primer-tua sm:w-auto"
           >
+            <WhatsappLogoIcon aria-hidden weight="fill" className="size-5" />
             Gabung grup WhatsApp sekarang
           </a>
         </div>
       )}
+
+      <AksiFormulir token={token} />
 
       <dl className="mt-8 grid gap-x-6 gap-y-4 sm:grid-cols-2">
         <Baris judul="Nama" nilai={r.nama} />

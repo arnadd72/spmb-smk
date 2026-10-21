@@ -81,10 +81,23 @@ test.describe("interaksi landing (desktop)", () => {
     await expect.poll(() => slider.evaluate((e) => e.scrollLeft)).toBeGreaterThan(0);
   });
 
-  test("tes minat bakat memetakan jawaban dan menampilkan jurusan seri setara", async ({ page }) => {
+  test("landing hanya menjelaskan tes minat bakat dan tombolnya membuka halaman tes", async ({ page }) => {
     await page.goto("/");
+    const bagian = page.locator("#tes-minat-bakat");
+    await bagian.scrollIntoViewIfNeeded();
+    await expect(bagian.getByRole("heading", { name: "Tes minat dan bakat calon siswa SMK" })).toBeVisible();
+    await expect(bagian.getByRole("radio")).toHaveCount(0);
+    await bagian.getByRole("link", { name: "Mulai tes minat bakat" }).click();
+    await expect(page).toHaveURL(/\/tes-minat-bakat$/);
+    await expect(page.getByText("Pertanyaan 1 dari 15")).toBeVisible();
+  });
+
+  test("tes minat bakat dari menu navbar memetakan jawaban dan menampilkan jurusan seri setara", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/");
+    await page.getByRole("navigation", { name: "Menu utama" }).getByRole("link", { name: "Tes Minat Bakat" }).click();
+    await expect(page).toHaveURL(/\/tes-minat-bakat$/);
     const tes = page.locator("#tes-minat-bakat");
-    await tes.scrollIntoViewIfNeeded();
     await expect(tes.getByText("Pertanyaan 1 dari 15")).toBeVisible();
 
     for (let nomor = 0; nomor < 15; nomor++) {

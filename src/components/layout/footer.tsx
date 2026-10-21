@@ -53,11 +53,8 @@ export function Footer() {
         </div>
       </div>
       <div className="border-t border-kertas/15">
-        <div className="wadah flex items-center justify-between py-4 text-sm text-kertas/70">
+        <div className="wadah py-4 text-sm text-kertas/70">
           <p>SPMB SMK Ma&apos;arif NU 1 Wangon</p>
-          <Link href="/admin/login" className="inline-block min-h-11 py-2.5 underline-offset-2 hover:underline">
-            Masuk panitia
-          </Link>
         </div>
       </div>
     </footer>

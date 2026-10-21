@@ -1,13 +1,15 @@
 import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
+import { hapusGambarCloudinary, konfigCloudinary, publicIdDariUrl, unggahGambar, urlPublik } from "@/server/services/cloudinary";
 import { buatTokenAcak } from "@/server/services/kripto";
 import { MAKS_UKURAN_BYTE, deteksiMime } from "@/server/services/draf";
 import { GalatApi } from "@/server/types/galat";
 
-// Gambar konten publik (berita, galeri, testimoni, foto jurusan) untuk situs (PRD v4 7.4: bucket publik `konten-publik`).
-// Tanpa Supabase dan bukan produksi, gambar disimpan di public/uploads/konten supaya bisa dikembangkan lokal;
-// folder itu tidak di-commit. Di produksi tanpa Supabase unggah ditolak, karena disk Vercel tidak persisten.
+// Gambar konten publik (berita, galeri, testimoni, foto jurusan, aset situs). Penyimpanan utama Cloudinary (PRD v4 butir 56),
+// dikompres saat diunggah. Gambar lama di bucket Supabase `konten-publik` tetap bisa dihapus. Tanpa keduanya dan bukan
+// produksi, gambar disimpan di public/uploads/konten supaya bisa dikembangkan lokal; folder itu tidak di-commit.
+// Di produksi tanpa Cloudinary unggah ditolak, karena disk Vercel tidak persisten.
 
 const AWALAN_LOKAL = "/uploads/konten/";
 const GAMBAR_SAH = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -31,6 +33,12 @@ export async function simpanMedia(isi: Buffer): Promise<string> {
   const sekarang = new Date();
   const relatif = `${sekarang.getUTCFullYear()}/${String(sekarang.getUTCMonth() + 1).padStart(2, "0")}/${buatTokenAcak(14)}.${jenis.ext}`;
 
+  const c = konfigCloudinary();
+  if (c) {
+    const publicId = await unggahGambar(c, isi, jenis.mime, { publicId: `spmb/konten/${relatif.replace(/\.[^.]+$/, "")}`, akses: "public" });
+    return urlPublik(c.cloud, publicId);
+  }
+
   const s = supabase();
   if (s) {
     const { error } = await s.klien.storage.from(s.bucket).upload(`konten/${relatif}`, isi, { contentType: jenis.mime, cacheControl: "31536000", upsert: false });
@@ -39,7 +47,7 @@ export async function simpanMedia(isi: Buffer): Promise<string> {
   }
 
   if (process.env.NODE_ENV === "production") {
-    throw new GalatApi(503, "STORAGE_UNAVAILABLE", "Penyimpanan gambar belum dikonfigurasi (Supabase Storage).");
+    throw new GalatApi(503, "STORAGE_UNAVAILABLE", "Penyimpanan gambar belum dikonfigurasi (Cloudinary).");
   }
   const lokasi = path.join(process.cwd(), "public", AWALAN_LOKAL, relatif);
   await mkdir(path.dirname(lokasi), { recursive: true });
@@ -55,6 +63,12 @@ export async function hapusMediaBila(url: string | null | undefined): Promise<vo
       const relatif = url.slice(AWALAN_LOKAL.length);
       if (relatif.includes("..")) return;
       await rm(path.join(process.cwd(), "public", AWALAN_LOKAL, relatif), { force: true });
+      return;
+    }
+    const c = konfigCloudinary();
+    const publicId = c ? publicIdDariUrl(url, c.cloud) : null;
+    if (c && publicId) {
+      await hapusGambarCloudinary(c, publicId);
       return;
     }
     const s = supabase();

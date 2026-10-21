@@ -21,6 +21,8 @@ export default defineConfig({
   globalTeardown: "./tests/e2e/global-teardown.ts",
   // Server dev mengompilasi rute saat pertama diakses; beri ruang saat banyak berkas uji berjalan paralel.
   expect: { timeout: 15_000 },
+  // Semua berkas uji berbagi satu database dan mengubah tabel global (galeri, gelombang, pengaturan), jadi berjalan satu per satu.
+  workers: 1,
   use: { baseURL: process.env.E2E_BASE_URL ?? `http://localhost:${PORT}` },
   webServer: process.env.E2E_BASE_URL
     ? undefined

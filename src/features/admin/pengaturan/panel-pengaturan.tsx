@@ -29,7 +29,7 @@ const KELOMPOK: { judul: string; field: DefPengaturan[] }[] = [
   {
     judul: "Kontak",
     field: [
-      { kunci: "kontak_panitia", label: "Kontak panitia", tipe: "area", bantuan: "Tampil di Tanya Panitia dan halaman bantuan." },
+      { kunci: "kontak_panitia", label: "Kontak panitia", tipe: "area", bantuan: "Tampil di Tanya Sunan dan halaman bantuan." },
       { kunci: "wa_group_url", label: "Tautan grup WhatsApp", tipe: "teks", bantuan: "Diawali https://. Kosongkan bila tidak ada." },
     ],
   },

@@ -3,15 +3,15 @@ import { expect, test, type Page } from "@playwright/test";
 import { masukSebagai } from "./masuk";
 
 async function bukaChat(page: Page) {
-  await page.getByRole("button", { name: "Tanya Panitia" }).click();
-  const dialog = page.getByRole("dialog", { name: "Tanya Panitia" });
+  await page.getByRole("button", { name: "Tanya Sunan" }).click();
+  const dialog = page.getByRole("dialog", { name: "Tanya Sunan" });
   await expect(dialog).toBeVisible();
   await expect(dialog.getByLabel("Tulis pertanyaan")).toBeFocused();
   return dialog;
 }
 
 for (const lebar of [1440, 360]) {
-  test(`chatbot Tanya Panitia di landing ${lebar}px: pertanyaan cepat, FAQ, pertanyaan di luar FAQ, aksesibilitas`, async ({ page }) => {
+  test(`chatbot Tanya Sunan di landing ${lebar}px: pertanyaan cepat, FAQ, pertanyaan di luar FAQ, aksesibilitas`, async ({ page }) => {
     test.setTimeout(90_000);
     await page.setViewportSize({ width: lebar, height: 800 });
     await page.goto("/");
@@ -40,8 +40,8 @@ for (const lebar of [1440, 360]) {
 
     // Escape menutup dan fokus kembali ke tombol
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("dialog", { name: "Tanya Panitia" })).toHaveCount(0);
-    await expect(page.getByRole("button", { name: "Tanya Panitia" })).toBeFocused();
+    await expect(page.getByRole("dialog", { name: "Tanya Sunan" })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Tanya Sunan" })).toBeFocused();
   });
 }
 
@@ -56,14 +56,14 @@ test("jawaban aturan memuat tautan, dan pertanyaan kosong tidak terkirim", async
 
 test("chatbot juga ada di halaman pendaftaran dan cek status, tetapi tidak di panel admin", async ({ page }) => {
   await page.goto("/daftar");
-  await expect(page.getByRole("button", { name: "Tanya Panitia" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tanya Sunan" })).toBeVisible();
   await page.goto("/cek-status");
-  await expect(page.getByRole("button", { name: "Tanya Panitia" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Tanya Sunan" })).toBeVisible();
 
   await masukSebagai(page, "panitia");
   await page.goto("/admin");
   await expect(page.getByRole("heading", { name: "Dashboard", exact: true })).toBeVisible();
-  await expect(page.getByRole("button", { name: "Tanya Panitia" })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Tanya Sunan" })).toHaveCount(0);
 });
 
 test("endpoint /tanya menolak permintaan lintas-origin", async ({ request }) => {

@@ -96,6 +96,14 @@ export async function seedFormField(prisma: PrismaClient) {
     if (f.placeholder) await prisma.formField.updateMany({ where: { kunci: f.kunci, placeholder: null }, data: { placeholder: f.placeholder } });
     if (Array.isArray(f.opsi)) await prisma.formField.updateMany({ where: { kunci: f.kunci, opsi: { equals: Prisma.DbNull } }, data: { opsi: f.opsi } });
   }
+  // Tahun tamat berubah dari isian teks menjadi dropdown 2025-2030, hanya bila belum disunting panitia.
+  const tahunTamat = FORM_FIELDS.find((x) => x.kunci === "tamat_tahun");
+  if (tahunTamat && Array.isArray(tahunTamat.opsi)) {
+    await prisma.formField.updateMany({
+      where: { kunci: "tamat_tahun", tipe: "text" },
+      data: { tipe: "select", opsi: tahunTamat.opsi, placeholder: null, teksBantuan: tahunTamat.teksBantuan },
+    });
+  }
   // Label yang berubah karena revisi sekolah (hanya bila belum disunting panitia).
   const labelBaru: Record<string, [string, string]> = {
     jurusan_1: ["Pilihan jurusan 1", "Pilihan jurusan"],

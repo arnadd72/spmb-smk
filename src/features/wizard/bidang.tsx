@@ -190,7 +190,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           inputMode={f.tipe === "number" ? "numeric" : f.kunci === "nisn" || f.kunci === "nik" || f.kunci === "no_kk" ? "numeric" : undefined}
           autoComplete={AUTOFILL[f.kunci]}
           value={teks(nilai)}
-          onChange={(e) => onChange(f.kunci, f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)}
+          onChange={(e) => onChange(f.kunci, f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : f.tipe === "number" ? e.target.value.replace(/\D/g, "") : e.target.value)}
           disabled={disabled}
           placeholder={f.placeholder ?? undefined}
           className={cn(f.tipe === "number" && "max-w-40")}

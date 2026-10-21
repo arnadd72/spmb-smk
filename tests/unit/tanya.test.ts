@@ -72,7 +72,7 @@ describe("pengakaran dan pencocokan", () => {
 
 describe("jawabPertanyaan: aturan dan FAQ", () => {
   it("sapaan, jadwal (dari pengaturan), kontak, jurusan, dan kuota dijawab dari data situs tanpa AI", async () => {
-    expect((await jawabPertanyaan("Halo kak")).jawaban).toMatch(/asisten Tanya Panitia/);
+    expect((await jawabPertanyaan("Halo kak")).jawaban).toMatch(/asisten Tanya Sunan/);
 
     const belum = await jawabPertanyaan("kapan jadwal pendaftaran dibuka?");
     expect(belum.jawaban).toMatch(/belum ditetapkan/);

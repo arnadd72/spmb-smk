@@ -5,7 +5,7 @@ import { daftarGelombang } from "@/server/services/gelombang";
 import { terdaftarPerJurusan } from "@/server/services/kuota";
 import { GalatApi } from "@/server/types/galat";
 
-// Tanya Panitia (PRD v3.1 10.8, diperluas atas permintaan pemilik proyek 11 Okt 2026):
+// Tanya Sunan (PRD v3.1 10.8, diperluas atas permintaan pemilik proyek 11 Okt 2026):
 // 1) aturan sederhana (jadwal, kontak, jurusan, kuota, persyaratan, sapaan) dari data situs,
 // 2) pencarian FAQ (Jaccard + cakupan kata), 3) bila tidak ada yang cocok, Gemini dengan konteks sekolah (hanya bila GEMINI_API_KEY ada),
 // 4) bila semuanya gagal, arahkan ke kontak panitia. Sumber jawaban selalu dilaporkan supaya UI jujur soal jawaban AI.
@@ -108,7 +108,7 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
   const kata = t.trim().split(" ");
   const sapaan = /^(halo|hai|hi|assalamualaikum|permisi)$/.test(kata[0]) || (kata[0] === "selamat" && /^(pagi|siang|sore|malam)$/.test(kata[1] ?? ""));
   if (sapaan && kata.length <= 3) {
-    return { sumber: "aturan", jawaban: "Halo, saya asisten Tanya Panitia SPMB SMK Ma'arif NU 1 Wangon. Silakan tanyakan jadwal, persyaratan, cara mendaftar, jurusan, atau kuota." };
+    return { sumber: "aturan", jawaban: "Halo, saya asisten Tanya Sunan SPMB SMK Ma'arif NU 1 Wangon. Silakan tanyakan jadwal, persyaratan, cara mendaftar, jurusan, atau kuota." };
   }
 
   // Fitur situs yang sering ditanyakan. Berada sebelum aturan kontak: kata "whatsapp" dalam "grup WhatsApp" bukan pertanyaan kontak.
@@ -177,7 +177,7 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
 function instruksiSistem(k: Konteks): string {
   const { konfig } = k;
   return [
-    "Kamu adalah asisten Tanya Panitia untuk SPMB (penerimaan murid baru) SMK Ma'arif NU 1 Wangon, Banyumas.",
+    "Kamu adalah asisten Tanya Sunan untuk SPMB (penerimaan murid baru) SMK Ma'arif NU 1 Wangon, Banyumas.",
     "Jawab dalam Bahasa Indonesia yang ramah, singkat (maksimal 5 kalimat), dan hanya berdasarkan INFORMASI RESMI di bawah.",
     "Jika jawabannya tidak ada di informasi resmi, katakan terus terang bahwa kamu tidak tahu dan arahkan ke panitia. Jangan mengarang angka, biaya, tanggal, atau aturan.",
     "Jangan meminta atau menyebut data pribadi (NIK, nomor KK, nomor HP, alamat). Jangan membahas hal di luar SPMB sekolah ini.",

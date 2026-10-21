@@ -116,7 +116,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
     field: [
       { kunci: "pertanyaan", label: "Pertanyaan", tipe: "teks", wajib: true },
       { kunci: "jawaban", label: "Jawaban", tipe: "area", wajib: true },
-      { kunci: "keywords", label: "Kata kunci", tipe: "teks", bantuan: "Dipisah koma. Dipakai pencarian Tanya Panitia, mis. syarat, berkas, rapor." },
+      { kunci: "keywords", label: "Kata kunci", tipe: "teks", bantuan: "Dipisah koma. Dipakai pencarian Tanya Sunan, mis. syarat, berkas, rapor." },
       { kunci: "kategori", label: "Kategori", tipe: "teks" },
       { kunci: "urutan", label: "Urutan", tipe: "angka", awal: 0 },
       aktif,

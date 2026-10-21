@@ -6,7 +6,7 @@ import { tangani } from "../../_lib/tangani";
 // Maksimal beberapa detik: Gemini dibatasi 9 detik di services/gemini.ts.
 export const maxDuration = 30;
 
-/** Tanya Panitia: aturan, FAQ, lalu Gemini bila perlu. Publik, dibatasi laju per IP. Tidak menyimpan teks pertanyaan. */
+/** Tanya Sunan: aturan, FAQ, lalu Gemini bila perlu. Publik, dibatasi laju per IP. Tidak menyimpan teks pertanyaan. */
 export const POST = tangani(async (req: Request) => {
   periksaOrigin(req);
   const { pertanyaan } = (await req.json().catch(() => ({}))) as { pertanyaan?: unknown };

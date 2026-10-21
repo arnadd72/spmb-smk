@@ -1,4 +1,4 @@
-// Klien Gemini (Google AI) untuk cadangan jawaban Tanya Panitia. Permintaan manual lewat fetch, tanpa SDK, agar mudah diuji dan
+// Klien Gemini (Google AI) untuk cadangan jawaban Tanya Sunan. Permintaan manual lewat fetch, tanpa SDK, agar mudah diuji dan
 // tidak menambah ketergantungan. Hanya teks pertanyaan dan konteks sekolah yang dikirim; tidak pernah data pendaftar.
 
 export type OpsiGemini = { instruksi: string; pesan: string; batasWaktuMs?: number };

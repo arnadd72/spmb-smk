@@ -3,8 +3,9 @@
 import { useRef, useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeftIcon, FileIcon, TrashIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import { ArrowLeftIcon, CameraIcon, FileIcon, TrashIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
@@ -50,6 +51,8 @@ function Unggah({
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState<string>();
   const input = useRef<HTMLInputElement>(null);
+  const kamera = useRef<HTMLInputElement>(null);
+  const [peringatanSeragam, setPeringatanSeragam] = useState(false);
 
   function perbarui(baru: BerkasKlien[]) {
     setDaftar(baru);
@@ -82,6 +85,7 @@ function Unggah({
     } finally {
       setSibuk(false);
       if (input.current) input.current.value = "";
+      if (kamera.current) kamera.current.value = "";
     }
   }
 
@@ -148,29 +152,63 @@ function Unggah({
         <p className="text-sm text-tinta-redup" aria-live="polite">
           {sibuk ? "Mengunggah berkas..." : `JPG, PNG, WebP, atau PDF, maksimal ${MAKS_MB} MB.`}
         </p>
-        <Button
-          type="button"
-          varian="sekunder"
-          disabled={sibuk}
-          onClick={() => input.current?.click()}
-        >
-          {penuh
-            ? "Ganti berkas"
-            : slot.jamak && daftar.length > 0
-              ? "Tambah berkas"
-              : "Ambil foto atau pilih berkas"}
-        </Button>
+        <div className="flex w-full flex-col justify-center gap-2 sm:flex-row">
+          <Button
+            type="button"
+            varian="sekunder"
+            disabled={sibuk}
+            onClick={() => (slot.kunci === "pas_foto" ? setPeringatanSeragam(true) : kamera.current?.click())}
+          >
+            <CameraIcon aria-hidden className="size-5" />
+            Ambil dari kamera
+          </Button>
+          <Button type="button" varian="sekunder" disabled={sibuk} onClick={() => input.current?.click()}>
+            <UploadSimpleIcon aria-hidden className="size-5" />
+            {penuh ? "Ganti dari galeri atau berkas" : slot.jamak && daftar.length > 0 ? "Tambah dari galeri atau berkas" : "Pilih dari galeri atau berkas"}
+          </Button>
+        </div>
         <input
           ref={input}
           type="file"
           accept="image/jpeg,image/png,image/webp,application/pdf"
-          capture="environment"
           aria-label={`Pilih berkas ${slot.label}`}
           data-berkas={slot.kunci}
           className="sr-only"
           onChange={(e) => pilih(e.target.files?.[0])}
         />
+        <input
+          ref={kamera}
+          type="file"
+          accept="image/*"
+          capture={slot.kunci === "pas_foto" ? "user" : "environment"}
+          aria-label={`Ambil foto ${slot.label} dari kamera`}
+          data-kamera={slot.kunci}
+          className="sr-only"
+          onChange={(e) => pilih(e.target.files?.[0])}
+        />
       </div>
+      <Dialog
+        buka={peringatanSeragam}
+        onBukaChange={setPeringatanSeragam}
+        judul="Pakai seragam OSIS SMP"
+        deskripsi="Pas foto harus diambil dengan memakai seragam OSIS SMP asal. Pastikan wajah terlihat jelas, menghadap depan, dan latar polos."
+        aksi={
+          <>
+            <Button type="button" varian="hantu" onClick={() => setPeringatanSeragam(false)}>
+              Batal
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setPeringatanSeragam(false);
+                kamera.current?.click();
+              }}
+            >
+              Saya sudah berseragam, buka kamera
+            </Button>
+          </>
+        }
+      />
       {galat && <PesanGalat pesan={galat} />}
     </div>
   );

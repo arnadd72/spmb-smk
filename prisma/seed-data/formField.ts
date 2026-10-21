@@ -24,6 +24,8 @@ const PENDIDIKAN = sama("SD", "SMP", "SMA/SMK", "Diploma", "Sarjana", "Pascasarj
 const PEKERJAAN_AYAH = sama("Petani", "Buruh", "Wiraswasta", "PNS", "TNI/Polri", "Guru", "Karyawan Swasta", "Lainnya");
 const PEKERJAAN_IBU = sama("Ibu Rumah Tangga", "Petani", "Buruh", "Wiraswasta", "PNS", "Guru", "Karyawan Swasta", "Lainnya");
 const AGAMA = sama("Islam", "Kristen", "Katolik", "Hindu", "Buddha", "Konghucu");
+// Tahun kelulusan yang bisa dipilih pendaftar (2025 sampai 2030).
+const TAHUN_TAMAT = sama(...Array.from({ length: 6 }, (_, i) => String(2025 + i)));
 const PENGHASILAN: Opsi[] = [
   { nilai: "01", label: "Kurang dari Rp500.000" },
   { nilai: "02", label: "Rp500.000–999.999" },
@@ -72,7 +74,7 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(5, 60, "agama", "Agama", "select", { opsi: AGAMA }),
   f(5, 70, "anak_ke", "Anak ke", "number", { teksBantuan: "Angka saja. Contoh: 2." }),
   f(5, 71, "jumlah_saudara", "Jumlah saudara", "number", { teksBantuan: "Jumlah saudara kandung, angka saja. Contoh: 3." }),
-  f(5, 100, "tamat_tahun", "Tahun tamat", "text", { teksBantuan: "4 digit tahun lulus. Contoh: 2026.", placeholder: "2026" }),
+  f(5, 100, "tamat_tahun", "Tahun tamat", "select", { teksBantuan: "Pilih tahun kelulusan dari SMP/MTs.", opsi: TAHUN_TAMAT }),
   f(5, 110, "no_hp", "Nomor HP", "tel", { teksBantuan: "Nomor yang aktif, angka saja. Contoh: 081234567890.", placeholder: "081234567890" }),
   f(5, 111, "no_wa", "Nomor WhatsApp", "tel", { ...opsional, teksBantuan: "Boleh dikosongkan bila sama dengan nomor HP. Contoh: 081234567890." }),
   f(5, 120, "email", "Email", "email", { ...opsional, teksBantuan: "Untuk menerima kode pendaftaran. Contoh: nama@gmail.com." }),

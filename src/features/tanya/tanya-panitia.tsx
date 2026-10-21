@@ -23,7 +23,7 @@ const TOMBOL_CEPAT = [
 const SAPAAN: Pesan = {
   id: 0,
   peran: "asisten",
-  teks: "Halo! Saya asisten Tanya Panitia. Pilih pertanyaan cepat di bawah atau tulis pertanyaan Anda tentang SPMB SMK Ma'arif NU 1 Wangon.",
+  teks: "Halo! Saya asisten Tanya Sunan. Pilih pertanyaan cepat di bawah atau tulis pertanyaan Anda tentang SPMB SMK Ma'arif NU 1 Wangon.",
 };
 
 const KETERANGAN: Record<Sumber, string | null> = {
@@ -33,7 +33,7 @@ const KETERANGAN: Record<Sumber, string | null> = {
   "tidak-ada": null,
 };
 
-/** Widget Tanya Panitia (chatbot): aturan dan FAQ dulu, asisten AI bila tidak ada yang cocok. Mengambang di pojok kanan bawah. */
+/** Widget Tanya Sunan (chatbot): aturan dan FAQ dulu, asisten AI bila tidak ada yang cocok. Mengambang di pojok kanan bawah. */
 export function TanyaPanitia() {
   const [buka, setBuka] = useState(false);
   const [pesan, setPesan] = useState<Pesan[]>([SAPAAN]);
@@ -85,7 +85,7 @@ export function TanyaPanitia() {
           )}
         >
           <ChatCircleDotsIcon aria-hidden weight="fill" className="size-6" />
-          Tanya Panitia
+          Tanya Sunan
         </button>
       </Dialog.Trigger>
 
@@ -101,10 +101,10 @@ export function TanyaPanitia() {
         >
           <header className="flex items-start justify-between gap-3 bg-primer px-4 py-3 text-primer-tinta">
             <div>
-              <Dialog.Title className="font-display text-lg font-bold leading-tight">Tanya Panitia</Dialog.Title>
+              <Dialog.Title className="font-display text-lg font-bold leading-tight">Tanya Sunan</Dialog.Title>
               <p className="text-xs opacity-90">SPMB SMK Ma&apos;arif NU 1 Wangon</p>
             </div>
-            <Dialog.Close aria-label="Tutup Tanya Panitia" className="grid size-11 shrink-0 place-items-center rounded-kontrol hover:bg-white/15">
+            <Dialog.Close aria-label="Tutup Tanya Sunan" className="grid size-11 shrink-0 place-items-center rounded-kontrol hover:bg-white/15">
               <XIcon aria-hidden weight="bold" className="size-5" />
             </Dialog.Close>
           </header>

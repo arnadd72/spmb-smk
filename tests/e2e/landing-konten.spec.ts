@@ -73,12 +73,14 @@ test.describe("landing menampilkan konten admin", () => {
       expect((await page.request.post("/api/v1/admin/galeri", { headers: sama, data: { judul: `${AWALAN} foto ${i}`, gambar: "/images/sekolah/kultum.webp", urutan: i, isActive: true } })).status()).toBe(201);
     }
     await page.goto("/");
-    await expect(page.getByText(`${AWALAN} foto 1`)).toBeVisible();
+    // Galeri berputar tanpa ujung: ada tiga salinan, hanya yang tengah terbaca pembaca layar (tanpa aria-hidden).
+    const asli = page.locator("[data-slider-galeri] li:not([aria-hidden])");
+    await expect(asli.getByText(`${AWALAN} foto 1`)).toBeVisible();
     await expect(page.getByText("Kultum bersama di musala.")).toHaveCount(0);
 
     await bersihkan(page.request);
     await page.goto("/");
-    await expect(page.getByText("Kultum bersama di musala.")).toBeVisible();
+    await expect(page.locator("[data-slider-galeri] li:not([aria-hidden])").getByText("Kultum bersama di musala.")).toBeVisible();
   });
 
   test("endpoint JSON publik terbuka tanpa login dan tidak memuat konten nonaktif", async ({ request }) => {

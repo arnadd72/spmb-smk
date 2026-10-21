@@ -24,7 +24,7 @@ export default async function HalamanDaftar() {
   return (
     <div className="px-4 py-10 sm:py-14">
       <h1 className="max-w-[18ch] font-display text-[clamp(2rem,6vw,3rem)] font-semibold leading-[1.02] text-ink">
-        Pendaftaran peserta didik baru
+        Sistem penerimaan murid baru
       </h1>
       <p className="mt-3 text-tinta-redup">Tahun ajaran {konfig.tahunAjaran}. Sekitar 10 sampai 15 menit, tanpa membuat akun.</p>
 

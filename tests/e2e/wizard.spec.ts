@@ -59,7 +59,7 @@ test.describe("wizard pendaftaran manual", () => {
   test("langkah tanpa draf diarahkan ke halaman mulai", async ({ page }) => {
     await page.goto("/daftar/langkah/5");
     await expect(page).toHaveURL(/\/daftar$/);
-    await expect(page.getByRole("heading", { level: 1 })).toContainText("Pendaftaran peserta didik baru");
+    await expect(page.getByRole("heading", { level: 1 })).toContainText("Sistem penerimaan murid baru");
   });
 
   test("dari mulai sampai nomor pendaftaran dan cek status", async ({ page }) => {

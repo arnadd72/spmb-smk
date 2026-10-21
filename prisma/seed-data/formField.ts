@@ -57,7 +57,7 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(2, 20, "kk", "Kartu keluarga", "file", opsional),
   f(2, 30, "pas_foto", "Pas foto 3 x 4", "file", {
     ...opsional,
-    teksBantuan: "Foto tampak depan berlatar merah, memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG.",
+    teksBantuan: "Foto tampak depan berlatar merah (pas foto background merah), memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG.",
   }),
 
   // Langkah 3: nilai rapor (terkunci selama rekomendasi aktif). Foto rapor tidak diunggah, hanya nilainya.

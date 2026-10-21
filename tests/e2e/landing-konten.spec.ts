@@ -66,10 +66,10 @@ test.describe("landing menampilkan konten admin", () => {
     expect((await page.request.get(alamat)).status()).toBe(404);
   });
 
-  test("galeri admin (tiga foto atau lebih) menggantikan foto bawaan di bagian Kehidupan sekolah", async ({ page }) => {
+  test("galeri admin (satu foto saja sudah cukup) menggantikan foto bawaan di bagian Kehidupan sekolah", async ({ page }) => {
     await masukSebagai(page, "konten");
     await bersihkan(page.request);
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 1; i++) {
       expect((await page.request.post("/api/v1/admin/galeri", { headers: sama, data: { judul: `${AWALAN} foto ${i}`, gambar: "/images/sekolah/kultum.webp", urutan: i, isActive: true } })).status()).toBe(201);
     }
     await page.goto("/");
@@ -77,6 +77,9 @@ test.describe("landing menampilkan konten admin", () => {
     const asli = page.locator("[data-slider-galeri] li:not([aria-hidden])");
     await expect(asli.getByText(`${AWALAN} foto 1`)).toBeVisible();
     await expect(page.getByText("Kultum bersama di musala.")).toHaveCount(0);
+    // Satu foto saja: tampil diam, tanpa tombol panah.
+    await expect(page.getByRole("button", { name: "Foto berikutnya" })).toHaveCount(0);
+    await expect(page.locator("[data-slider-galeri] li")).toHaveCount(1);
 
     await bersihkan(page.request);
     await page.goto("/");

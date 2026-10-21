@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
+import { cn } from "@/lib/cn";
 import { GambarKonten } from "@/features/berita/gambar-konten";
 import { GALERI_BAWAAN } from "@/lib/aset-bawaan";
 import { batalkanGulir, gulirHalus } from "@/lib/gulir-halus";
@@ -21,15 +22,17 @@ type FotoDb = { id: string; judul: string | null; gambar: string };
 export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
   const akar = useRef<HTMLElement>(null);
   const jalur = useRef<HTMLDivElement>(null);
-  // Galeri dari admin menggantikan foto bawaan bila minimal tiga foto aktif.
+  // Galeri dari admin menggantikan foto bawaan begitu ada satu foto aktif.
   const daftar =
-    galeri.length >= 3
+    galeri.length >= 1
       ? galeri.map((g) => ({
           src: g.gambar,
           alt: g.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon",
           ket: g.judul ?? "",
         }))
       : FOTO;
+  // Satu foto saja: tampil diam, tanpa putaran, geser otomatis, dan tombol panah.
+  const putar = daftar.length >= 2;
 
   function geser(arah: 1 | -1) {
     const el = jalur.current;
@@ -48,7 +51,7 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
   // dan tidak berjalan bila pengguna memilih kurangi gerak.
   useEffect(() => {
     const el = jalur.current;
-    if (!el) return;
+    if (!el || !putar) return;
     const n = daftar.length;
     const item = () => Array.from(el.querySelectorAll<HTMLElement>("li"));
     const posisi = (li: HTMLElement) => li.offsetLeft - item()[0].offsetLeft;
@@ -111,7 +114,7 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
       el.removeEventListener("scroll", saatGulir);
       for (const [nama, fn] of peristiwa) area.removeEventListener(nama, fn);
     };
-  }, [daftar.length]);
+  }, [daftar.length, putar]);
 
   // Hanya judul yang beranimasi; foto bergeser otomatis, dan bisa digeser pengguna lewat swipe atau tombol.
   useGsapPublik(akar, {
@@ -144,6 +147,7 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
           Belajar, berkarya, dan beribadah bersama.
         </h2>
 
+        {putar && (
         <div className="mt-10 flex items-center justify-between gap-4 lg:mt-14">
           <p className="text-sm text-tinta-redup">Foto bergeser otomatis. Geser ke samping untuk melihat foto lainnya.</p>
           <div className="flex gap-2">
@@ -165,6 +169,7 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
             </button>
           </div>
         </div>
+        )}
 
         <div
           ref={jalur}
@@ -172,14 +177,14 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
           role="region"
           aria-label="Galeri foto kegiatan sekolah"
           tabIndex={0}
-          className="mt-4 overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory focus-visible:outline-offset-4 [&::-webkit-scrollbar]:hidden"
+          className={cn(putar ? "mt-4" : "mt-10 lg:mt-14", "overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory focus-visible:outline-offset-4 [&::-webkit-scrollbar]:hidden")}
         >
         <ul className="flex w-max gap-5">
-          {[0, 1, 2].flatMap((salinan) =>
+          {(putar ? [0, 1, 2] : [0]).flatMap((salinan) =>
             daftar.map((f) => (
               <li
                 key={`${salinan}-${f.src}`}
-                aria-hidden={salinan === 1 ? undefined : true}
+                aria-hidden={salinan === (putar ? 1 : 0) ? undefined : true}
                 className="w-[78vw] shrink-0 snap-start sm:w-[52vw] lg:w-[min(44vw,40rem)]"
               >
                 <figure className="flex flex-col gap-3">

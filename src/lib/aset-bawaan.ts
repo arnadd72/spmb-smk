@@ -32,7 +32,7 @@ export function fotoJurusan(kode: string, nama: string, gambar: string | null | 
   return { src: gambar, alt: `Kegiatan praktik jurusan ${nama}` };
 }
 
-// Lima foto kehidupan sekolah di landing. Dipakai saat galeri di database kurang dari tiga foto, dan bisa dimuat
+// Lima foto kehidupan sekolah di landing. Dipakai saat galeri di database belum punya foto aktif, dan bisa dimuat
 // ke galeri admin lewat tombol "Muat foto bawaan situs" agar dapat diubah atau dihapus.
 export const GALERI_BAWAAN: { src: string; alt: string; ket: string }[] = [
   {

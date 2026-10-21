@@ -138,7 +138,7 @@ export function PanelAsetSitus({ awal }: { awal: DaftarAset }) {
         <div className="mt-6 rounded-kontrol border border-garis bg-permukaan p-4" data-galeri-bawaan>
           <p className="font-semibold text-ink">Galeri kegiatan di beranda masih memakai 5 foto bawaan.</p>
           <p className="mt-1 text-sm text-tinta-redup">
-            Muat foto bawaan itu ke daftar galeri di bawah supaya bisa Anda ubah, urutkan, atau hapus. Setelah galeri berisi minimal tiga foto, situs
+            Muat foto bawaan itu ke daftar galeri di bawah supaya bisa Anda ubah, urutkan, atau hapus. Begitu galeri berisi satu foto aktif, situs
             menampilkan foto dari galeri.
           </p>
           <Button type="button" varian="sekunder" className="mt-3" memuat={memuatBawaan} onClick={muatBawaan}>

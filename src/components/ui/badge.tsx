@@ -60,10 +60,10 @@ export function BadgeStatus({ status }: { status: StatusPendaftar }) {
 
 export type Keyakinan = "HIGH" | "MEDIUM" | "LOW";
 
-/** Lencana keyakinan OCR (PRD 10.4): Tinggi hijau, Perlu dicek kuning. */
+/** Lencana keyakinan OCR (PRD 10.4): Terdeteksi hijau, Perlu dicek kuning. Keduanya tetap harus diperiksa pendaftar. */
 export function BadgeKeyakinan({ level }: { level: Keyakinan }) {
   return level === "HIGH" ? (
-    <Badge nada="sukses">Tinggi</Badge>
+    <Badge nada="sukses">Terdeteksi</Badge>
   ) : (
     <Badge nada="peringatan">Perlu dicek</Badge>
   );

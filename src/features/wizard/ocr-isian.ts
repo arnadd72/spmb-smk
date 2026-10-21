@@ -23,6 +23,28 @@ export const LABEL_ISIAN_OCR: Record<string, string> = {
   propinsi: "Provinsi",
 };
 
+/** Contoh isian di bawah kolom, sebagai acuan saat siswa mengisi manual. */
+export const CONTOH_ISIAN_OCR: Record<string, string> = {
+  tempat_lahir: "Kota atau kabupaten kelahiran sesuai Akta. Contoh: BANYUMAS",
+  jenis_kelamin: "Pilih sesuai Akta.",
+  nama_ayah: "Nama lengkap sesuai Akta. Contoh: SUPRIYADI",
+  nama_ibu: "Nama lengkap sesuai Akta. Contoh: SITI AMINAH",
+  no_kk: "16 angka di bagian atas KK. Contoh: 3302010406080001",
+  nik: "16 angka milik calon siswa. Contoh: 3302010903100002",
+  alamat: "Nama jalan atau dusun, tanpa RT/RW. Contoh: DUSUN SIDAURIP",
+  rt: "Contoh: 003",
+  rw: "Contoh: 002",
+  desa: "Contoh: SIDAURIP",
+  kecamatan: "Contoh: WANGON",
+  kabupaten: "Contoh: BANYUMAS",
+  propinsi: "Contoh: JAWA TENGAH",
+};
+
+export const OPSI_JENIS_KELAMIN = [
+  { nilai: "L", label: "Laki-laki" },
+  { nilai: "P", label: "Perempuan" },
+];
+
 export type Saran = Record<string, FieldOcr>;
 
 const terisi = (f: FieldOcr | undefined): f is FieldOcr => Boolean(f && f.nilai);

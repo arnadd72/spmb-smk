@@ -19,10 +19,17 @@ import { KUNCI_AKTA, KUNCI_KK, gabungSaran, nilaiAkhirOcr } from "./ocr-isian";
 import { rataMapel, skemaNilaiRapor, type NilaiRapor } from "./schema-client";
 
 export type BerkasKlien = { ref: string; nama: string; mime: string; ukuran: number };
-export type SlotBerkas = { kunci: string; label: string; wajib: boolean; jamak?: boolean; bantuan?: string };
+export type SlotBerkas = {
+  kunci: string;
+  label: string;
+  wajib: boolean;
+  jamak?: boolean;
+  bantuan?: string;
+};
 
 const MAKS_MB = 5;
-const ukuran = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(b / 1024)} KB`);
+const ukuran = (b: number) =>
+  b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(b / 1024)} KB`;
 
 function Unggah({
   slot,
@@ -67,7 +74,11 @@ function Unggah({
       perbarui(slot.jamak ? [...daftar, baru] : [baru]);
       onBerkas?.(f, baru);
     } catch (e) {
-      setGalat(e instanceof ApiError ? (e.errors?.berkas?.[0] ?? e.message) : "Gagal mengunggah. Coba lagi.");
+      setGalat(
+        e instanceof ApiError
+          ? (e.errors?.berkas?.[0] ?? e.message)
+          : "Gagal mengunggah. Coba lagi.",
+      );
     } finally {
       setSibuk(false);
       if (input.current) input.current.value = "";
@@ -105,13 +116,21 @@ function Unggah({
       {daftar.length > 0 && (
         <ul className="flex flex-col gap-2">
           {daftar.map((b) => (
-            <li key={b.ref} className="flex items-center gap-3 rounded-kontrol border border-garis bg-permukaan p-3">
+            <li
+              key={b.ref}
+              className="flex items-center gap-3 rounded-kontrol border border-garis bg-permukaan p-3"
+            >
               <FileIcon aria-hidden weight="duotone" className="size-7 shrink-0 text-primer" />
               <div className="min-w-0 flex-1">
                 <p className="truncate font-semibold text-tinta">{b.nama}</p>
                 <p className="angka text-sm text-tinta-redup">{ukuran(b.ukuran)} · terunggah</p>
               </div>
-              <Button type="button" varian="hantu" onClick={() => hapus(b)} aria-label={`Hapus ${b.nama}`}>
+              <Button
+                type="button"
+                varian="hantu"
+                onClick={() => hapus(b)}
+                aria-label={`Hapus ${b.nama}`}
+              >
                 <TrashIcon aria-hidden className="size-5" />
               </Button>
             </li>
@@ -129,8 +148,17 @@ function Unggah({
         <p className="text-sm text-tinta-redup" aria-live="polite">
           {sibuk ? "Mengunggah berkas..." : `JPG, PNG, WebP, atau PDF, maksimal ${MAKS_MB} MB.`}
         </p>
-        <Button type="button" varian="sekunder" disabled={sibuk} onClick={() => input.current?.click()}>
-          {penuh ? "Ganti berkas" : slot.jamak && daftar.length > 0 ? "Tambah berkas" : "Ambil foto atau pilih berkas"}
+        <Button
+          type="button"
+          varian="sekunder"
+          disabled={sibuk}
+          onClick={() => input.current?.click()}
+        >
+          {penuh
+            ? "Ganti berkas"
+            : slot.jamak && daftar.length > 0
+              ? "Tambah berkas"
+              : "Ambil foto atau pilih berkas"}
         </Button>
         <input
           ref={input}
@@ -202,15 +230,29 @@ export function LangkahAkta({
   async function jalankan(kunci: "akta" | "kk", f: File) {
     setStatus((s) => ({ ...s, [kunci]: { status: "membaca" } }));
     setBagian((b) => ({ ...b, [kunci]: undefined }));
-    const onTahap = (tahap: Tahap) => setStatus((s) => ({ ...s, [kunci]: { status: "membaca", tahap } }));
-    const r = kunci === "akta" ? await bacaAkta(f, konteks, onTahap) : await bacaKk(f, konteks, onTahap);
+    const onTahap = (tahap: Tahap) =>
+      setStatus((s) => ({ ...s, [kunci]: { status: "membaca", tahap } }));
+    const r =
+      kunci === "akta" ? await bacaAkta(f, konteks, onTahap) : await bacaKk(f, konteks, onTahap);
     if (!r.ok) {
-      setStatus((s) => ({ ...s, [kunci]: { status: "gagal", pesan: pesanGagalOcr(r.kode, f.type === "application/pdf") } }));
+      setStatus((s) => ({
+        ...s,
+        [kunci]: { status: "gagal", pesan: pesanGagalOcr(r.kode, f.type === "application/pdf") },
+      }));
       return;
     }
-    setBagian((b) => ({ ...b, [kunci]: { fields: r.hasil.fields, peringatan: r.hasil.peringatan } }));
+    setBagian((b) => ({
+      ...b,
+      [kunci]: { fields: r.hasil.fields, peringatan: r.hasil.peringatan },
+    }));
     // Saran baru menggantikan suntingan lama untuk kunci dokumen ini.
-    setSuntingan((x) => Object.fromEntries(Object.entries(x).filter(([k]) => !(kunci === "akta" ? KUNCI_AKTA : KUNCI_KK).includes(k as never))));
+    setSuntingan((x) =>
+      Object.fromEntries(
+        Object.entries(x).filter(
+          ([k]) => !(kunci === "akta" ? KUNCI_AKTA : KUNCI_KK).includes(k as never),
+        ),
+      ),
+    );
     setStatus((s) => ({ ...s, [kunci]: { status: "selesai" } }));
   }
 
@@ -242,15 +284,17 @@ export function LangkahAkta({
 
   const ubah = (k: string, v: string) => setSuntingan((x) => ({ ...x, [k]: v }));
   // Nama orang tua dari KK (cadangan) tampil di kartu KK, bukan di kartu Akta, bila Akta tidak memberinya.
-  const dariKk = (["nama_ayah", "nama_ibu"] as const).filter((k) => !bagian.akta?.fields[k]?.nilai && bagian.kk?.fields[k]?.nilai);
+  const dariKk = (["nama_ayah", "nama_ibu"] as const).filter(
+    (k) => !bagian.akta?.fields[k]?.nilai && bagian.kk?.fields[k]?.nilai,
+  );
   const kunciKk = [...KUNCI_KK, ...dariKk];
   const kunciAkta = KUNCI_AKTA.filter((k) => !(dariKk as readonly string[]).includes(k));
 
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
       <p className="text-tinta-redup">
-        Unggah foto atau pindaian yang jelas dan tidak terpotong. Dokumen dibaca otomatis di HP Anda, dan hasilnya bisa Anda perbaiki.
-        Berkas ini hanya dilihat panitia untuk verifikasi.
+        Unggah foto atau pindaian yang jelas dan tidak terpotong. Dokumen dibaca otomatis di HP
+        Anda, dan hasilnya bisa Anda perbaiki. Berkas ini hanya dilihat panitia untuk verifikasi.
       </p>
       {slot.map((s) => {
         const ocr = s.kunci === "akta" || s.kunci === "kk" ? s.kunci : null;
@@ -272,6 +316,7 @@ export function LangkahAkta({
                 suntingan={suntingan}
                 awal={awal}
                 peringatan={bagian.akta?.peringatan ?? []}
+                gagal={status.akta?.status === "gagal"}
                 onUbah={ubah}
               />
             )}
@@ -283,6 +328,7 @@ export function LangkahAkta({
                 suntingan={suntingan}
                 awal={awal}
                 peringatan={bagian.kk?.peringatan ?? []}
+                gagal={status.kk?.status === "gagal"}
                 onUbah={ubah}
               />
             )}
@@ -312,11 +358,22 @@ export function LangkahRapor({
 }) {
   const router = useRouter();
   const [grid, setGrid] = useState<Grid>(() =>
-    Object.fromEntries(mapel.map((m) => [m.kode, Object.fromEntries(semester.map((s) => [String(s), awal?.mapel[m.kode]?.[String(s)]?.toString() ?? ""]))])),
+    Object.fromEntries(
+      mapel.map((m) => [
+        m.kode,
+        Object.fromEntries(
+          semester.map((s) => [String(s), awal?.mapel[m.kode]?.[String(s)]?.toString() ?? ""]),
+        ),
+      ]),
+    ),
   );
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
+  // Kolom nilai hanya tampil bila pendaftar minta saran jurusan; draf yang sudah berisi nilai langsung membukanya.
+  const [pakaiNilai, setPakaiNilai] = useState(() =>
+    Object.values(grid).some((s) => Object.values(s).some((v) => v.trim() !== "")),
+  );
 
   function ubah(kode: string, sem: number, v: string) {
     setGrid((g) => ({ ...g, [kode]: { ...g[kode], [sem]: v } }));
@@ -335,7 +392,24 @@ export function LangkahRapor({
   async function kirim(e: SyntheticEvent) {
     e.preventDefault();
     setGalatUmum(undefined);
-    const isi = { semester, mapel: Object.fromEntries(Object.entries(grid).map(([k, s]) => [k, Object.fromEntries(Object.entries(s).map(([a, b]) => [a, b.replace(",", ".")]))])) };
+    // Tanpa saran jurusan, nilai yang mungkin sempat diketik tidak ikut terkirim.
+    const dikirim = pakaiNilai
+      ? grid
+      : Object.fromEntries(
+          Object.entries(grid).map(([k, s]) => [
+            k,
+            Object.fromEntries(Object.keys(s).map((a) => [a, ""])),
+          ]),
+        );
+    const isi = {
+      semester,
+      mapel: Object.fromEntries(
+        Object.entries(dikirim).map(([k, s]) => [
+          k,
+          Object.fromEntries(Object.entries(s).map(([a, b]) => [a, b.replace(",", ".")])),
+        ]),
+      ),
+    };
     const cek = skemaNilaiRapor(semester, []).safeParse(isi);
     if (!cek.success) {
       const peta: Record<string, string> = {};
@@ -363,46 +437,107 @@ export function LangkahRapor({
       <div>
         <h2 className="text-lg font-bold text-ink">Nilai rapor</h2>
         <p className="mt-1 text-tinta-redup">
-          Nilai rapor opsional. Isi nilai yang tersedia bila ingin mendapat saran jurusan; jika dikosongkan, Anda tetap bisa memilih jurusan sendiri.
-          Rata-rata dihitung otomatis.
+          Nilai rapor tidak wajib. Anda tetap bisa memilih jurusan sendiri tanpa mengisinya.
         </p>
       </div>
 
-      <ul className="flex flex-col gap-4">
-        {mapel.map((m) => {
-          const r = rata(m.kode);
-          return (
-            <li key={m.kode} className="rounded-kartu border border-garis bg-permukaan p-3 sm:p-4">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-semibold text-tinta">{m.nama}</p>
-                <p className="angka shrink-0 text-sm text-tinta-redup">
-                  Rata-rata <span className="font-bold text-tinta">{r === null ? "-" : r.toFixed(1)}</span>
-                </p>
-              </div>
-              <div className="mt-2 grid gap-2" style={{ gridTemplateColumns: `repeat(${semester.length}, minmax(0, 1fr))` }}>
-                {semester.map((s) => (
-                  <label key={s} className="flex flex-col gap-1 text-center text-xs font-semibold text-tinta-redup">
-                    <span>
-                      Sem <span className="angka">{s}</span>
-                    </span>
-                    <Input
-                      inputMode="decimal"
-                      aria-label={`${m.nama} semester ${s}`}
-                      aria-invalid={galat[m.kode] ? true : undefined}
-                      value={grid[m.kode]?.[s] ?? ""}
-                      onChange={(e) => ubah(m.kode, s, e.target.value)}
-                      className="angka px-1 text-center"
-                    />
-                  </label>
-                ))}
-              </div>
-              {galat[m.kode] && <PesanGalat pesan={galat[m.kode]} />}
-            </li>
-          );
-        })}
-      </ul>
+      <fieldset className="flex flex-col gap-3">
+        <legend className="mb-1 text-sm font-semibold text-tinta">
+          Apakah Anda ingin mendapat saran jurusan dari nilai rapor?
+        </legend>
+        {[
+          {
+            nilai: true,
+            judul: "Ya, saya isi nilai rapor",
+            isi: "Cocok bila Anda belum tahu jurusan mana yang sesuai dengan nilai Anda.",
+          },
+          {
+            nilai: false,
+            judul: "Tidak, saya akan memilih jurusan sendiri",
+            isi: "Lewati langkah ini; tidak perlu mengisi nilai.",
+          },
+        ].map((o) => (
+          <label
+            key={o.judul}
+            className={cn(
+              "flex min-h-11 cursor-pointer items-start gap-3 rounded-kartu border p-3 sm:p-4",
+              pakaiNilai === o.nilai
+                ? "border-primer bg-permukaan-alt"
+                : "border-garis bg-permukaan",
+            )}
+          >
+            <input
+              type="radio"
+              name="pakai_nilai"
+              checked={pakaiNilai === o.nilai}
+              onChange={() => setPakaiNilai(o.nilai)}
+              className="mt-1 size-5 shrink-0 accent-primer"
+            />
+            <span>
+              <span className="block text-sm font-semibold text-tinta">{o.judul}</span>
+              <span className="block text-sm text-tinta-redup">{o.isi}</span>
+            </span>
+          </label>
+        ))}
+      </fieldset>
 
-      <p className="text-sm text-tinta-redup">Jika mengisi nilai, panitia dapat mencocokkannya dengan rapor asli saat verifikasi atau daftar ulang.</p>
+      {pakaiNilai && (
+        <>
+          <p className="text-sm text-tinta-redup">
+            Isi nilai yang tersedia saja, boleh sebagian. Rata-rata dihitung otomatis.
+          </p>
+          <ul className="flex flex-col gap-4">
+            {mapel.map((m) => {
+              const r = rata(m.kode);
+              return (
+                <li
+                  key={m.kode}
+                  className="rounded-kartu border border-garis bg-permukaan p-3 sm:p-4"
+                >
+                  <div className="flex items-baseline justify-between gap-3">
+                    <p className="text-sm font-semibold text-tinta">{m.nama}</p>
+                    <p className="angka shrink-0 text-sm text-tinta-redup">
+                      Rata-rata{" "}
+                      <span className="font-bold text-tinta">
+                        {r === null ? "-" : r.toFixed(1)}
+                      </span>
+                    </p>
+                  </div>
+                  <div
+                    className="mt-2 grid gap-2"
+                    style={{ gridTemplateColumns: `repeat(${semester.length}, minmax(0, 1fr))` }}
+                  >
+                    {semester.map((s) => (
+                      <label
+                        key={s}
+                        className="flex flex-col gap-1 text-center text-xs font-semibold text-tinta-redup"
+                      >
+                        <span>
+                          Sem <span className="angka">{s}</span>
+                        </span>
+                        <Input
+                          inputMode="decimal"
+                          aria-label={`${m.nama} semester ${s}`}
+                          aria-invalid={galat[m.kode] ? true : undefined}
+                          value={grid[m.kode]?.[s] ?? ""}
+                          onChange={(e) => ubah(m.kode, s, e.target.value)}
+                          className="angka px-1 text-center"
+                        />
+                      </label>
+                    ))}
+                  </div>
+                  {galat[m.kode] && <PesanGalat pesan={galat[m.kode]} />}
+                </li>
+              );
+            })}
+          </ul>
+
+          <p className="text-sm text-tinta-redup">
+            Jika mengisi nilai, panitia dapat mencocokkannya dengan rapor asli saat verifikasi atau
+            daftar ulang.
+          </p>
+        </>
+      )}
 
       {galatUmum && <PesanGalat pesan={galatUmum} />}
       <Navigasi langkah={3} menyimpan={menyimpan} />

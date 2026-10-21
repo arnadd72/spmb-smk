@@ -124,14 +124,35 @@ test.describe("OCR di wizard", () => {
 
     await page.locator("[data-berkas=kk]").setInputFiles({ name: "kk.png", mimeType: "image/png", buffer: PNG });
     await expect(page.getByText(/tidak dapat dibaca otomatis\. Silakan isi data secara manual/)).toBeVisible();
-    await expect(page.getByRole("region", { name: "Hasil baca Kartu Keluarga" })).toHaveCount(0);
+    // Kolom kosong muncul agar siswa bisa mengisi manual di langkah ini juga.
+    const kartu = page.getByRole("region", { name: "Hasil baca Kartu Keluarga" });
+    await expect(kartu).toBeVisible();
+    await expect(kartu.getByText(/isi data di bawah ini secara manual/)).toBeVisible();
+    await expect(kartu.getByLabel("NIK calon siswa")).toHaveValue("");
+    await kartu.getByLabel("Alamat").fill("dusun manual");
+    await expect(kartu.getByLabel("Alamat")).toHaveValue("DUSUN MANUAL");
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
+    // Isian manual itu tersimpan di draf.
+    await page.goto("/daftar/langkah/2");
+    await expect(page.getByRole("region", { name: "Hasil baca Kartu Keluarga" }).getByLabel("Alamat")).toHaveValue("DUSUN MANUAL");
+    await page.goto("/daftar/langkah/3");
+
     // Nilai rapor diisi manual; tidak ada pemilih foto rapor.
     await expect(page.locator("[data-baca-rapor]")).toHaveCount(0);
+    // Kolom nilai tersembunyi sampai pendaftar memilih saran jurusan dari nilai rapor.
+    await expect(page.getByLabel("Matematika semester 1")).toHaveCount(0);
+    await page.getByRole("radio", { name: /Ya, saya isi nilai rapor/ }).check();
     await page.getByLabel("Matematika semester 1").fill("85");
     await expect(page.getByLabel("Matematika semester 1")).toHaveValue("85");
+    // Memilih "Tidak" menyembunyikan kolom lagi.
+    await page.getByRole("radio", { name: /Tidak, saya akan memilih jurusan sendiri/ }).check();
+    await expect(page.getByLabel("Matematika semester 1")).toHaveCount(0);
+    // Nilai yang sempat diketik tidak ikut terkirim: langkah jurusan tanpa saran skor.
+    await lanjut(page);
+    await expect(page).toHaveURL(/\/langkah\/4$/);
+    await expect(page.getByText(/Nilai rapor tidak diisi, jadi tidak ada skor rekomendasi/)).toBeVisible();
   });
 
   test("mesin PaddleOCR sungguhan membaca foto KK sintetis di browser", async ({ page }) => {

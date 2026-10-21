@@ -133,7 +133,18 @@ export function IsiForm({
 // ---------------------------------------------------------------- panel
 
 /** `ekstra` tampil tepat di bawah judul, sebelum pencarian dan daftar (mis. foto tetap situs di halaman Galeri). */
-export function PanelKonten({ konfig, ekstra }: { konfig: KonfigKonten; ekstra?: ReactNode }) {
+export function PanelKonten({
+  konfig,
+  ekstra,
+  bagian,
+  keterangan,
+}: {
+  konfig: KonfigKonten;
+  ekstra?: ReactNode;
+  /** Tampil sebagai bagian dalam halaman lain: judul h2, tanpa kolom cari. */
+  bagian?: boolean;
+  keterangan?: string;
+}) {
   const [daftar, setDaftar] = useState<Daftar | null>(null);
   const [galatMuat, setGalatMuat] = useState<string>();
   const [q, setQ] = useState("");
@@ -209,17 +220,20 @@ export function PanelKonten({ konfig, ekstra }: { konfig: KonfigKonten; ekstra?:
   const judulBaris = (b: Baris) => String(b.judul ?? b.nama ?? b.pertanyaan ?? "");
 
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className={bagian ? "mt-10 border-t border-garis pt-8" : "mx-auto max-w-5xl"} data-panel-konten={konfig.api}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-ink">{konfig.judul}</h1>
+        {bagian ? <h2 className="text-xl font-bold text-ink">{konfig.judul}</h2> : <h1 className="text-3xl font-bold text-ink">{konfig.judul}</h1>}
         <Button onClick={() => bukaForm()}>
           <PlusIcon aria-hidden weight="bold" className="size-5" />
           Tambah {konfig.tunggal}
         </Button>
       </div>
 
+      {keterangan && <p className="mt-1 max-w-prose text-sm text-tinta-redup">{keterangan}</p>}
+
       {ekstra}
 
+      {!bagian && (
       <div className="relative mt-6 max-w-sm">
         <MagnifyingGlassIcon aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-tinta-redup" />
         <Input
@@ -233,6 +247,7 @@ export function PanelKonten({ konfig, ekstra }: { konfig: KonfigKonten; ekstra?:
           className="pl-10"
         />
       </div>
+      )}
 
       <div className="mt-6" aria-live="polite">
         {galatMuat ? (

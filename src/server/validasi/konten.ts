@@ -42,6 +42,19 @@ export const skemaEvent = z.object({
   isActive: aktif,
 });
 
+/** Foto tambahan hero beranda: bentuknya sama dengan galeri. */
+export const skemaFotoHero = z.object({
+  judul: teksOpsional(200),
+  gambar: z
+    .string()
+    .trim()
+    .min(1, "Gambar wajib diisi.")
+    .max(500)
+    .refine((v) => v.startsWith("/") || v.startsWith("https://"), "Alamat gambar harus diawali / atau https://"),
+  urutan,
+  isActive: aktif,
+});
+
 export const skemaGaleri = z.object({
   judul: teksOpsional(200),
   gambar: z

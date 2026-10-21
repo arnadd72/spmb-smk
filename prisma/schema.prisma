@@ -363,6 +363,17 @@ model Galeri {
   createdAt DateTime @default(now())
 }
 
+/// Foto tambahan hero beranda; foto pertama hero tetap aset "hero" di Pengaturan.
+model FotoHero {
+  id        BigInt   @id @default(autoincrement())
+  /// Keterangan singkat, dipakai sebagai teks alternatif foto.
+  judul     String?
+  gambar    String
+  urutan    Int      @default(0)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
 model Testimoni {
   id        BigInt   @id @default(autoincrement())
   nama      String

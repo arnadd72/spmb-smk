@@ -10,5 +10,15 @@ export const metadata = { title: "Galeri" };
 export default async function Halaman() {
   await wajibPeranHalaman(...PERAN.konten);
   const [data, bawaanDimuat] = await Promise.all([daftarAset(), bawaanSudahDimuat()]);
-  return <PanelKonten konfig={KONFIG_KONTEN.galeri} ekstra={<PanelAsetSitus awal={{ data, bawaanDimuat }} />} />;
+  return <PanelKonten konfig={KONFIG_KONTEN.galeri} ekstra={
+        <>
+          <PanelAsetSitus awal={{ data, bawaanDimuat }} />
+          <PanelKonten
+            konfig={KONFIG_KONTEN.hero}
+            bagian
+            keterangan="Foto utama beranda di atas selalu tampil pertama. Foto di sini menyusul dan berganti otomatis tiap 5 detik. Maksimal 6 foto."
+          />
+        </>
+      }
+    />;
 }

@@ -30,6 +30,7 @@ async function bersih() {
   await prisma.berita.deleteMany();
   await prisma.event.deleteMany();
   await prisma.galeri.deleteMany();
+  await prisma.fotoHero.deleteMany();
   await prisma.testimoni.deleteMany();
   await prisma.faq.deleteMany();
   await prisma.auditLog.deleteMany();
@@ -85,6 +86,13 @@ describe("landing menampilkan konten dari database", () => {
     expect(d.jurusan).toHaveLength(4);
   });
 
+  it("foto tambahan hero: hanya yang aktif, urut sesuai urutan", async () => {
+    await buatKonten("hero", { judul: "Kedua", gambar: "/images/h2.webp", urutan: 2, isActive: true }, ctx);
+    await buatKonten("hero", { judul: "Pertama", gambar: "/images/h1.webp", urutan: 1, isActive: true }, ctx);
+    await buatKonten("hero", { judul: "Disembunyikan", gambar: "/images/h3.webp", urutan: 3, isActive: false }, ctx);
+    expect((await ambilDataLanding()).heroTambahan.map((h) => h.judul)).toEqual(["Pertama", "Kedua"]);
+  });
+
   it("agenda hari ini tetap tampil walau jamnya sudah lewat; kemarin tidak", async () => {
     const hari = new Date(Date.now() + 7 * 3600_000).toISOString().slice(0, 10);
     await buatKonten("event", { judul: "Agenda pagi tadi", tanggal: new Date(`${hari}T00:05:00+07:00`), isActive: true }, ctx);
@@ -94,7 +102,7 @@ describe("landing menampilkan konten dari database", () => {
 
   it("tanpa konten semua bagian kosong (bagian disembunyikan di halaman), tanpa error", async () => {
     const d = await ambilDataLanding();
-    expect([d.berita, d.agenda, d.galeri, d.testimoni].every((x) => x.length === 0)).toBe(true);
+    expect([d.berita, d.agenda, d.galeri, d.heroTambahan, d.testimoni].every((x) => x.length === 0)).toBe(true);
   });
 });
 

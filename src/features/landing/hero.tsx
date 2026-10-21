@@ -1,16 +1,59 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { GambarLogo } from "@/components/ui/gambar-logo";
 import { GambarKonten } from "@/features/berita/gambar-konten";
 import { useGsapPublik } from "@/components/motion/use-gsap";
+import { cn } from "@/lib/cn";
 import { Magnetik } from "./magnetik";
 
+/** Selang pergantian foto hero, dengan transisi memudar. */
+const SELANG_HERO_MS = 5000;
+
+type FotoTambahan = { id: string; judul: string | null; gambar: string };
+
 // Copy hero: usulan awal, final dari sekolah (keputusan S14).
-export function Hero({ tahunAjaran, foto, fotoAlt, logo }: { tahunAjaran: string | null; foto: string; fotoAlt: string; logo: string }) {
+export function Hero({
+  tahunAjaran,
+  foto,
+  fotoAlt,
+  logo,
+  fotoTambahan = [],
+}: {
+  tahunAjaran: string | null;
+  foto: string;
+  fotoAlt: string;
+  logo: string;
+  fotoTambahan?: FotoTambahan[];
+}) {
   const akar = useRef<HTMLElement>(null);
+  // Foto pertama = "Foto utama beranda"; sisanya tambahan dari admin. Satu foto saja = diam.
+  const slide = [
+    { id: "utama", src: foto, alt: fotoAlt },
+    ...fotoTambahan.map((f) => ({ id: f.id, src: f.gambar, alt: f.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon" })),
+  ];
+  const [aktif, setAktif] = useState(0);
+  const banyak = slide.length > 1;
+
+  // Ganti foto tiap SELANG_HERO_MS selama hero terlihat dan tab aktif. Mode kurangi gerak: berpindah tanpa transisi (CSS).
+  useEffect(() => {
+    const el = akar.current;
+    if (!el || !banyak) return;
+    let terlihat = true;
+    const pengamat = new IntersectionObserver(([e]) => {
+      terlihat = e.isIntersecting;
+    });
+    pengamat.observe(el);
+    const timer = window.setInterval(() => {
+      if (terlihat && !document.hidden) setAktif((i) => (i + 1) % slide.length);
+    }, SELANG_HERO_MS);
+    return () => {
+      window.clearInterval(timer);
+      pengamat.disconnect();
+    };
+  }, [banyak, slide.length]);
 
   // Foto dimulai tepat di bawah blok teks (jarak tetap), berapa pun tinggi layar dan panjang judul.
   // Diukur lewat ResizeObserver dan ditulis ke variabel CSS, tanpa state React.
@@ -88,7 +131,17 @@ export function Hero({ tahunAjaran, foto, fotoAlt, logo }: { tahunAjaran: string
         className="absolute inset-0 [--m:max(var(--pad),calc((100vw-84rem)/2+var(--pad)))] [clip-path:inset(calc(var(--teks,20rem)+2rem)_var(--m)_1.5rem_var(--m)_round_18px)] lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_2.5rem_var(--m)_round_22px)]"
       >
         <div data-foto-gambar className="absolute inset-0 will-change-transform">
-          <GambarKonten src={foto} alt={fotoAlt} prioritas sizes="100vw" className="object-[50%_60%]" />
+          {slide.map((s, i) => (
+            <div
+              key={s.id}
+              data-hero-slide={i}
+              data-hero-aktif={i === aktif ? "true" : undefined}
+              aria-hidden={i === aktif ? undefined : true}
+              className={cn("absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none", i === aktif ? "opacity-100" : "opacity-0")}
+            >
+              <GambarKonten src={s.src} alt={s.alt} prioritas={i === 0} sizes="100vw" className="object-[50%_60%]" />
+            </div>
+          ))}
         </div>
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
       </div>

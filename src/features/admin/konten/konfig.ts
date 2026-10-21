@@ -16,7 +16,7 @@ export type DefKolom = { kunci: string; label: string; tipe?: "teks" | "tanggal"
 
 export type KonfigKonten = {
   /** Segmen API: /api/v1/admin/{api} */
-  api: "berita" | "event" | "galeri" | "testimoni" | "faq";
+  api: "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq";
   judul: string;
   tunggal: string;
   kolom: DefKolom[];
@@ -82,6 +82,24 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
       aktif,
     ],
     kosong: { judul: "Galeri masih kosong", deskripsi: "Tambahkan foto kegiatan sekolah." },
+  },
+  hero: {
+    api: "hero",
+    judul: "Foto tambahan beranda",
+    tunggal: "foto tambahan",
+    kolom: [
+      { kunci: "gambar", label: "Foto", tipe: "gambar" },
+      { kunci: "judul", label: "Keterangan" },
+      { kunci: "urutan", label: "Urutan", tipe: "angka" },
+      { kunci: "isActive", label: "Status", tipe: "status" },
+    ],
+    field: [
+      { kunci: "gambar", label: "Foto", tipe: "gambar", wajib: true, bantuan: "Pakai foto mendatar yang jelas, sama seperti Foto utama beranda." },
+      { kunci: "judul", label: "Keterangan", tipe: "teks", bantuan: "Dibacakan pembaca layar sebagai teks alternatif foto." },
+      { kunci: "urutan", label: "Urutan", tipe: "angka", awal: 0, bantuan: "Angka kecil tampil lebih dulu, setelah Foto utama beranda." },
+      aktif,
+    ],
+    kosong: { judul: "Belum ada foto tambahan", deskripsi: "Tambahkan foto agar hero beranda berganti-ganti otomatis." },
   },
   testimoni: {
     api: "testimoni",

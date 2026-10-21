@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import { ambilJurusanAdmin, buatKonten, daftarKonten, hapusKonten, ubahJurusan, ubahKonten } from "@/server/actions/konten";
+import { BATAS_FOTO_HERO, ambilJurusanAdmin, buatKonten, daftarKonten, hapusKonten, ubahJurusan, ubahKonten } from "@/server/actions/konten";
 import { ambilSemuaPengaturan, simpanPengaturanAdmin } from "@/server/actions/pengaturan";
 import { ambilBerita, ambilDaftarBerita, ambilJurusanPublik } from "@/server/actions/ambilPublik";
 import { prisma } from "@/server/db/client";
@@ -14,6 +14,7 @@ async function bersih() {
   await prisma.berita.deleteMany();
   await prisma.event.deleteMany();
   await prisma.galeri.deleteMany();
+  await prisma.fotoHero.deleteMany();
   await prisma.testimoni.deleteMany();
   await prisma.faq.deleteMany();
   await prisma.pengaturan.deleteMany();
@@ -115,6 +116,19 @@ describe("entitas lain", () => {
   it("galeri wajib gambar; testimoni wajib isi", async () => {
     expect(await galat(buatKonten("galeri", { judul: "tanpa gambar" }, ctx))).toBeDefined();
     expect(await galat(buatKonten("testimoni", { nama: "Rina" }, ctx))).toBeDefined();
+  });
+
+  it("foto tambahan hero: wajib gambar, urut sesuai urutan, dan dibatasi jumlahnya", async () => {
+    expect(await galat(buatKonten("hero", { judul: "tanpa gambar" }, ctx))).toBeDefined();
+    await buatKonten("hero", { judul: "Kedua", gambar: "/images/h2.webp", urutan: 2 }, ctx);
+    await buatKonten("hero", { judul: "Pertama", gambar: "/images/h1.webp", urutan: 1 }, ctx);
+    const urut = (await daftarKonten("hero")).data as { judul: string }[];
+    expect(urut.map((h) => h.judul)).toEqual(["Pertama", "Kedua"]);
+
+    for (let i = 3; i <= BATAS_FOTO_HERO; i++) await buatKonten("hero", { gambar: `/images/h${i}.webp`, urutan: i }, ctx);
+    const galatBatas = (await galat(buatKonten("hero", { gambar: "/images/lagi.webp" }, ctx))) as GalatApi;
+    expect(galatBatas.errors?.gambar?.[0]).toMatch(/maksimal 6/);
+    expect((await daftarKonten("hero")).total).toBe(BATAS_FOTO_HERO);
   });
 
   it("daftar mendukung pencarian tanpa peka huruf dan paginasi", async () => {

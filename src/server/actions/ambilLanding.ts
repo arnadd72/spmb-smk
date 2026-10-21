@@ -3,6 +3,7 @@ import { ambilAsetPublik, type AsetPublik } from "@/server/services/asetSitus";
 import { ambilKonfigWizard } from "@/server/services/draf";
 import { daftarGelombang } from "@/server/services/gelombang";
 import { ambilPengaturan } from "@/server/services/pengaturan";
+import { BATAS_FOTO_HERO } from "./konten";
 import { ambilAgendaMendatang, ambilDaftarBerita, type BeritaRingkas, type EventRingkas } from "./ambilPublik";
 
 export type JurusanLanding = {
@@ -23,6 +24,7 @@ export type GelombangLanding = { id: string; nama: string; buka: string; tutup: 
 export type FaqLanding = { id: string; pertanyaan: string; jawaban: string };
 
 export type FotoGaleri = { id: string; judul: string | null; gambar: string };
+export type FotoHeroLanding = { id: string; judul: string | null; gambar: string };
 export type TestimoniLanding = { id: string; nama: string; keterangan: string | null; isi: string; foto: string | null };
 
 export type DataLanding = {
@@ -31,6 +33,8 @@ export type DataLanding = {
   berita: BeritaRingkas[];
   agenda: EventRingkas[];
   galeri: FotoGaleri[];
+  /** Foto tambahan hero (slideshow); foto pertama tetap `aset.hero`. */
+  heroTambahan: FotoHeroLanding[];
   testimoni: TestimoniLanding[];
   gelombang: GelombangLanding[];
   /** Mis. "2027/2028". Null bila panitia belum mengisi pengaturan. */
@@ -50,7 +54,7 @@ const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is s
  */
 export async function ambilDataLanding(): Promise<DataLanding> {
   try {
-    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, testimoni, konfig, aset] = await Promise.all([
+    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, heroTambahan, testimoni, konfig, aset] = await Promise.all([
       prisma.jurusan.findMany({
         where: { isActive: true },
         orderBy: { urutan: "asc" },
@@ -61,6 +65,7 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       ambilDaftarBerita(3),
       ambilAgendaMendatang(3),
       prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: BATAS_GALERI }),
+      prisma.fotoHero.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: BATAS_FOTO_HERO }),
       prisma.testimoni.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 4 }),
       ambilKonfigWizard(),
       ambilAsetPublik(),
@@ -84,11 +89,12 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       berita,
       agenda,
       galeri: galeri.map((g) => ({ id: g.id.toString(), judul: g.judul, gambar: g.gambar })),
+      heroTambahan: heroTambahan.map((h) => ({ id: h.id.toString(), judul: h.judul, gambar: h.gambar })),
       testimoni: testimoni.map((t) => ({ id: t.id.toString(), nama: t.nama, keterangan: t.keterangan, isi: t.isi, foto: t.foto })),
       gelombang: gelombang.map((g) => ({ id: g.id, nama: g.nama, buka: g.buka, tutup: g.tutup, kuota: g.kuota, sisa: g.sisa, status: g.status })),
     };
   } catch (e) {
     console.error("[landing] gagal membaca data:", e instanceof Error ? e.message : "tidak diketahui");
-    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], testimoni: [], gelombang: [], tahunAjaran: null, aset: await ambilAsetPublik() };
+    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], heroTambahan: [], testimoni: [], gelombang: [], tahunAjaran: null, aset: await ambilAsetPublik() };
   }
 }

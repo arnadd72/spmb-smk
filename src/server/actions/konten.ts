@@ -6,12 +6,15 @@ import { sanitasiHtml } from "@/server/services/sanitasi";
 import { serialisasi } from "@/server/services/serialisasi";
 import { slugUnik } from "@/server/services/slug";
 import { GalatApi } from "@/server/types/galat";
-import { skemaBerita, skemaEvent, skemaFaq, skemaGaleri, skemaJurusan, skemaTestimoni } from "@/server/validasi/konten";
+import { skemaBerita, skemaEvent, skemaFaq, skemaFotoHero, skemaGaleri, skemaJurusan, skemaTestimoni } from "@/server/validasi/konten";
 
 // CRUD konten admin (PRD v3.1 13.8). Satu implementasi untuk lima entitas yang bentuknya sama.
 
-export type Entitas = "berita" | "event" | "galeri" | "testimoni" | "faq";
-export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "testimoni", "faq"];
+export type Entitas = "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq";
+export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "hero", "testimoni", "faq"];
+
+/** Foto tambahan hero dibatasi agar beranda tetap ringan. */
+export const BATAS_FOTO_HERO = 6;
 
 type Baris = Record<string, unknown>;
 type Delegate = {
@@ -41,6 +44,7 @@ const KONFIG: Record<Entitas, Konfig> = {
   berita: { delegate: prisma.berita as unknown as Delegate, skema: skemaBerita, urut: { createdAt: "desc" }, cari: ["judul"], slugDari: "judul", sanitasi: "isi", tipeAudit: "berita" },
   event: { delegate: prisma.event as unknown as Delegate, skema: skemaEvent, urut: { tanggal: "desc" }, cari: ["judul"], slugDari: "judul", tipeAudit: "event" },
   galeri: { delegate: prisma.galeri as unknown as Delegate, skema: skemaGaleri, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["judul"], tipeAudit: "galeri" },
+  hero: { delegate: prisma.fotoHero as unknown as Delegate, skema: skemaFotoHero, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["judul"], tipeAudit: "hero" },
   testimoni: { delegate: prisma.testimoni as unknown as Delegate, skema: skemaTestimoni, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["nama", "isi"], tipeAudit: "testimoni" },
   faq: { delegate: prisma.faq as unknown as Delegate, skema: skemaFaq, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["pertanyaan"], tipeAudit: "faq" },
 };
@@ -103,6 +107,9 @@ export async function buatKonten(entitas: Entitas, mentah: unknown, ctx: Konteks
     input.slug = await slugUnik(String(input[k.slugDari]), async (s) => (await k.delegate.findUnique({ where: { slug: s } })) === null);
   }
   if (entitas === "berita" && input.isActive && !input.publishedAt) input.publishedAt = new Date();
+  if (entitas === "hero" && (await k.delegate.count()) >= BATAS_FOTO_HERO) {
+    throw GalatApi.validasi({ gambar: [`Foto tambahan beranda maksimal ${BATAS_FOTO_HERO}. Hapus salah satu dulu.`] });
+  }
 
   const baru = await k.delegate.create({ data: input });
   await catatAudit({ userId: ctx.userId, aksi: `${k.tipeAudit}.buat`, entitasTipe: k.tipeAudit, entitasId: String(baru.id), dataBaru: input, ip: ctx.ip });

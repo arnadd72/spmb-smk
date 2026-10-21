@@ -121,6 +121,87 @@ describe("jawabPertanyaan: aturan dan FAQ", () => {
   });
 });
 
+describe("jawabPertanyaan: fitur situs yang sering ditanyakan", () => {
+  it("tes minat bakat dijawab langsung dengan tautan ke halaman tes, tanpa AI", async () => {
+    for (const q of ["tes minat bakat tuh apa aja", "apa itu tes minat dan bakat?", "ada tes bakat nggak?"]) {
+      const r = await jawabPertanyaan(q, "ip-minat");
+      expect(r.sumber).toBe("aturan");
+      expect(r.jawaban).toMatch(/15 pertanyaan/);
+      expect(r.jawaban).toMatch(/tidak disimpan/);
+      expect(r.tautan?.[0].href).toBe("/tes-minat-bakat");
+    }
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("grup WhatsApp dijawab bila tautan grup diatur, dan tidak salah diarahkan ke aturan kontak", async () => {
+    await simpanPengaturan("wa_group_url", "https://chat.whatsapp.com/contoh");
+    for (const q of ["apa perlu join grup?", "apakah wajib masuk grup whatsapp?"]) {
+      const r = await jawabPertanyaan(q, "ip-grup");
+      expect(r.sumber).toBe("aturan");
+      expect(r.jawaban).toMatch(/wajib bergabung ke grup WhatsApp/);
+      expect(r.jawaban).toMatch(/hasil seleksi/);
+      expect(r.jawaban).not.toMatch(/telepon/); // bukan jawaban kontak
+      expect(r.jawaban).not.toContain("chat.whatsapp.com"); // tautan tidak dibocorkan lewat obrolan
+    }
+  });
+
+  it("tanpa tautan grup diatur, bot tidak mengklaim adanya kewajiban grup", async () => {
+    const r = await jawabPertanyaan("apa perlu join grup?", "ip-grup-kosong");
+    expect(r.jawaban).not.toMatch(/wajib bergabung ke grup WhatsApp/);
+  });
+
+  it("pertanyaan fungsi Cek Status dijawab fungsinya, bukan cara membukanya", async () => {
+    for (const q of ["cek status buat apa?", "setelah cek status dapat apa?", "apa fungsi cek status"]) {
+      const r = await jawabPertanyaan(q, "ip-status");
+      expect(r.sumber).toBe("aturan");
+      expect(r.jawaban).toMatch(/memantau perkembangan/);
+      expect(r.jawaban).toMatch(/keputusan keluar/);
+      expect(r.tautan?.[0].href).toBe("/cek-status");
+    }
+    // Pertanyaan cara tetap dijawab FAQ.
+    expect((await jawabPertanyaan("cara cek status pendaftaran", "ip-status")).sumber).toBe("faq");
+  });
+});
+
+describe("jawabPertanyaan: maksud pertanyaan fungsi tidak dijawab FAQ cara-cara", () => {
+  it("dengan AI tersedia, pertanyaan fungsi yang mirip FAQ diserahkan ke AI dengan FAQ sebagai konteks", async () => {
+    process.env.GEMINI_API_KEY = "kunci-uji";
+    fetchMock.mockResolvedValue(balasGemini("Upload rapor dipakai untuk saran jurusan."));
+    const r = await jawabPertanyaan("upload rapor buat apa?", "ip-fungsi");
+    expect(r.sumber).toBe("ai");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const badan = JSON.parse((fetchMock.mock.calls[0] as [string, { body: string }])[1].body);
+    const sistem = badan.systemInstruction.parts[0].text as string;
+    expect(sistem).toContain("Tes Minat Bakat");
+    expect(sistem).toContain("Cek Status");
+    expect(sistem).not.toContain("dibaca dari foto di HP tanpa disimpan"); // teks lama yang sudah tidak berlaku
+  });
+
+  it("tanpa AI, pertanyaan fungsi yang mirip FAQ tetap mendapat jawaban FAQ terdekat", async () => {
+    const r = await jawabPertanyaan("upload rapor buat apa?", "ip-fungsi-2");
+    expect(r.sumber).toBe("faq");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("jika AI gagal, jatuh ke FAQ terdekat, bukan ke pesan tidak ada jawaban", async () => {
+    process.env.GEMINI_API_KEY = "kunci-uji";
+    fetchMock.mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
+    expect((await jawabPertanyaan("upload rapor buat apa?", "ip-fungsi-3")).sumber).toBe("faq");
+  });
+
+  it("instruksi AI memuat grup WhatsApp hanya bila tautan grup diatur", async () => {
+    process.env.GEMINI_API_KEY = "kunci-uji";
+    fetchMock.mockResolvedValue(balasGemini("Jawaban."));
+    await jawabPertanyaan("apakah ada beasiswa untuk anak yatim?", "ip-instr-1");
+    expect((JSON.parse((fetchMock.mock.calls[0] as [string, { body: string }])[1].body).systemInstruction.parts[0].text as string)).not.toContain("Grup WhatsApp:");
+
+    await simpanPengaturan("wa_group_url", "https://chat.whatsapp.com/contoh");
+    fetchMock.mockClear();
+    await jawabPertanyaan("apakah ada program magang industri?", "ip-instr-2");
+    expect((JSON.parse((fetchMock.mock.calls[0] as [string, { body: string }])[1].body).systemInstruction.parts[0].text as string)).toContain("Grup WhatsApp:");
+  });
+});
+
 describe("jawabPertanyaan: Gemini sebagai cadangan", () => {
   it("tanpa GEMINI_API_KEY pertanyaan tak dikenal diarahkan ke panitia, tanpa memanggil jaringan", async () => {
     const r = await jawabPertanyaan("apakah ada beasiswa untuk anak yatim?");
@@ -138,7 +219,7 @@ describe("jawabPertanyaan: Gemini sebagai cadangan", () => {
     expect(r.jawaban).toBe("Ya, ada program beasiswa.\n\n• Hubungi panitia untuk rincian.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     const [url, init] = fetchMock.mock.calls[0] as [string, { headers: Record<string, string>; body: string }];
-    expect(url).toContain("/models/gemini-2.5-flash:generateContent");
+    expect(url).toContain("/models/gemini-3.5-flash-lite:generateContent");
     expect(init.headers["x-goog-api-key"]).toBe("kunci-uji");
     expect(url).not.toContain("kunci-uji"); // kunci lewat header, bukan URL
     const badan = JSON.parse(init.body);
@@ -168,6 +249,19 @@ describe("jawabPertanyaan: Gemini sebagai cadangan", () => {
     }
     fetchMock.mockRejectedValueOnce(new Error("jaringan putus"));
     expect((await jawabPertanyaan("apakah ada beasiswa?", "ip-x")).sumber).toBe("tidak-ada");
+  });
+
+  it("Gemini 503 atau 429 diulang sekali lalu berhasil; galat lain tidak diulang", async () => {
+    process.env.GEMINI_API_KEY = "kunci-uji";
+    fetchMock.mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({}) }).mockResolvedValueOnce(balasGemini("Ada, hubungi panitia."));
+    const r = await jawabPertanyaan("apakah ada beasiswa?", "ip-ulang");
+    expect(r.sumber).toBe("ai");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    fetchMock.mockReset();
+    fetchMock.mockResolvedValue({ ok: false, status: 500, json: async () => ({}) });
+    expect((await jawabPertanyaan("apakah ada beasiswa lain?", "ip-ulang-2")).sumber).toBe("tidak-ada");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("pertanyaan berisi upaya injeksi tetap dikirim sebagai data pengguna, bukan dijadikan instruksi", async () => {

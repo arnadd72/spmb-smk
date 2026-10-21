@@ -3,7 +3,7 @@
 
 export type OpsiGemini = { instruksi: string; pesan: string; batasWaktuMs?: number };
 
-const MODEL_BAWAAN = "gemini-2.5-flash";
+const MODEL_BAWAAN = "gemini-3.5-flash-lite";
 
 export const adaGemini = () => Boolean(process.env.GEMINI_API_KEY);
 
@@ -29,16 +29,23 @@ export async function tanyaGemini({ instruksi, pesan, batasWaktuMs = 9000 }: Ops
   const pengendali = new AbortController();
   const timer = setTimeout(() => pengendali.abort(), batasWaktuMs);
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "x-goog-api-key": kunci },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: instruksi }] },
-        contents: [{ role: "user", parts: [{ text: pesan }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
-      }),
-      signal: pengendali.signal,
-    });
+    const kirim = () =>
+      fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-goog-api-key": kunci },
+        body: JSON.stringify({
+          systemInstruction: { parts: [{ text: instruksi }] },
+          contents: [{ role: "user", parts: [{ text: pesan }] }],
+          generationConfig: { temperature: 0.2, maxOutputTokens: 500 },
+        }),
+        signal: pengendali.signal,
+      });
+    let res = await kirim();
+    // 503 (permintaan sedang tinggi) dan 429 (kena batas laju) biasanya sementara: ulangi sekali di dalam batas waktu yang sama.
+    if (res.status === 503 || res.status === 429) {
+      await new Promise((selesai) => setTimeout(selesai, 600));
+      res = await kirim();
+    }
     if (!res.ok) {
       console.error("[gemini] status", res.status);
       return null;

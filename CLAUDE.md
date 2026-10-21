@@ -47,7 +47,7 @@ Satu aplikasi Next.js full-stack (Vercel, Prisma, Postgres). Tidak ada lagi Lara
 ## Perintah umum
 - Dev: `npm run dev`. Postgres lokal tanpa Docker: `npm run db:start` (lihat README). Docker opsional.
 - Cek: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`.
-- E2E memakai database lokal `spmb_test` dan server sendiri di port 3100 (`.env.test`, tidak di-commit), bukan Supabase,
+- E2E memakai database lokal `spmb_e2e_test` (terpisah dari `spmb_test` milik tes unit, yang dikosongkan tiap berkas uji) dan server sendiri di port 3100 (`.env.test`, tidak di-commit), bukan Supabase,
   jadi aman dijalankan saat `npm run dev` terhubung ke Supabase. Pertama kali: `npm run db:start` lalu `npm run db:test:siapkan`.
   Playwright menolak jalan bila `DATABASE_URL` bukan Postgres lokal berakhiran `_test`. Contoh isi `.env.test` ada di `.env.example`.
 - Prisma: `npm run db:migrate`, `npm run db:seed`.

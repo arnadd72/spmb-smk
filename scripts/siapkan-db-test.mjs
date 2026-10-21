@@ -9,7 +9,7 @@ dotenv.config({ path: resolve(akar, ".env.test"), override: true, quiet: true })
 
 const url = process.env.DATABASE_URL ?? "";
 if (!/^postgres(ql)?:\/\/[^@]+@(localhost|127\.0\.0\.1)(:\d+)?\/[^/?]+_test(\?.*)?$/.test(url)) {
-  console.error("DATABASE_URL di .env.test harus Postgres lokal dengan nama database berakhiran _test.");
+  console.error("DATABASE_URL di .env.test harus Postgres lokal dengan nama database berakhiran _test (disarankan spmb_e2e_test).");
   process.exit(1);
 }
 

@@ -2,7 +2,7 @@ import path from "node:path";
 import dotenv from "dotenv";
 import { defineConfig } from "@playwright/test";
 
-// Tes e2e memakai database lokal terpisah (.env.test, spmb_test di port 5433) dan server dev sendiri di port 3100,
+// Tes e2e memakai database lokal terpisah (.env.test, spmb_e2e_test di port 5433, terpisah dari spmb_test milik tes unit) dan server dev sendiri di port 3100,
 // supaya tidak menyentuh Supabase dan tidak mengganggu `npm run dev` di port 3000. Siapkan sekali: `npm run db:test:siapkan`.
 dotenv.config({ path: path.join(__dirname, ".env.test"), override: true, quiet: true });
 

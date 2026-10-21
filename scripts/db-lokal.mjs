@@ -13,7 +13,8 @@ const logFile = join(akar, ".local", "pg.log");
 const PORT = process.env.PG_PORT ?? "5433";
 const USER = "spmb";
 const PASSWORD = "spmb_dev";
-const DATABASES = ["spmb", "spmb_test"];
+// spmb_test dipakai tes unit (isinya dikosongkan tiap berkas uji); spmb_e2e_test khusus tes e2e (berisi seed tetap).
+const DATABASES = ["spmb", "spmb_test", "spmb_e2e_test"];
 
 function cariBin() {
   const kandidat = [

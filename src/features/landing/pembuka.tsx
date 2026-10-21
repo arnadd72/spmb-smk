@@ -1,7 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef } from "react";
+import { GambarLogo } from "@/components/ui/gambar-logo";
 
 const KUNCI = "spmb_pembuka";
 
@@ -10,7 +10,7 @@ const KUNCI = "spmb_pembuka";
  * Cadangan tanpa JS: animasi CSS di globals.css mengangkatnya sendiri setelah 3 detik, dan <noscript>
  * menyembunyikannya. Dilewati untuk reduced motion, kunjungan ulang dalam sesi, dan browser otomatis.
  */
-export function Pembuka() {
+export function Pembuka({ logo }: { logo: string }) {
   const akar = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function Pembuka() {
         className="pembuka fixed inset-0 z-[70] grid place-items-center bg-ink text-kertas"
       >
         <div className="flex flex-col items-center gap-4">
-          <Image data-lambang src="/images/sekolah/logo-sekolah.png" alt="" width={96} height={96} className="size-24 object-contain" priority />
+          <GambarLogo data-lambang src={logo} width={96} height={96} className="size-24 object-contain" priority />
           <p data-sapaan className="font-display text-2xl font-semibold tracking-tight">
             SPMB SMK Ma&apos;arif NU 1 Wangon
           </p>

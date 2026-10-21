@@ -135,6 +135,25 @@ describe("akses rute admin", () => {
     expect((await panggil(GET, new NextRequest("http://localhost:3000/api/v1/admin/berita?per=5"))).status).toBe(200);
   });
 
+  it("foto situs: operator konten dan superadmin boleh, panitia ditolak (403), dan tolak origin lain", async () => {
+    const daftar = await import("@/app/api/v1/admin/aset/route");
+    const item = await import("@/app/api/v1/admin/aset/[kunci]/route");
+    const kunciLogo = { params: Promise.resolve({ kunci: "logo" }) };
+    const ubah = () => new Request("http://localhost:3000/x", { method: "PUT", headers: { "sec-fetch-site": "same-origin", "content-type": "application/json" }, body: JSON.stringify({ url: "/images/sekolah/logo-sekolah.png" }) });
+
+    await sesiSebagai("panitia");
+    expect((await panggil(daftar.GET, req("GET"))).status).toBe(403);
+    expect((await (item.PUT as Handler)(ubah(), kunciLogo)).status).toBe(403);
+
+    await sesiSebagai("konten");
+    const res = await panggil(daftar.GET, req("GET"));
+    expect(res.status).toBe(200);
+    expect((await res.json()).data.map((a: { kunci: string }) => a.kunci)).toEqual(expect.arrayContaining(["logo", "hero"]));
+
+    const lintasOrigin = new Request("http://localhost:3000/x", { method: "PUT", headers: { "sec-fetch-site": "cross-site" }, body: "{}" });
+    expect((await (item.PUT as Handler)(lintasOrigin, kunciLogo)).status).toBe(403);
+  });
+
   it("pengaturan dan ubah jurusan hanya superadmin", async () => {
     const pengaturan = await import("@/app/api/v1/admin/pengaturan/route");
     for (const peran of ["panitia", "konten"] as const) {

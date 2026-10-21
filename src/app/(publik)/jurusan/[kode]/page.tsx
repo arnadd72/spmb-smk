@@ -1,10 +1,11 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
+import { GambarKonten } from "@/features/berita/gambar-konten";
 import { TAMPIL_JURUSAN, TAMPIL_STANDAR } from "@/features/jurusan/tampil";
+import { fotoJurusan } from "@/lib/aset-bawaan";
 import { cn } from "@/lib/cn";
 import { formatAngka } from "@/lib/format";
 import { ambilDaftarJurusan, ambilJurusanPublik } from "@/server/actions/ambilPublik";
@@ -31,6 +32,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
   if (!j) notFound(); // kode tidak ada atau jurusan nonaktif
 
   const t = TAMPIL_JURUSAN[j.kode] ?? TAMPIL_STANDAR;
+  const foto = fotoJurusan(j.kode, j.nama, j.gambar);
   const lainnya = (await ambilDaftarJurusan().catch(() => [])).filter((x) => x.kode !== j.kode);
   const bobotMaks = Math.max(...j.mapelUtama.map((m) => m.bobot), 0.01);
 
@@ -48,9 +50,9 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
             <p className="mt-5 max-w-[26ch] text-[clamp(1.35rem,2.4vw,1.9rem)] font-bold leading-tight">{j.nama}</p>
             <p className="mt-3 max-w-[56ch] text-lg font-medium">{j.deskripsi}</p>
           </div>
-          {t.foto && (
+          {foto && (
             <div className="relative aspect-[16/10] overflow-hidden rounded-kartu">
-              <Image src={t.foto.src} alt={t.foto.alt} fill priority sizes="(min-width: 1024px) 40vw, 100vw" className={cn("object-cover", t.foto.posisi)} />
+              <GambarKonten src={foto.src} alt={foto.alt} prioritas sizes="(min-width: 1024px) 40vw, 100vw" className={foto.posisi} />
             </div>
           )}
         </div>

@@ -16,6 +16,8 @@ export type JurusanDetail = {
   sisa: number;
   /** Mata pelajaran berbobot terbesar untuk rekomendasi. */
   mapelUtama: { nama: string; bobot: number }[];
+  /** Foto pilihan admin; null memakai foto bawaan situs. */
+  gambar: string | null;
 };
 
 export async function ambilDaftarJurusan(): Promise<JurusanDetail[]> {
@@ -44,6 +46,7 @@ export async function ambilDaftarJurusan(): Promise<JurusanDetail[]> {
       terdaftar,
       sisa: Math.max(0, j.kuota - terdaftar),
       mapelUtama: j.bobot.map((b) => ({ nama: b.mataPelajaran.nama, bobot: Number(b.bobot) })),
+      gambar: j.gambar,
     };
   });
 }

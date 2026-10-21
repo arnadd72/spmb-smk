@@ -1,36 +1,31 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { ArrowRightIcon, CalculatorIcon, PillIcon } from "@phosphor-icons/react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
+import { GambarKonten } from "@/features/berita/gambar-konten";
+import { fotoJurusan } from "@/lib/aset-bawaan";
 import { cn } from "@/lib/cn";
 import type { JurusanLanding } from "@/server/actions/ambilLanding";
 
-// Warna dan foto per jurusan. Keempat jurusan punya foto; jurusan baru tanpa foto memakai bentuk besar dan ikon.
-const TAMPIL: Record<string, { warna: string; kode: string; foto?: { src: string; alt: string; posisi?: string }; ikon?: "kalkulator" | "obat" }> = {
+// Warna per jurusan. Foto dari pilihan admin atau foto bawaan (fotoJurusan); jurusan tanpa foto memakai bentuk besar dan ikon.
+const TAMPIL: Record<string, { warna: string; kode: string; ikon?: "kalkulator" | "obat" }> = {
   AKL: {
     warna: "bg-primer text-kertas",
     kode: "text-kunyit",
-    foto: { src: "/images/sekolah/praktik-akl.webp", alt: "Siswa AKL mengerjakan uji kompetensi akuntansi di laboratorium komputer" },
   },
   MPLB: {
     warna: "bg-mint text-ink",
     kode: "text-ink",
-    foto: { src: "/images/sekolah/praktik-mplb.webp", alt: "Siswi MPLB berlatih layanan telepon di ruang praktik perkantoran" },
   },
   LPK3: {
     warna: "bg-jurusan-lpk3 text-kertas",
     kode: "text-kertas",
-    // Foto 4:3 di bingkai hampir kotak: fokus ke siswi kiri yang meracik, dengan rak hijau di kanannya.
-    foto: { src: "/images/sekolah/praktik-farmasi.webp", alt: "Siswa LPK3 meracik obat dengan mortir dan alu di laboratorium farmasi", posisi: "object-[0%_50%]" },
   },
   TKR: {
     warna: "bg-jurusan-tkr text-kertas",
     kode: "text-kertas",
-    // Foto lebar 2:1 di bingkai hampir kotak: fokus ke guru dan siswa yang memeriksa roda di kiri.
-    foto: { src: "/images/sekolah/praktik-tkr.webp", alt: "Siswa TKR memeriksa roda mobil di bengkel sekolah", posisi: "object-[18%_50%]" },
   },
 };
 
@@ -47,6 +42,7 @@ function Bentuk({ ikon }: { ikon?: "kalkulator" | "obat" }) {
 
 function Panel({ j }: { j: JurusanLanding }) {
   const t = TAMPIL[j.kode] ?? { warna: "bg-permukaan text-ink", kode: "text-primer" };
+  const foto = fotoJurusan(j.kode, j.nama, j.gambar);
   return (
     <article
       data-panel
@@ -88,9 +84,9 @@ function Panel({ j }: { j: JurusanLanding }) {
       </div>
 
       <div className="relative min-h-44 flex-1 overflow-hidden rounded-kartu lg:min-h-0 lg:max-w-[38%]">
-        {t.foto ? (
+        {foto ? (
           <div data-foto-panel className="absolute inset-[-8%] will-change-transform">
-            <Image src={t.foto.src} alt={t.foto.alt} fill sizes="(min-width: 1024px) 30vw, 100vw" className={cn("object-cover", t.foto.posisi)} />
+            <GambarKonten src={foto.src} alt={foto.alt} sizes="(min-width: 1024px) 30vw, 100vw" className={foto.posisi} />
           </div>
         ) : (
           <Bentuk ikon={t.ikon} />

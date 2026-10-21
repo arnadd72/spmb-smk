@@ -1,14 +1,15 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { GambarLogo } from "@/components/ui/gambar-logo";
+import { GambarKonten } from "@/features/berita/gambar-konten";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { Magnetik } from "./magnetik";
 
 // Copy hero: usulan awal, final dari sekolah (keputusan S14).
-export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
+export function Hero({ tahunAjaran, foto, fotoAlt, logo }: { tahunAjaran: string | null; foto: string; fotoAlt: string; logo: string }) {
   const akar = useRef<HTMLElement>(null);
 
   // Foto dimulai tepat di bawah blok teks (jarak tetap), berapa pun tinggi layar dan panjang judul.
@@ -87,14 +88,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
         className="absolute inset-0 [--m:max(var(--pad),calc((100vw-84rem)/2+var(--pad)))] [clip-path:inset(calc(var(--teks,20rem)+2rem)_var(--m)_1.5rem_var(--m)_round_18px)] lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_2.5rem_var(--m)_round_22px)]"
       >
         <div data-foto-gambar className="absolute inset-0 will-change-transform">
-          <Image
-            src="/images/sekolah/gedung-siswa.webp"
-            alt="Siswi SMK Ma'arif NU 1 Wangon berfoto bersama di halaman depan gedung sekolah"
-            fill
-            priority
-            sizes="100vw"
-            className="object-cover object-[50%_60%]"
-          />
+          <GambarKonten src={foto} alt={fotoAlt} prioritas sizes="100vw" className="object-[50%_60%]" />
         </div>
         <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
       </div>
@@ -137,7 +131,7 @@ export function Hero({ tahunAjaran }: { tahunAjaran: string | null }) {
       </div>
 
       <div className="pointer-events-none absolute bottom-[3.25rem] right-[calc(max(var(--pad),calc((100vw-84rem)/2+var(--pad)))+1rem)] z-10 hidden items-center gap-3 rounded-kartu bg-permukaan/95 px-3 py-2.5 shadow-kartu lg:flex">
-        <Image src="/images/sekolah/logo-sekolah.png" alt="" width={40} height={40} className="size-10 object-contain" />
+        <GambarLogo src={logo} width={40} height={40} className="size-10 object-contain" />
         <p className="text-sm font-bold leading-tight text-ink">
           SMK Pusat
           <br />

@@ -1,13 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { GambarLogo } from "@/components/ui/gambar-logo";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { Magnetik } from "./magnetik";
 
-export function Penutup() {
+export function Penutup({ logo }: { logo: string }) {
   const akar = useRef<HTMLElement>(null);
 
   useGsapPublik(akar, {
@@ -39,9 +39,9 @@ export function Penutup() {
 
   return (
     <section ref={akar} aria-labelledby="judul-penutup" className="relative overflow-hidden bg-ink py-20 text-kertas lg:py-28">
-      <Image
+      <GambarLogo
         data-lambang-latar
-        src="/images/sekolah/logo-sekolah.png"
+        src={logo}
         alt=""
         width={800}
         height={800}

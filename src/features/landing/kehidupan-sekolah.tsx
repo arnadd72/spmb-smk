@@ -3,38 +3,13 @@
 import { useRef } from "react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { GambarKonten } from "@/features/berita/gambar-konten";
+import { GALERI_BAWAAN } from "@/lib/aset-bawaan";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 // Foto asli dari situs sekolah, warna asli. Keterangan di bawah foto, bukan menimpanya.
 // Tata letak layar lebar: dua baris berpasangan (7/5 lalu 5/7) bertepi sejajar, lalu satu foto lebar penuh.
 // Di tiap baris, foto berasio tetap menentukan tinggi baris; pasangannya (`lg:flex-1`) mengisi tinggi yang sama.
-const FOTO = [
-  {
-    src: "/images/sekolah/p5-karya.webp",
-    alt: "Siswa dan guru menunjukkan tempat sampah hasil karya kelas di halaman sekolah",
-    ket: "Gelar karya: tempat sampah daur ulang buatan siswa kelas XI.",
-  },
-  {
-    src: "/images/sekolah/istighotsah.webp",
-    alt: "Siswa berkumpul untuk istighotsah di aula sekolah",
-    ket: "Istighotsah bersama sebelum kunjungan industri.",
-  },
-  {
-    src: "/images/sekolah/kelas-otkp.webp",
-    alt: "Siswa makan bersama di kelas Otomatisasi dan Tata Kelola Perkantoran",
-    ket: "Makan bergizi bersama di kelas perkantoran.",
-  },
-  {
-    src: "/images/sekolah/p5-kostum.webp",
-    alt: "Siswi memakai kostum dari bahan daur ulang pada Projek Penguatan Profil Pelajar Pancasila",
-    ket: "Pawai karya Projek Penguatan Profil Pelajar Pancasila.",
-  },
-  {
-    src: "/images/sekolah/kultum.webp",
-    alt: "Siswa mendengarkan kultum di musala sekolah",
-    ket: "Kultum bersama di musala.",
-  },
-];
+const FOTO = GALERI_BAWAAN;
 
 type FotoDb = { id: string; judul: string | null; gambar: string };
 

@@ -27,7 +27,7 @@ export default async function Beranda() {
 
   return (
     <>
-      <Hero tahunAjaran={data.tahunAjaran} />
+      <Hero tahunAjaran={data.tahunAjaran} foto={data.aset.hero} fotoAlt={data.aset.heroAlt} logo={data.aset.logo} />
       <Pernyataan />
       <MarqueeJurusan />
       <ProgramKeahlian jurusan={data.jurusan} />
@@ -38,7 +38,7 @@ export default async function Beranda() {
       <TesMinat />
       <TestimoniLanding testimoni={data.testimoni} />
       <FaqLanding faq={data.faq} />
-      <Penutup />
+      <Penutup logo={data.aset.logo} />
     </>
   );
 }

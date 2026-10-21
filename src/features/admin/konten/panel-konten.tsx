@@ -1,7 +1,7 @@
 "use client";
 
 import { UnggahGambar } from "./unggah-gambar";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { MagnifyingGlassIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -132,7 +132,8 @@ export function IsiForm({
 
 // ---------------------------------------------------------------- panel
 
-export function PanelKonten({ konfig }: { konfig: KonfigKonten }) {
+/** `ekstra` tampil tepat di bawah judul, sebelum pencarian dan daftar (mis. foto tetap situs di halaman Galeri). */
+export function PanelKonten({ konfig, ekstra }: { konfig: KonfigKonten; ekstra?: ReactNode }) {
   const [daftar, setDaftar] = useState<Daftar | null>(null);
   const [galatMuat, setGalatMuat] = useState<string>();
   const [q, setQ] = useState("");
@@ -216,6 +217,8 @@ export function PanelKonten({ konfig }: { konfig: KonfigKonten }) {
           Tambah {konfig.tunggal}
         </Button>
       </div>
+
+      {ekstra}
 
       <div className="relative mt-6 max-w-sm">
         <MagnifyingGlassIcon aria-hidden className="pointer-events-none absolute left-3 top-1/2 size-5 -translate-y-1/2 text-tinta-redup" />

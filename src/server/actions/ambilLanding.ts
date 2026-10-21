@@ -1,4 +1,5 @@
 import { prisma } from "@/server/db/client";
+import { ambilAsetPublik, type AsetPublik } from "@/server/services/asetSitus";
 import { ambilKonfigWizard } from "@/server/services/draf";
 import { daftarGelombang } from "@/server/services/gelombang";
 import { ambilPengaturan } from "@/server/services/pengaturan";
@@ -13,6 +14,8 @@ export type JurusanLanding = {
   kuota: number;
   /** Mata pelajaran yang paling berpengaruh pada rekomendasi, urut bobot terbesar. */
   mapelUtama: string[];
+  /** Foto pilihan admin; null memakai foto bawaan situs. */
+  gambar: string | null;
 };
 
 export type GelombangLanding = { id: string; nama: string; buka: string; tutup: string; kuota: number | null; sisa: number | null; status: "belum" | "buka" | "tutup" | "penuh" };
@@ -32,6 +35,8 @@ export type DataLanding = {
   gelombang: GelombangLanding[];
   /** Mis. "2027/2028". Null bila panitia belum mengisi pengaturan. */
   tahunAjaran: string | null;
+  /** Logo dan foto hero (pilihan admin atau bawaan). */
+  aset: AsetPublik;
 };
 
 const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
@@ -42,7 +47,7 @@ const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is s
  */
 export async function ambilDataLanding(): Promise<DataLanding> {
   try {
-    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, testimoni, konfig] = await Promise.all([
+    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, testimoni, konfig, aset] = await Promise.all([
       prisma.jurusan.findMany({
         where: { isActive: true },
         orderBy: { urutan: "asc" },
@@ -55,11 +60,13 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 5 }),
       prisma.testimoni.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 4 }),
       ambilKonfigWizard(),
+      ambilAsetPublik(),
     ]);
     const gelombang = await daftarGelombang(konfig.tahunAjaran);
 
     return {
       tahunAjaran,
+      aset,
       jurusan: jurusan.map((j) => ({
         kode: j.kode,
         nama: j.nama,
@@ -68,6 +75,7 @@ export async function ambilDataLanding(): Promise<DataLanding> {
         keunggulan: array(j.keunggulan),
         kuota: j.kuota,
         mapelUtama: j.bobot.map((b) => b.mataPelajaran.nama),
+        gambar: j.gambar,
       })),
       faq: faq.map((f) => ({ id: f.id.toString(), pertanyaan: f.pertanyaan, jawaban: f.jawaban })),
       berita,
@@ -78,6 +86,6 @@ export async function ambilDataLanding(): Promise<DataLanding> {
     };
   } catch (e) {
     console.error("[landing] gagal membaca data:", e instanceof Error ? e.message : "tidak diketahui");
-    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], testimoni: [], gelombang: [], tahunAjaran: null };
+    return { jurusan: [], faq: [], berita: [], agenda: [], galeri: [], testimoni: [], gelombang: [], tahunAjaran: null, aset: await ambilAsetPublik() };
   }
 }

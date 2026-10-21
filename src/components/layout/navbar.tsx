@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ListIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { GambarLogo } from "@/components/ui/gambar-logo";
 
 const tautan = [
   { href: "/", label: "Beranda" },
@@ -16,7 +16,7 @@ const tautan = [
   { href: "/cek-status", label: "Cek Status" },
 ];
 
-export function Navbar() {
+export function Navbar({ logo }: { logo: string }) {
   const [buka, setBuka] = useState(false);
 
   useEffect(() => {
@@ -30,7 +30,7 @@ export function Navbar() {
     <header className="sticky top-0 z-30 border-b border-garis bg-latar/95 backdrop-blur-sm">
       <div className="wadah flex h-16 items-center justify-between gap-4">
         <Link href="/" className="flex items-center gap-3 font-display text-lg font-extrabold leading-none text-primer-tua">
-          <Image src="/images/sekolah/logo-sekolah.png" alt="" width={40} height={40} className="size-10 object-contain" priority />
+          <GambarLogo src={logo} width={40} height={40} className="size-10 object-contain" priority />
           <span>
             SMK Ma&apos;arif NU 1 Wangon
             <span className="mt-1 block text-xs font-semibold tracking-wide text-tinta-redup">SPMB</span>

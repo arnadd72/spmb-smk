@@ -9,6 +9,8 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    // Folder build server dev milik tes e2e (playwright.config.ts).
+    ".next-e2e/**",
     "out/**",
     "build/**",
     "next-env.d.ts",

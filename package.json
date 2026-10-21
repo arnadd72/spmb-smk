@@ -16,6 +16,7 @@
     "db:start": "node scripts/db-lokal.mjs start",
     "db:stop": "node scripts/db-lokal.mjs stop",
     "db:status": "node scripts/db-lokal.mjs status",
+    "db:test:siapkan": "node scripts/siapkan-db-test.mjs",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",

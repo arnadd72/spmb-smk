@@ -13,6 +13,8 @@ const hostSupabase = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Dipakai tes e2e (playwright.config.ts) agar servernya tidak berbenturan dengan `npm run dev` di folder .next.
+  ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   images: hostSupabase ? { remotePatterns: [{ protocol: "https", hostname: hostSupabase, pathname: "/storage/v1/object/public/**" }] } : undefined,
   // PDF template formulir dibaca lewat fs saat runtime: pastikan ikut terbawa ke fungsi serverless Vercel.
   outputFileTracingIncludes: {

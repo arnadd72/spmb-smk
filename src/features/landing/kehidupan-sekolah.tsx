@@ -13,8 +13,10 @@ import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 // Di tiap baris, foto berasio tetap menentukan tinggi baris; pasangannya (`lg:flex-1`) mengisi tinggi yang sama.
 const FOTO = GALERI_BAWAAN;
 
+/** Jeda singkat sebelum geser pertama setelah galeri terlihat. */
+const TUNDA_AWAL_MS = 700;
 /** Selang geser otomatis, dan jeda setelah pengguna menyentuh atau menggeser sendiri. */
-const SELANG_OTOMATIS_MS = 3000;
+const SELANG_OTOMATIS_MS = 2500;
 const JEDA_SETELAH_INTERAKSI_MS = 4000;
 
 type FotoDb = { id: string; judul: string | null; gambar: string };
@@ -22,15 +24,16 @@ type FotoDb = { id: string; judul: string | null; gambar: string };
 export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
   const akar = useRef<HTMLElement>(null);
   const jalur = useRef<HTMLDivElement>(null);
-  // Galeri dari admin menggantikan foto bawaan begitu ada satu foto aktif.
-  const daftar =
-    galeri.length >= 1
-      ? galeri.map((g) => ({
-          src: g.gambar,
-          alt: g.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon",
-          ket: g.judul ?? "",
-        }))
-      : FOTO;
+  // Foto dari admin MENAMBAH foto bawaan (bawaan dulu, lalu foto admin). Bila admin memuat foto bawaan ke galeri
+  // (sudah ada di database), isi galeri menjadi acuan tunggal agar foto bawaan bisa diurutkan atau dihapus.
+  const dariAdmin = galeri.map((g) => ({
+    src: g.gambar,
+    alt: g.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon",
+    ket: g.judul ?? "",
+  }));
+  const srcBawaan = new Set(FOTO.map((f) => f.src));
+  const bawaanDimuat = galeri.some((g) => srcBawaan.has(g.gambar));
+  const daftar = bawaanDimuat ? dariAdmin : [...FOTO, ...dariAdmin];
   // Satu foto saja: tampil diam, tanpa putaran, geser otomatis, dan tombol panah.
   const putar = daftar.length >= 2;
 
@@ -79,6 +82,8 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
     const kurangiGerak = window.matchMedia("(prefers-reduced-motion: reduce)");
     let terakhirInteraksi = 0;
     let terlihat = false;
+    let timer: number | undefined;
+    let tundaAwal: number | undefined;
     const tandai = () => {
       terakhirInteraksi = Date.now();
     };
@@ -88,7 +93,16 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
       batalkanGulir(el);
     };
     const pengamat = new IntersectionObserver(([e]) => {
+      const sebelumnya = terlihat;
       terlihat = e.isIntersecting;
+      // Begitu galeri masuk layar, geser pertama langsung jalan sebentar kemudian (tidak menunggu detak pewaktu).
+      if (terlihat && !sebelumnya) {
+        window.clearInterval(timer);
+      window.clearTimeout(tundaAwal);
+        window.clearTimeout(tundaAwal);
+        tundaAwal = window.setTimeout(langkahOtomatis, TUNDA_AWAL_MS);
+        timer = window.setInterval(langkahOtomatis, SELANG_OTOMATIS_MS);
+      }
     });
     pengamat.observe(el);
     const area = el.closest("section") ?? el;
@@ -99,12 +113,13 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
     ];
     for (const [nama, fn] of peristiwa) area.addEventListener(nama, fn, { passive: true });
 
-    const timer = window.setInterval(() => {
+    const langkahOtomatis = () => {
       if (!terlihat || document.hidden) return;
       if (Date.now() - terakhirInteraksi < JEDA_SETELAH_INTERAKSI_MS) return;
       const berikut = item().find((li) => posisi(li) > el.scrollLeft + 8);
       if (berikut) gulirHalus(el, posisi(berikut), kurangiGerak.matches);
-    }, SELANG_OTOMATIS_MS);
+    };
+    timer = window.setInterval(langkahOtomatis, SELANG_OTOMATIS_MS);
 
     return () => {
       window.clearTimeout(diam);

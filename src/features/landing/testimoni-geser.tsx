@@ -7,6 +7,8 @@ import { cn } from "@/lib/cn";
 
 type Testimoni = { id: string; nama: string; keterangan: string | null; isi: string; foto: string | null };
 
+/** Jeda singkat sebelum geser pertama setelah testimoni terlihat. */
+const TUNDA_AWAL_MS = 700;
 /** Testimoni lebih lama dibaca daripada foto: selang geser lebih panjang dari galeri. */
 const SELANG_OTOMATIS_MS = 4000;
 const JEDA_SETELAH_INTERAKSI_MS = 5000;
@@ -60,12 +62,23 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
     const kurangiGerak = window.matchMedia("(prefers-reduced-motion: reduce)");
     let terakhirInteraksi = 0;
     let terlihat = false;
+    let timer: number | undefined;
+    let tundaAwal: number | undefined;
     const ambilAlih = () => {
       terakhirInteraksi = Date.now();
       batalkanGulir(el);
     };
     const pengamat = new IntersectionObserver(([e]) => {
+      const sebelumnya = terlihat;
       terlihat = e.isIntersecting;
+      // Begitu galeri masuk layar, geser pertama langsung jalan sebentar kemudian (tidak menunggu detak pewaktu).
+      if (terlihat && !sebelumnya) {
+        window.clearInterval(timer);
+      window.clearTimeout(tundaAwal);
+        window.clearTimeout(tundaAwal);
+        tundaAwal = window.setTimeout(langkahOtomatis, TUNDA_AWAL_MS);
+        timer = window.setInterval(langkahOtomatis, SELANG_OTOMATIS_MS);
+      }
     });
     pengamat.observe(el);
     const peristiwa: [string, () => void][] = [
@@ -75,12 +88,13 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
     ];
     for (const [nama, fn] of peristiwa) el.addEventListener(nama, fn, { passive: true });
 
-    const timer = window.setInterval(() => {
+    const langkahOtomatis = () => {
       if (!terlihat || document.hidden) return;
       if (Date.now() - terakhirInteraksi < JEDA_SETELAH_INTERAKSI_MS) return;
       const berikut = item().find((li) => posisi(li) > el.scrollLeft + 8);
       if (berikut) gulirHalus(el, posisi(berikut), kurangiGerak.matches);
-    }, SELANG_OTOMATIS_MS);
+    };
+    timer = window.setInterval(langkahOtomatis, SELANG_OTOMATIS_MS);
 
     return () => {
       window.clearTimeout(diam);

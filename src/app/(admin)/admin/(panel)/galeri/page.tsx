@@ -3,12 +3,12 @@ import { PanelKonten } from "@/features/admin/konten/panel-konten";
 import { KONFIG_KONTEN } from "@/features/admin/konten/konfig";
 import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
-import { daftarAset, jumlahFotoGaleri } from "@/server/services/asetSitus";
+import { bawaanSudahDimuat, daftarAset } from "@/server/services/asetSitus";
 
 export const metadata = { title: "Galeri" };
 
 export default async function Halaman() {
   await wajibPeranHalaman(...PERAN.konten);
-  const [data, galeri] = await Promise.all([daftarAset(), jumlahFotoGaleri()]);
-  return <PanelKonten konfig={KONFIG_KONTEN.galeri} ekstra={<PanelAsetSitus awal={{ data, galeri }} />} />;
+  const [data, bawaanDimuat] = await Promise.all([daftarAset(), bawaanSudahDimuat()]);
+  return <PanelKonten konfig={KONFIG_KONTEN.galeri} ekstra={<PanelAsetSitus awal={{ data, bawaanDimuat }} />} />;
 }

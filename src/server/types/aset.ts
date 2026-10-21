@@ -12,4 +12,5 @@ export type BarisAset = {
   diganti: boolean;
 };
 
-export type DaftarAset = { data: BarisAset[]; galeri: number };
+/** `bawaanDimuat`: foto bawaan landing sudah disalin ke galeri (maka galeri di database jadi acuan tunggal). */
+export type DaftarAset = { data: BarisAset[]; bawaanDimuat: boolean };

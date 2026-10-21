@@ -126,15 +126,16 @@ export async function kembalikanAset(kunci: string, ctx: KonteksAset): Promise<v
   await catatAudit({ userId: ctx.userId, aksi: "aset.kembalikan", entitasTipe: "aset", entitasId: kunci, dataLama: { url: lama }, ip: ctx.ip });
 }
 
-/** Banyak foto di galeri (untuk menawarkan tombol muat foto bawaan saat kosong). */
-export const jumlahFotoGaleri = () => prisma.galeri.count();
+/** Apakah foto bawaan sudah disalin ke galeri (untuk menawarkan tombol muat foto bawaan). */
+export const bawaanSudahDimuat = async () =>
+  (await prisma.galeri.count({ where: { gambar: { in: GALERI_BAWAAN.map((f) => f.src) } } })) > 0;
 
 /**
- * Salin lima foto bawaan landing ke galeri agar bisa diubah atau dihapus admin. Hanya bila galeri masih kosong,
- * supaya tidak menduplikasi. Mengembalikan jumlah foto yang dibuat.
+ * Salin lima foto bawaan landing ke galeri agar bisa diubah atau dihapus admin. Hanya bila belum pernah dimuat,
+ * supaya tidak menduplikasi. Foto yang sudah diunggah admin tetap ada. Mengembalikan jumlah foto yang dibuat.
  */
 export async function muatGaleriBawaan(ctx: KonteksAset): Promise<number> {
-  if ((await prisma.galeri.count()) > 0) throw GalatApi.validasi({ galeri: ["Galeri sudah berisi foto, foto bawaan tidak dimuat lagi."] });
+  if (await bawaanSudahDimuat()) throw GalatApi.validasi({ galeri: ["Foto bawaan sudah ada di galeri."] });
   await prisma.galeri.createMany({
     data: GALERI_BAWAAN.map((f, urutan) => ({ judul: f.ket, gambar: f.src, urutan, isActive: true })),
   });

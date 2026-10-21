@@ -66,24 +66,23 @@ test.describe("landing menampilkan konten admin", () => {
     expect((await page.request.get(alamat)).status()).toBe(404);
   });
 
-  test("galeri admin (satu foto saja sudah cukup) menggantikan foto bawaan di bagian Kehidupan sekolah", async ({ page }) => {
+  test("foto galeri admin menambah foto bawaan di bagian Kehidupan sekolah", async ({ page }) => {
     await masukSebagai(page, "konten");
     await bersihkan(page.request);
     for (let i = 1; i <= 1; i++) {
-      expect((await page.request.post("/api/v1/admin/galeri", { headers: sama, data: { judul: `${AWALAN} foto ${i}`, gambar: "/images/sekolah/kultum.webp", urutan: i, isActive: true } })).status()).toBe(201);
+      expect((await page.request.post("/api/v1/admin/galeri", { headers: sama, data: { judul: `${AWALAN} foto ${i}`, gambar: "/images/sekolah/logo-sekolah.png", urutan: i, isActive: true } })).status()).toBe(201);
     }
     await page.goto("/");
     // Galeri berputar tanpa ujung: ada tiga salinan, hanya yang tengah terbaca pembaca layar (tanpa aria-hidden).
     const asli = page.locator("[data-slider-galeri] li:not([aria-hidden])");
     await expect(asli.getByText(`${AWALAN} foto 1`)).toBeVisible();
-    await expect(page.getByText("Kultum bersama di musala.")).toHaveCount(0);
-    // Satu foto saja: tampil diam, tanpa tombol panah.
-    await expect(page.getByRole("button", { name: "Foto berikutnya" })).toHaveCount(0);
-    await expect(page.locator("[data-slider-galeri] li")).toHaveCount(1);
+    // Foto bawaan tetap ada; foto admin ditambahkan setelahnya (5 bawaan + 1).
+    await expect(asli.getByText("Kultum bersama di musala.")).toBeVisible();
+    await expect(asli).toHaveCount(6);
 
     await bersihkan(page.request);
     await page.goto("/");
-    await expect(page.locator("[data-slider-galeri] li:not([aria-hidden])").getByText("Kultum bersama di musala.")).toBeVisible();
+    await expect(asli).toHaveCount(5);
   });
 
   test("endpoint JSON publik terbuka tanpa login dan tidak memuat konten nonaktif", async ({ request }) => {

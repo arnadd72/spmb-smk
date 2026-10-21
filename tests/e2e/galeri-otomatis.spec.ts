@@ -29,6 +29,15 @@ test.describe("galeri kehidupan sekolah", () => {
     expect(Math.abs((await posisi()) - sebelum)).toBeLessThan(5);
   });
 
+  test("langsung bergeser begitu galeri terlihat, tanpa menunggu detak pewaktu", async ({ page }) => {
+    const jalur = page.locator("[data-slider-galeri]");
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.waitForTimeout(3000); // pewaktu sudah berdetak beberapa kali selagi galeri di luar layar
+    const awal = await jalur.evaluate((el) => el.scrollLeft);
+    await jalur.scrollIntoViewIfNeeded();
+    await expect.poll(() => jalur.evaluate((el) => el.scrollLeft), { timeout: 2200 }).not.toBe(awal);
+  });
+
   test("tetap bergeser walau kursor diam di galeri", async ({ page }) => {
     const jalur = page.locator("[data-slider-galeri]");
     const awal = await jalur.evaluate((el) => el.scrollLeft);

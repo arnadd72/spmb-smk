@@ -134,12 +134,12 @@ export function PanelAsetSitus({ awal }: { awal: DaftarAset }) {
         ))}
       </ul>
 
-      {daftar.galeri === 0 && (
+      {!daftar.bawaanDimuat && (
         <div className="mt-6 rounded-kontrol border border-garis bg-permukaan p-4" data-galeri-bawaan>
-          <p className="font-semibold text-ink">Galeri kegiatan di beranda masih memakai 5 foto bawaan.</p>
+          <p className="font-semibold text-ink">Beranda menampilkan 5 foto bawaan, lalu foto yang Anda tambahkan di galeri.</p>
           <p className="mt-1 text-sm text-tinta-redup">
-            Muat foto bawaan itu ke daftar galeri di bawah supaya bisa Anda ubah, urutkan, atau hapus. Begitu galeri berisi satu foto aktif, situs
-            menampilkan foto dari galeri.
+            Muat foto bawaan itu ke daftar galeri di bawah bila ingin mengubah, mengurutkan, atau menghapusnya. Setelah dimuat, beranda menampilkan
+            isi galeri saja.
           </p>
           <Button type="button" varian="sekunder" className="mt-3" memuat={memuatBawaan} onClick={muatBawaan}>
             Muat foto bawaan situs ke galeri

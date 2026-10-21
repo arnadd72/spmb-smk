@@ -67,7 +67,7 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(4, 10, "jurusan_1", "Pilihan jurusan", "select", { opsi: { dinamis: "jurusan" } }),
 
   // Langkah 5: data murid
-  f(5, 20, "tempat_lahir", "Tempat lahir", "text", { teksBantuan: "Tulis nama kota atau kabupaten tempat lahir, sesuai akta. Contoh: BANYUMAS. Tanggal lahir diisi terpisah.", placeholder: "BANYUMAS" }),
+  f(5, 20, "tempat_lahir", "Tempat lahir", "text", { teksBantuan: "Tulis nama kota atau kabupaten tempat lahir, sesuai akta. Contoh: BANYUMAS.", placeholder: "BANYUMAS" }),
   f(5, 40, "nik", "NIK", "text", { teksBantuan: "16 digit angka sesuai Kartu Keluarga. Contoh: 3302010507100001.", placeholder: "3302010507100001" }),
   f(5, 41, "no_kk", "Nomor Kartu Keluarga", "text", { teksBantuan: "16 digit angka, ada di bagian atas Kartu Keluarga. Contoh: 3302010101100001.", placeholder: "3302010101100001" }),
   f(5, 50, "jenis_kelamin", "Jenis kelamin", "radio", { opsi: [{ nilai: "L", label: "Laki-laki" }, { nilai: "P", label: "Perempuan" }] }),

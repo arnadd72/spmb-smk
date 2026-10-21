@@ -109,6 +109,11 @@ export async function seedFormField(prisma: PrismaClient) {
     where: { kunci: "pas_foto", teksBantuan: "Foto tampak depan berlatar merah, memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG." },
     data: { teksBantuan: "Foto tampak depan berlatar merah (pas foto background merah), memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG." },
   });
+  // Keterangan tempat lahir dipersingkat (21 Okt 2026), hanya bila belum disunting panitia.
+  await prisma.formField.updateMany({
+    where: { kunci: "tempat_lahir", teksBantuan: "Tulis nama kota atau kabupaten tempat lahir, sesuai akta. Contoh: BANYUMAS. Tanggal lahir diisi terpisah." },
+    data: { teksBantuan: "Tulis nama kota atau kabupaten tempat lahir, sesuai akta. Contoh: BANYUMAS." },
+  });
   // Label yang berubah karena revisi sekolah (hanya bila belum disunting panitia).
   const labelBaru: Record<string, [string, string]> = {
     jurusan_1: ["Pilihan jurusan 1", "Pilihan jurusan"],

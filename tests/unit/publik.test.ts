@@ -79,7 +79,7 @@ describe("landing menampilkan konten dari database", () => {
     const d = await ambilDataLanding();
     expect(d.berita.map((b) => b.judul)).toEqual(["Berita tayang"]);
     expect(d.agenda.map((a) => a.judul)).toEqual(["Agenda depan"]);
-    expect(d.galeri).toHaveLength(5);
+    expect(d.galeri).toHaveLength(6);
     expect(d.galeri.map((g) => g.judul)).not.toContain("Foto 2");
     expect(d.testimoni.map((t) => t.nama)).toEqual(["Alumni A"]);
     expect(d.jurusan).toHaveLength(4);

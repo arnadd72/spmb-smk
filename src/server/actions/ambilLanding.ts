@@ -39,6 +39,9 @@ export type DataLanding = {
   aset: AsetPublik;
 };
 
+/** Foto galeri aktif yang ditampilkan di landing. Cukup besar agar foto baru dari admin selalu ikut tampil. */
+export const BATAS_GALERI = 20;
+
 const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : []);
 
 /**
@@ -57,7 +60,7 @@ export async function ambilDataLanding(): Promise<DataLanding> {
       ambilPengaturan("tahun_ajaran"),
       ambilDaftarBerita(3),
       ambilAgendaMendatang(3),
-      prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 5 }),
+      prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: BATAS_GALERI }),
       prisma.testimoni.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: 4 }),
       ambilKonfigWizard(),
       ambilAsetPublik(),

@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { GambarKonten } from "@/features/berita/gambar-konten";
 import { GALERI_BAWAAN } from "@/lib/aset-bawaan";
+import { batalkanGulir, gulirHalus } from "@/lib/gulir-halus";
 import { ArrowLeftIcon, ArrowRightIcon } from "@phosphor-icons/react";
 
 // Foto asli dari situs sekolah, warna asli. Keterangan di bawah foto, bukan menimpanya.
@@ -14,36 +15,6 @@ const FOTO = GALERI_BAWAAN;
 /** Selang geser otomatis, dan jeda setelah pengguna menyentuh atau menggeser sendiri. */
 const SELANG_OTOMATIS_MS = 3000;
 const JEDA_SETELAH_INTERAKSI_MS = 4000;
-const DURASI_GESER_MS = 700;
-
-const animasiAktif = new WeakMap<HTMLElement, number>();
-
-/** Menggulir halus ke `tujuan` dengan kurva ease-in-out. Scroll-snap dimatikan selama animasi agar tidak tersendat. */
-function gulirHalus(el: HTMLElement, tujuan: number, tanpaAnimasi: boolean) {
-  batalkanGulir(el);
-  if (tanpaAnimasi) {
-    el.scrollLeft = tujuan;
-    return;
-  }
-  const dari = el.scrollLeft;
-  const mulai = performance.now();
-  el.style.scrollSnapType = "none";
-  const langkah = (sekarang: number) => {
-    const t = Math.min(1, (sekarang - mulai) / DURASI_GESER_MS);
-    const ease = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-    el.scrollLeft = dari + (tujuan - dari) * ease;
-    if (t < 1) animasiAktif.set(el, requestAnimationFrame(langkah));
-    else batalkanGulir(el);
-  };
-  animasiAktif.set(el, requestAnimationFrame(langkah));
-}
-
-function batalkanGulir(el: HTMLElement) {
-  const id = animasiAktif.get(el);
-  if (id !== undefined) cancelAnimationFrame(id);
-  animasiAktif.delete(el);
-  el.style.scrollSnapType = "";
-}
 
 type FotoDb = { id: string; judul: string | null; gambar: string };
 

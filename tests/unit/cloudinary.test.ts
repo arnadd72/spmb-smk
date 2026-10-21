@@ -58,6 +58,7 @@ describe("unggah dan hapus lewat REST", () => {
     const form = init.body;
     expect(form.get("api_key")).toBe("kunci-uji");
     expect(form.get("type")).toBe("authenticated");
+    expect(form.get("public_id")).toBe("spmb/x/1");
     expect(form.get("transformation")).toBe("c_limit,w_1600,h_1600,q_auto:good");
     expect(form.get("file")).toBeInstanceOf(Blob);
     // Tanda tangan dihitung dari semua parameter kecuali file, api_key, dan signature, dan rahasia tidak ikut terkirim.
@@ -65,6 +66,14 @@ describe("unggah dan hapus lewat REST", () => {
     for (const [k, v] of form.entries()) if (typeof v === "string" && !["api_key", "signature"].includes(k)) param[k] = v;
     expect(form.get("signature")).toBe(tandaTangan(param, K.rahasia));
     expect([...form.values()].some((v) => v === K.rahasia)).toBe(false);
+  });
+
+  it("gambar publik diunggah dan dihapus dengan type=upload (type=public ditolak Cloudinary dengan 400)", async () => {
+    fetchPalsu.mockImplementation(async () => new Response(JSON.stringify({ public_id: "spmb/x/2", result: "ok" }), { status: 200 }));
+    await unggahGambar(K, JPEG, "image/jpeg", { publicId: "spmb/x/2", akses: "public" });
+    await hapusGambarCloudinary(K, "spmb/x/2");
+    expect((fetchPalsu.mock.calls[0][1] as { body: FormData }).body.get("type")).toBe("upload");
+    expect((fetchPalsu.mock.calls[1][1] as { body: FormData }).body.get("type")).toBe("upload");
   });
 
   it("melempar galat berisi pesan Cloudinary saat unggah ditolak", async () => {

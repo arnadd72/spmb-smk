@@ -2,6 +2,7 @@ import { Readable } from "node:stream";
 import { prisma } from "@/server/db/client";
 import { catatAudit } from "@/server/services/audit";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
+import { adalahRefCloudinary } from "@/server/services/penyimpanan/driverCloudinary";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { pindahkanKeDrive } from "@/server/services/pendaftaran";
 import { MAKS_UKURAN_BYTE, deteksiMime, type Berkas, type BerkasDraf } from "@/server/services/draf";
@@ -21,7 +22,7 @@ export type DeskripsiBerkas = {
   nama: string;
   mime: string;
   ukuran: number;
-  sumber: "drive" | "sementara" | "hilang";
+  sumber: "drive" | "sementara" | "cloudinary" | "hilang";
 };
 
 const MIME_AMAN = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
@@ -55,7 +56,7 @@ export async function daftarBerkasPendaftar(p: Baris): Promise<DeskripsiBerkas[]
   for (const { kunci, indeks, b } of daftarMeta(p)) {
     let sumber: DeskripsiBerkas["sumber"] = "hilang";
     if (idDrive(p, kunci, indeks)) sumber = "drive";
-    else if (await temp.ada(b.ref).catch(() => false)) sumber = "sementara";
+    else if (await temp.ada(b.ref).catch(() => false)) sumber = adalahRefCloudinary(b.ref) ? "cloudinary" : "sementara";
     const jumlah = daftarMeta(p).filter((x) => x.kunci === kunci).length;
     hasil.push({
       kunci,
@@ -168,7 +169,8 @@ async function hapusDariDrive(idBerkas: string | null | undefined) {
 
 function adaYangTertunda(meta: BerkasDraf, p: { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown; kustomFileIds?: unknown }): boolean {
   const kustom = (p.kustomFileIds ?? {}) as Record<string, string>;
-  for (const [k, v] of Object.entries(meta)) if (v && !["akta", "kk", "rapor"].includes(k) && !kustom[k]) return true;
+  // Berkas di Cloudinary (rujukan "cld:") tidak menunggu Drive.
+  for (const [k, v] of Object.entries(meta)) if (v && !["akta", "kk", "rapor"].includes(k) && !kustom[k] && !(!Array.isArray(v) && adalahRefCloudinary(v.ref))) return true;
   const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
   if (meta.akta && !p.aktaFileId) return true;
   if (meta.kk && !p.kkFileId) return true;

@@ -9,6 +9,9 @@ export type KonfigCloudinary = { cloud: string; kunci: string; rahasia: string }
 /** `public` untuk gambar situs (URL terbuka); `authenticated` untuk data pribadi (URL harus bertanda tangan). */
 export type JenisAkses = "public" | "authenticated";
 
+/** Nama jenis pengiriman di Cloudinary: gambar terbuka bertipe `upload`; `public` bukan nilai yang sah (ditolak 400). */
+const tipeCloudinary = (akses: JenisAkses) => (akses === "public" ? "upload" : "authenticated");
+
 /** Batas sisi terpanjang dan kualitas saat disimpan: kecil tetapi tetap jelas. */
 export const TRANSFORMASI_MASUK = "c_limit,w_1600,h_1600,q_auto:good";
 /** Transformasi pengiriman gambar publik: format dan kualitas dipilih Cloudinary menurut peramban. */
@@ -68,14 +71,16 @@ export async function unggahGambar(
   const hasil = await panggil<{ public_id: string }>(
     k,
     "upload",
-    { public_id: opsi.publicId, type: opsi.akses, transformation: opsi.transformasi ?? TRANSFORMASI_MASUK, overwrite: "false" },
+    { public_id: opsi.publicId, type: tipeCloudinary(opsi.akses), transformation: opsi.transformasi ?? TRANSFORMASI_MASUK, overwrite: "false" },
     { isi, mime },
   );
   return hasil.public_id;
 }
 
 export async function hapusGambarCloudinary(k: KonfigCloudinary, publicId: string, akses: JenisAkses = "public"): Promise<void> {
-  await panggil(k, "destroy", { public_id: publicId, type: akses, invalidate: "true" });
+  const { result } = await panggil<{ result?: string }>(k, "destroy", { public_id: publicId, type: tipeCloudinary(akses), invalidate: "true" });
+  // "not found" berarti sudah tidak ada: tujuan penghapusan tercapai. Selain "ok" dianggap gagal.
+  if (result !== "ok" && result !== "not found") throw new Error(`Cloudinary destroy tidak menghapus berkas (result: ${result ?? "kosong"}).`);
 }
 
 /**

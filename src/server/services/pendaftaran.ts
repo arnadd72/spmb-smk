@@ -21,6 +21,7 @@ import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/
 import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
+import { adalahRefCloudinary } from "@/server/services/penyimpanan/driverCloudinary";
 import { hitungRekomendasi, muatBobotJurusan, versiBobot } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 
@@ -164,8 +165,9 @@ export async function pindahkanKeDrive(nomor: string): Promise<void> {
   const tugas: Tugas[] = [];
   for (const [kunci, nilai] of Object.entries(meta)) {
     if (!nilai) continue;
-    if (Array.isArray(nilai)) nilai.forEach((b, i) => !(kunci === "rapor" && rapor[i]) && tugas.push({ kunci, i, b }));
-    else if (!(kunci === "akta" && p.aktaFileId) && !(kunci === "kk" && p.kkFileId) && !(kunci !== "akta" && kunci !== "kk" && kustomId[kunci])) {
+    // Berkas yang sudah di Cloudinary (pas foto, rujukan "cld:") tetap di sana dan tidak dipindah ke Drive.
+    if (Array.isArray(nilai)) nilai.forEach((b, i) => !(kunci === "rapor" && rapor[i]) && !adalahRefCloudinary(b.ref) && tugas.push({ kunci, i, b }));
+    else if (!adalahRefCloudinary(nilai.ref) && !(kunci === "akta" && p.aktaFileId) && !(kunci === "kk" && p.kkFileId) && !(kunci !== "akta" && kunci !== "kk" && kustomId[kunci])) {
       tugas.push({ kunci, i: 0, b: nilai });
     }
   }

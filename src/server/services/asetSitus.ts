@@ -18,7 +18,7 @@ type KunciUmum = (typeof KUNCI_UMUM)[number];
 
 const INFO_UMUM: Record<KunciUmum, { label: string; bantuan: string }> = {
   logo: { label: "Logo sekolah", bantuan: "Tampil di navbar, layar pembuka, beranda, dan penutup. Pakai gambar persegi dengan latar transparan." },
-  hero: { label: "Foto utama beranda", bantuan: "Foto lebar di bagian atas beranda, tampil pertama. Foto lain bisa ditambahkan di Foto tambahan beranda (di bawah) agar berganti otomatis. Pakai foto mendatar yang jelas." },
+  hero: { label: "Foto utama beranda", bantuan: "Foto lebar di bagian atas beranda, tampil pertama. Tombol Tambah foto menambahkan foto lain agar berganti otomatis (daftarnya di bagian Foto tambahan beranda, di bawah). Pakai foto mendatar yang jelas." },
 };
 
 const AWALAN_JURUSAN = "jurusan-";

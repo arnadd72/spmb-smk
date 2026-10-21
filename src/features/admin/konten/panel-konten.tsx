@@ -12,7 +12,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { formatTanggal } from "@/lib/format";
-import type { DefField, DefKolom, KonfigKonten } from "./konfig";
+import { PERISTIWA_TAMBAH, type DefField, type DefKolom, type KonfigKonten } from "./konfig";
 
 type Baris = Record<string, unknown> & { id: string };
 type Daftar = { data: Baris[]; total: number; halaman: number; per: number };
@@ -173,6 +173,20 @@ export function PanelKonten({
     return () => clearTimeout(t);
   }, [muat, q]);
 
+  // Tombol di luar panel ini (mis. "Tambah foto" di kartu Foto utama beranda) membuka formulir tambah lewat peristiwa.
+  useEffect(() => {
+    if (!bagian) return;
+    const buka = (e: Event) => {
+      if ((e as CustomEvent<string>).detail !== konfig.api) return;
+      setNilai(dariBaris(konfig.field, undefined));
+      setGalat({});
+      setGalatUmum(undefined);
+      setForm({});
+    };
+    window.addEventListener(PERISTIWA_TAMBAH, buka);
+    return () => window.removeEventListener(PERISTIWA_TAMBAH, buka);
+  }, [bagian, konfig.api, konfig.field]);
+
   function bukaForm(baris?: Baris) {
     setNilai(dariBaris(konfig.field, baris));
     setGalat({});
@@ -223,10 +237,12 @@ export function PanelKonten({
     <div className={bagian ? "mt-10 border-t border-garis pt-8" : "mx-auto max-w-5xl"} data-panel-konten={konfig.api}>
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         {bagian ? <h2 className="text-xl font-bold text-ink">{konfig.judul}</h2> : <h1 className="text-3xl font-bold text-ink">{konfig.judul}</h1>}
-        <Button onClick={() => bukaForm()}>
-          <PlusIcon aria-hidden weight="bold" className="size-5" />
-          Tambah {konfig.tunggal}
-        </Button>
+        {!bagian && (
+          <Button onClick={() => bukaForm()}>
+            <PlusIcon aria-hidden weight="bold" className="size-5" />
+            Tambah {konfig.tunggal}
+          </Button>
+        )}
       </div>
 
       {keterangan && <p className="mt-1 max-w-prose text-sm text-tinta-redup">{keterangan}</p>}
@@ -264,7 +280,7 @@ export function PanelKonten({
           <EmptyState
             judul={q ? "Tidak ada hasil" : konfig.kosong.judul}
             deskripsi={q ? "Coba kata kunci lain." : konfig.kosong.deskripsi}
-            aksi={!q && <Button onClick={() => bukaForm()}>Tambah {konfig.tunggal}</Button>}
+            aksi={!q && !bagian && <Button onClick={() => bukaForm()}>Tambah {konfig.tunggal}</Button>}
           />
         ) : (
           <ul className="divide-y divide-garis rounded-kartu border border-garis bg-permukaan">

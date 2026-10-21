@@ -1,10 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { ArrowCounterClockwiseIcon, ImageIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon, ImageIcon, PlusIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import { PERISTIWA_TAMBAH } from "./konfig";
 import type { BarisAset, DaftarAset } from "@/server/types/aset";
 
 const pesanGalat = (e: unknown) => (e instanceof ApiError ? (e.errors?.berkas?.[0] ?? e.errors?.url?.[0] ?? e.errors?.galeri?.[0] ?? e.message) : "Tidak dapat terhubung ke server.");
@@ -70,6 +71,18 @@ function KartuAset({ aset, onUbah }: { aset: BarisAset; onUbah: () => Promise<vo
           <UploadSimpleIcon aria-hidden className="size-5" />
           Ganti foto
         </Button>
+        {aset.kunci === "hero" && (
+          <Button
+            type="button"
+            varian="sekunder"
+            disabled={sibuk}
+            onClick={() => window.dispatchEvent(new CustomEvent(PERISTIWA_TAMBAH, { detail: "hero" }))}
+            aria-label="Tambah foto tambahan beranda"
+          >
+            <PlusIcon aria-hidden weight="bold" className="size-5" />
+            Tambah foto
+          </Button>
+        )}
         {aset.diganti && (
           <Button type="button" varian="hantu" disabled={sibuk} onClick={kembalikan} aria-label={`Kembalikan ke foto bawaan: ${aset.label}`}>
             <ArrowCounterClockwiseIcon aria-hidden className="size-5" />

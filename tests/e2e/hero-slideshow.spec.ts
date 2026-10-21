@@ -49,7 +49,7 @@ test.describe("hero beranda berganti foto otomatis", () => {
     await expect(page.locator('[data-hero-aktif="true"]')).toHaveAttribute("data-hero-slide", "0");
   });
 
-  test("panel Galeri menampilkan daftar Foto tambahan beranda", async ({ page }) => {
+  test("tombol Tambah foto ada di kartu Foto utama beranda dan menambah ke daftar", async ({ page }) => {
     await masukSebagai(page, "konten");
     await bersihkan(page.request);
     await page.goto("/admin/galeri");
@@ -57,5 +57,19 @@ test.describe("hero beranda berganti foto otomatis", () => {
     await expect(bagian.getByRole("heading", { level: 2, name: "Foto tambahan beranda" })).toBeVisible();
     await expect(bagian.getByText("Belum ada foto tambahan")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Galeri" })).toBeVisible();
+
+    // Tombol tambah ada di kartu "Foto utama beranda", di sebelah tombol ganti foto (bukan di judul bagian).
+    await expect(bagian.getByRole("button", { name: /^Tambah/ })).toHaveCount(0);
+    const kartu = page.locator('[data-aset="hero"]');
+    await expect(kartu.getByRole("button", { name: /Ganti foto/ })).toBeVisible();
+    await kartu.getByRole("button", { name: "Tambah foto tambahan beranda" }).click();
+    const dialog = page.getByRole("dialog", { name: "Tambah foto tambahan" });
+    await expect(dialog).toBeVisible();
+
+    // Simpan lewat formulir, lalu muncul di daftar Foto tambahan beranda.
+    await dialog.locator("input:not([type=file])").first().fill("/images/sekolah/kultum.webp");
+    await dialog.getByLabel("Keterangan").fill(`${AWALAN} lewat form`);
+    await dialog.getByRole("button", { name: "Simpan" }).click();
+    await expect(bagian.getByText(`${AWALAN} lewat form`)).toBeVisible();
   });
 });

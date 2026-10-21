@@ -16,7 +16,7 @@ export default async function Halaman() {
           <PanelKonten
             konfig={KONFIG_KONTEN.hero}
             bagian
-            keterangan="Foto utama beranda di atas selalu tampil pertama. Foto di sini menyusul dan berganti otomatis tiap 5 detik. Maksimal 6 foto."
+            keterangan="Foto utama beranda selalu tampil pertama. Foto di sini menyusul dan berganti otomatis tiap 5 detik. Maksimal 6 foto. Tambah lewat tombol Tambah foto di kartu Foto utama beranda."
           />
         </>
       }

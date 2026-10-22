@@ -2,7 +2,6 @@ import { prisma } from "@/server/db/client";
 import { ambilAsetPublik, type AsetPublik } from "@/server/services/asetSitus";
 import { ambilKonfigWizard } from "@/server/services/draf";
 import { daftarGelombang } from "@/server/services/gelombang";
-import { ambilPengaturan } from "@/server/services/pengaturan";
 import { BATAS_FOTO_HERO } from "./konten";
 import { ambilAgendaMendatang, ambilDaftarBerita, type BeritaRingkas, type EventRingkas } from "./ambilPublik";
 
@@ -54,14 +53,13 @@ const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is s
  */
 export async function ambilDataLanding(): Promise<DataLanding> {
   try {
-    const [jurusan, faq, tahunAjaran, berita, agenda, galeri, heroTambahan, testimoni, konfig, aset] = await Promise.all([
+    const [jurusan, faq, berita, agenda, galeri, heroTambahan, testimoni, konfig, aset] = await Promise.all([
       prisma.jurusan.findMany({
         where: { isActive: true },
         orderBy: { urutan: "asc" },
         include: { bobot: { include: { mataPelajaran: true }, orderBy: { bobot: "desc" }, take: 3 } },
       }),
       prisma.faq.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" }, take: 6 }),
-      ambilPengaturan("tahun_ajaran"),
       ambilDaftarBerita(3),
       ambilAgendaMendatang(3),
       prisma.galeri.findMany({ where: { isActive: true }, orderBy: [{ urutan: "asc" }, { id: "desc" }], take: BATAS_GALERI }),
@@ -73,7 +71,7 @@ export async function ambilDataLanding(): Promise<DataLanding> {
     const gelombang = await daftarGelombang(konfig.tahunAjaran);
 
     return {
-      tahunAjaran,
+      tahunAjaran: konfig.tahunAjaran,
       aset,
       jurusan: jurusan.map((j) => ({
         kode: j.kode,

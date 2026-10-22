@@ -108,7 +108,6 @@ export function Hero({
     animasi: ({ gsap, SplitText, ScrollTrigger, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul]");
       const foto = el.querySelector<HTMLElement>("[data-foto-layer]");
-      const gambar = el.querySelector<HTMLElement>("[data-foto-gambar]");
       const teks = el.querySelector<HTMLElement>("[data-teks]");
 
       // Masuk: huruf judul naik dari balik topeng baris, lalu sisanya menyusul.
@@ -145,7 +144,6 @@ export function Hero({
         scrollTrigger: { trigger: el, start: "top 64px", end: "+=110%", pin: true, scrub: 0.6, invalidateOnRefresh: true },
       });
       tl.fromTo(foto, { clipPath: awal }, { clipPath: akhir, duration: 1 }, 0)
-        .fromTo(gambar, { scale: 1.18 }, { scale: 1, duration: 1 }, 0)
         .to(teks, { yPercent: -14, opacity: 0, duration: 0.2, ease: "power1.in" }, 0);
 
       return () => {
@@ -162,7 +160,7 @@ export function Hero({
         data-foto-layer
         className="absolute inset-0 [--m:max(var(--pad),calc((100vw-84rem)/2+var(--pad)))] [clip-path:inset(calc(var(--teks,20rem)+2rem)_var(--m)_1.5rem_var(--m)_round_18px)] lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_2.5rem_var(--m)_round_22px)]"
       >
-        <div data-foto-gambar className="absolute inset-0 will-change-transform">
+        <div data-foto-gambar className="absolute inset-0">
           {slide.map((s, i) => (
             <div
               key={s.id}

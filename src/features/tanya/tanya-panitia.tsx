@@ -109,7 +109,7 @@ export function TanyaPanitia() {
             </Dialog.Close>
           </header>
 
-          <div ref={log} role="log" aria-live="polite" aria-label="Percakapan" className="flex min-h-40 flex-1 flex-col gap-3 overflow-y-auto px-4 py-4" tabIndex={0}>
+          <div ref={log} data-lenis-prevent role="log" aria-live="polite" aria-label="Percakapan" className="flex min-h-40 flex-1 flex-col gap-3 overflow-y-auto overscroll-contain px-4 py-4" tabIndex={0}>
             {pesan.map((m) => (
               <div key={m.id} className={cn("flex flex-col gap-1.5", m.peran === "pengguna" ? "items-end" : "items-start")}>
                 <p

@@ -1,24 +1,14 @@
-import { PanelAsetSitus } from "@/features/admin/konten/panel-aset-situs";
+import { MuatGaleriBawaan } from "@/features/admin/konten/muat-galeri-bawaan";
 import { PanelKonten } from "@/features/admin/konten/panel-konten";
 import { KONFIG_KONTEN } from "@/features/admin/konten/konfig";
 import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
-import { bawaanSudahDimuat, daftarAset } from "@/server/services/asetSitus";
+import { bawaanSudahDimuat } from "@/server/services/asetSitus";
 
 export const metadata = { title: "Galeri" };
 
+// Galeri kegiatan (bagian "Kehidupan sekolah" di beranda). Logo, foto utama, dan foto jurusan ada di halaman Foto Beranda.
 export default async function Halaman() {
   await wajibPeranHalaman(...PERAN.konten);
-  const [data, bawaanDimuat] = await Promise.all([daftarAset(), bawaanSudahDimuat()]);
-  return <PanelKonten konfig={KONFIG_KONTEN.galeri} ekstra={
-        <>
-          <PanelAsetSitus awal={{ data, bawaanDimuat }} />
-          <PanelKonten
-            konfig={KONFIG_KONTEN.hero}
-            bagian
-            keterangan="Foto utama beranda selalu tampil pertama. Foto di sini menyusul dan berganti otomatis tiap 5 detik. Maksimal 6 foto. Tambah lewat tombol Tambah foto di kartu Foto utama beranda."
-          />
-        </>
-      }
-    />;
+  return <PanelKonten konfig={KONFIG_KONTEN.galeri} ekstra={<MuatGaleriBawaan bawaanDimuat={await bawaanSudahDimuat()} />} />;
 }

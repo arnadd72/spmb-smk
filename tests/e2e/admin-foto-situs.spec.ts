@@ -26,8 +26,8 @@ test.describe("admin: foto situs di halaman Galeri", () => {
   });
 
   test("halaman memuat foto tetap situs dan lolos pemeriksaan aksesibilitas", async ({ page }) => {
-    await page.goto("/admin/galeri");
-    await expect(page.getByRole("heading", { level: 1, name: "Galeri" })).toBeVisible();
+    await page.goto("/admin/foto-beranda");
+    await expect(page.getByRole("heading", { level: 1, name: "Foto Beranda" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Foto situs" })).toBeVisible();
     for (const kunci of ["logo", "hero", "jurusan-AKL", "jurusan-MPLB", "jurusan-LPK3", "jurusan-TKR"]) {
       const kartu = page.locator(`[data-aset="${kunci}"]`);
@@ -39,7 +39,7 @@ test.describe("admin: foto situs di halaman Galeri", () => {
   });
 
   test("ganti logo tampil di navbar situs, lalu dikembalikan ke bawaan", async ({ page }) => {
-    await page.goto("/admin/galeri");
+    await page.goto("/admin/foto-beranda");
     const kartu = page.locator('[data-aset="logo"]');
 
     await kartu.locator("[data-ganti-aset=logo]").setInputFiles({ name: "logo.png", mimeType: "image/png", buffer: PNG });
@@ -49,7 +49,7 @@ test.describe("admin: foto situs di halaman Galeri", () => {
     await page.goto("/cek-status");
     await expect(page.locator("header img").first()).toHaveAttribute("src", URL_UNGGAHAN);
 
-    await page.goto("/admin/galeri");
+    await page.goto("/admin/foto-beranda");
     await page.getByRole("button", { name: /Kembalikan ke foto bawaan: Logo sekolah/ }).click();
     await expect(page.locator('[data-aset="logo"]').getByText("Bawaan", { exact: true })).toBeVisible();
 
@@ -58,7 +58,7 @@ test.describe("admin: foto situs di halaman Galeri", () => {
   });
 
   test("ganti foto jurusan AKL tampil di halaman jurusan dan memakai alt yang sesuai", async ({ page }) => {
-    await page.goto("/admin/galeri");
+    await page.goto("/admin/foto-beranda");
     await page.locator("[data-ganti-aset=jurusan-AKL]").setInputFiles({ name: "akl.png", mimeType: "image/png", buffer: PNG });
     await expect(page.locator('[data-aset="jurusan-AKL"]').getByText("Diganti", { exact: true })).toBeVisible();
 
@@ -74,6 +74,9 @@ test.describe("admin: foto situs di halaman Galeri", () => {
 
   test("galeri kosong menawarkan foto bawaan; setelah dimuat bisa dikelola seperti foto lain", async ({ page }) => {
     await page.goto("/admin/galeri");
+    await expect(page.getByRole("heading", { level: 1, name: "Galeri" })).toBeVisible();
+    // Foto tetap situs tidak lagi di halaman Galeri (PRD 1.3 butir 61).
+    await expect(page.locator("[data-aset]")).toHaveCount(0);
     await expect(page.locator("[data-galeri-bawaan]")).toBeVisible();
 
     await page.getByRole("button", { name: "Muat foto bawaan situs ke galeri" }).click();

@@ -48,6 +48,7 @@ function RingkasanKonten({ nama }: { nama: string }) {
         {[
           ["Berita", "/admin/berita"],
           ["Agenda", "/admin/agenda"],
+          ["Foto Beranda", "/admin/foto-beranda"],
           ["Galeri", "/admin/galeri"],
           ["Testimoni", "/admin/testimoni"],
           ["FAQ", "/admin/faq"],

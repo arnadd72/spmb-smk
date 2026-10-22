@@ -8,7 +8,8 @@ import type { BarisAset } from "@/server/types/aset";
 import { GalatApi } from "@/server/types/galat";
 
 // Foto yang tampil di situs tetapi sebelumnya tertulis tetap di kode: logo, foto hero, foto tiap jurusan, dan
-// foto galeri bawaan (PRD v4 butir 57). Admin menggantinya dari halaman Galeri; tanpa pilihan admin, foto bawaan dipakai.
+// foto galeri bawaan (PRD v4 butir 57). Logo, hero, dan foto jurusan diganti dari halaman Foto Beranda, foto galeri bawaan dimuat dari
+// halaman Galeri; tanpa pilihan admin, foto bawaan dipakai.
 // Logo dan hero disimpan di tabel Pengaturan, foto jurusan di kolom Jurusan.gambar (yang juga bisa diubah di panel Jurusan).
 
 export type KonteksAset = { userId: string; ip?: string };

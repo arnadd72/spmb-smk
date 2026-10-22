@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import { masukSebagai } from "./masuk";
 
-// Hero beranda: Foto utama beranda + foto tambahan dari admin berganti otomatis (crossfade). Satu foto = diam.
+// Hero beranda: Foto utama beranda + foto tambahan dari admin bergeser otomatis dari kanan ke kiri. Satu foto = diam.
 const AWALAN = "Uji E2E Hero";
 const sama = { "sec-fetch-site": "same-origin" };
 
@@ -40,6 +40,56 @@ test.describe("hero beranda berganti foto otomatis", () => {
     await expect(page.locator("[data-hero-slide]:not([data-hero-aktif])").first()).toHaveAttribute("aria-hidden", "true");
   });
 
+  test("foto bergeser dari kanan ke kiri, juga saat kembali ke foto pertama (dua foto)", async ({ page }) => {
+    test.setTimeout(60_000);
+    await tambah(page, 1);
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto("/");
+    await expect(page.locator("[data-hero-slide]")).toHaveCount(2);
+
+    // Rekam posisi mendatar tiap foto (dalam satuan lebar foto) setiap frame selama dua pergantian.
+    const jejak = await page.evaluate(
+      () =>
+        new Promise<{ x: number[]; aktif: string | null }[]>((selesai) => {
+          const hasil: { x: number[]; aktif: string | null }[] = [];
+          const mulai = performance.now();
+          const ambil = () => {
+            const slide = [...document.querySelectorAll<HTMLElement>("[data-hero-slide]")];
+            hasil.push({
+              // Posisi nyata relatif ke wadah, dibagi lebar foto yang terukur: Tailwind v4 menggeser lewat properti `translate`
+              // (bukan `transform`), dan wadah ikut diskalakan GSAP sehingga skala harus saling meniadakan.
+              x: slide.map((s) => {
+                const r = s.getBoundingClientRect();
+                return (r.left - s.parentElement!.getBoundingClientRect().left) / r.width;
+              }),
+              aktif: document.querySelector("[data-hero-aktif]")?.getAttribute("data-hero-slide") ?? null,
+            });
+            if (performance.now() - mulai < 12_000) requestAnimationFrame(ambil);
+            else selesai(hasil);
+          };
+          ambil();
+        }),
+    );
+
+    // Dua pergantian terjadi: 0 -> 1 -> 0.
+    const urutanAktif = jejak.map((j) => j.aktif).filter((a, i, s) => a !== s[i - 1]);
+    expect(urutanAktif.slice(0, 3)).toEqual(["0", "1", "0"]);
+
+    // Foto benar-benar terekam di tengah perjalanan masuk dari kanan (bukan berganti seketika atau memudar).
+    expect(jejak.some((j) => j.x.some((x) => x > 0.1 && x < 0.9))).toBe(true);
+
+    // Setiap gerakan mengarah ke kiri; satu-satunya lompatan ke kanan adalah foto yang dipindah dari kiri ke kanan tanpa transisi.
+    for (let i = 1; i < jejak.length; i++) {
+      jejak[i].x.forEach((x, s) => {
+        const lalu = jejak[i - 1].x[s];
+        if (x > lalu + 0.01) {
+          expect(lalu, "foto hanya boleh melompat ke kanan dari posisi kiri").toBeLessThanOrEqual(-0.99);
+          expect(x).toBeGreaterThanOrEqual(0.99);
+        }
+      });
+    }
+  });
+
   test("tanpa foto tambahan: satu foto, tidak berganti", async ({ page }) => {
     await masukSebagai(page, "konten");
     await bersihkan(page.request);
@@ -52,11 +102,11 @@ test.describe("hero beranda berganti foto otomatis", () => {
   test("tombol Tambah foto ada di kartu Foto utama beranda dan menambah ke daftar", async ({ page }) => {
     await masukSebagai(page, "konten");
     await bersihkan(page.request);
-    await page.goto("/admin/galeri");
+    await page.goto("/admin/foto-beranda");
     const bagian = page.locator('[data-panel-konten="hero"]');
     await expect(bagian.getByRole("heading", { level: 2, name: "Foto tambahan beranda" })).toBeVisible();
     await expect(bagian.getByText("Belum ada foto tambahan")).toBeVisible();
-    await expect(page.getByRole("heading", { level: 1, name: "Galeri" })).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Foto Beranda" })).toBeVisible();
 
     // Tombol tambah ada di kartu "Foto utama beranda", di sebelah tombol ganti foto (bukan di judul bagian).
     await expect(bagian.getByRole("button", { name: /^Tambah/ })).toHaveCount(0);

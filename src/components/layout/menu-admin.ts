@@ -14,6 +14,7 @@ export type IkonMenu =
   | "kuota"
   | "berita"
   | "agenda"
+  | "beranda"
   | "galeri"
   | "testimoni"
   | "faq"
@@ -68,7 +69,8 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
     item: [
       { label: "Berita", href: "/admin/berita", ket: "Tulis dan atur berita", ikon: "berita", peran: KONTEN, siap: true },
       { label: "Agenda", href: "/admin/agenda", ket: "Jadwal kegiatan sekolah", ikon: "agenda", peran: KONTEN, siap: true },
-      { label: "Galeri", href: "/admin/galeri", ket: "Foto situs dan galeri kegiatan", ikon: "galeri", peran: KONTEN, siap: true },
+      { label: "Foto Beranda", href: "/admin/foto-beranda", ket: "Logo, foto utama, dan foto jurusan", ikon: "beranda", peran: KONTEN, siap: true },
+      { label: "Galeri", href: "/admin/galeri", ket: "Foto kegiatan sekolah", ikon: "galeri", peran: KONTEN, siap: true },
       { label: "Testimoni", href: "/admin/testimoni", ket: "Kesan dari alumni", ikon: "testimoni", peran: KONTEN, siap: true },
       { label: "FAQ", href: "/admin/faq", ket: "Pertanyaan yang sering diajukan", ikon: "faq", peran: KONTEN, siap: true },
     ],

@@ -35,25 +35,57 @@ export function Hero({
     ...fotoTambahan.map((f) => ({ id: f.id, src: f.gambar, alt: f.judul ?? "Foto kegiatan SMK Ma'arif NU 1 Wangon" })),
   ];
   const [aktif, setAktif] = useState(0);
+  const aktifRef = useRef(0);
+  // Foto yang baru saja keluar ke kiri, dan foto berikutnya yang lebih dulu diletakkan di kanan tanpa transisi.
+  const [sebelumnya, setSebelumnya] = useState<number | null>(null);
+  const [siap, setSiap] = useState<number | null>(null);
   const banyak = slide.length > 1;
 
-  // Ganti foto tiap SELANG_HERO_MS selama hero terlihat dan tab aktif. Mode kurangi gerak: berpindah tanpa transisi (CSS).
+  // Geser foto tiap SELANG_HERO_MS selama hero terlihat dan tab aktif: foto baru masuk dari kanan, foto lama keluar ke kiri.
+  // Dua tahap: foto berikutnya diletakkan di kanan dulu (tanpa transisi), satu frame kemudian baru digeser masuk. Tanpa tahap itu,
+  // dengan dua foto, foto berikutnya masih berada di kiri dan akan masuk dari arah yang salah. Mode kurangi gerak: berpindah tanpa transisi (CSS).
   useEffect(() => {
     const el = akar.current;
     if (!el || !banyak) return;
     let terlihat = true;
+    let bingkai = 0;
     const pengamat = new IntersectionObserver(([e]) => {
       terlihat = e.isIntersecting;
     });
     pengamat.observe(el);
     const timer = window.setInterval(() => {
-      if (terlihat && !document.hidden) setAktif((i) => (i + 1) % slide.length);
+      if (!terlihat || document.hidden) return;
+      const sekarang = aktifRef.current;
+      const berikut = (sekarang + 1) % slide.length;
+      setSiap(berikut);
+      bingkai = requestAnimationFrame(() => {
+        bingkai = requestAnimationFrame(() => {
+          aktifRef.current = berikut;
+          setSebelumnya(sekarang);
+          setAktif(berikut);
+          setSiap(null);
+        });
+      });
     }, SELANG_HERO_MS);
     return () => {
       window.clearInterval(timer);
+      cancelAnimationFrame(bingkai);
       pengamat.disconnect();
     };
   }, [banyak, slide.length]);
+
+  /**
+   * Posisi tiap foto: tengah (aktif), kiri (baru keluar), atau kanan (menunggu). Durasi dan easing hanya dipasang pada foto yang
+   * bergerak; foto lain wajib `transition-none`, karena transition-property bawaan CSS adalah `all` sehingga foto yang dipindah
+   * dari kiri ke kanan akan ikut bergeser melintasi layar.
+   */
+  const GERAK = "transition-transform duration-1000 ease-[cubic-bezier(0.65,0,0.35,1)] motion-reduce:transition-none";
+  const posisiSlide = (i: number) => {
+    if (i === aktif) return cn("translate-x-0", GERAK);
+    if (i === siap) return "translate-x-full transition-none";
+    if (i === sebelumnya) return cn("-translate-x-full", GERAK);
+    return "translate-x-full transition-none";
+  };
 
   // Foto dimulai tepat di bawah blok teks (jarak tetap), berapa pun tinggi layar dan panjang judul.
   // Diukur lewat ResizeObserver dan ditulis ke variabel CSS, tanpa state React.
@@ -137,7 +169,7 @@ export function Hero({
               data-hero-slide={i}
               data-hero-aktif={i === aktif ? "true" : undefined}
               aria-hidden={i === aktif ? undefined : true}
-              className={cn("absolute inset-0 transition-opacity duration-1000 motion-reduce:transition-none", i === aktif ? "opacity-100" : "opacity-0")}
+              className={cn("absolute inset-0", posisiSlide(i))}
             >
               <GambarKonten src={s.src} alt={s.alt} prioritas={i === 0} sizes="100vw" className="object-[50%_60%]" />
             </div>

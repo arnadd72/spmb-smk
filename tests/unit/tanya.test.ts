@@ -84,8 +84,12 @@ describe("jawabPertanyaan: aturan dan FAQ", () => {
     expect(jadwal.jawaban).toContain("10 Januari 2027");
     expect(jadwal.jawaban).toContain("20 Maret 2099");
 
+    // Nomor WhatsApp belum diisi admin: jujur bahwa belum tersedia, bukan mengulang jawaban kontak umum.
+    expect((await jawabPertanyaan("whatsapp panitia mana")).jawaban).toMatch(/WhatsApp panitia belum tersedia/);
+
     await simpanPengaturan("kontak_panitia", "WA 0812-0000-1111 (Bu Rina)");
     expect((await jawabPertanyaan("nomor kontak panitia?")).jawaban).toContain("0812-0000-1111");
+    expect((await jawabPertanyaan("whatsapp panitia mana")).jawaban).toContain("0812-0000-1111");
 
     const j = await jawabPertanyaan("jurusan apa saja yang ada?");
     expect(j.jawaban).toContain("AKL");

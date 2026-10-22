@@ -163,6 +163,10 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     return { sumber: "aturan", jawaban: `Ada ${k.jurusan.length} program keahlian: ${k.jurusan.map((j) => `${j.kode} (${j.nama})`).join(", ")}.`, tautan: [{ label: "Lihat semua jurusan", href: "/jurusan" }] };
   }
 
+  if (ada("whatsapp", "wa") && !k.konfig.kontak) {
+    return { sumber: "aturan", jawaban: `Nomor WhatsApp panitia belum tersedia di situs ini. Silakan hubungi sekolah lewat telepon atau email: ${KONTAK_BAWAAN}.` };
+  }
+
   if (ada("kontak", "hubungi", "telepon", "telp", "whatsapp", "nomor panitia", "alamat sekolah", "lokasi sekolah", "alamat")) {
     return { sumber: "aturan", jawaban: kontakTeks(k) };
   }

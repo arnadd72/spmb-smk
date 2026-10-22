@@ -31,8 +31,8 @@ export function Penutup({ logo }: { logo: string }) {
         stagger: 0.1,
         scrollTrigger: { trigger: el.querySelector("[data-aksi]"), start: "top 92%", once: true },
       });
-      // Lambang besar berputar pelan mengikuti gulir, hanya sebagai latar.
-      gsap.to("[data-lambang-latar]", { rotate: 90, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
+      // Lambang besar bergeser pelan naik mengikuti gulir (tanpa berputar), hanya sebagai latar.
+      gsap.fromTo("[data-lambang-latar]", { y: 90 }, { y: -90, ease: "none", scrollTrigger: { trigger: el, start: "top bottom", end: "bottom top", scrub: true } });
       return () => split?.revert();
     },
   });
@@ -46,7 +46,7 @@ export function Penutup({ logo }: { logo: string }) {
         width={800}
         height={800}
         aria-hidden
-        className="pointer-events-none absolute -right-40 top-1/2 size-[34rem] -translate-y-1/2 object-contain opacity-[0.09]"
+        className="pointer-events-none absolute right-4 top-1/2 size-[18rem] -translate-y-1/2 sm:right-8 sm:size-[26rem] lg:right-20 lg:size-[32rem] object-contain opacity-[0.09]"
       />
       <div className="wadah relative">
         <h2

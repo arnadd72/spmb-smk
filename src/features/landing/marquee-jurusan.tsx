@@ -6,7 +6,7 @@ import { useGsapPublik } from "@/components/motion/use-gsap";
 const KODE = ["AKL", "MPLB", "LPK3", "TKR"];
 const WARNA_KODE: Record<string, string> = {
   AKL: "text-primer",
-  MPLB: "text-ink",
+  MPLB: "text-kunyit",
   LPK3: "text-jurusan-lpk3",
   TKR: "text-jurusan-tkr",
 };

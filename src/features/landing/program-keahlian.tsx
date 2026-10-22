@@ -16,7 +16,7 @@ const TAMPIL: Record<string, { warna: string; kode: string; ikon?: "kalkulator" 
     kode: "text-kunyit",
   },
   MPLB: {
-    warna: "bg-mint text-ink",
+    warna: "bg-kunyit text-ink",
     kode: "text-ink",
   },
   LPK3: {
@@ -47,7 +47,7 @@ function Panel({ j }: { j: JurusanLanding }) {
     <article
       data-panel
       className={cn(
-        "relative flex shrink-0 flex-col gap-5 overflow-hidden rounded-kartu p-5 sm:p-7 lg:h-[min(25rem,58dvh)] lg:w-[min(48rem,58vw)] lg:flex-row lg:gap-6 lg:p-7",
+        "relative flex shrink-0 flex-col gap-5 overflow-hidden rounded-kartu p-5 sm:p-7 lg:min-h-[min(25rem,58dvh)] lg:w-[min(48rem,58vw)] lg:flex-row lg:gap-6 lg:p-7",
         t.warna,
       )}
     >
@@ -144,7 +144,7 @@ export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
       ref={akar}
       id="jurusan"
       aria-labelledby="judul-jurusan"
-      className="overflow-hidden bg-latar py-16 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:justify-center lg:py-0"
+      className="overflow-hidden bg-latar pt-6 pb-16 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:justify-start lg:pt-6 lg:pb-0"
     >
       <div className="wadah w-full">
         <h2

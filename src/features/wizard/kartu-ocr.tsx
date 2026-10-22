@@ -78,8 +78,9 @@ export function KartuIsianOcr({ judul, kunci, saran, suntingan, awal, peringatan
                   <Input
                     name={`ocr_${k}`}
                     value={nilai}
+                    maxLength={k === "nik" || k === "no_kk" ? 16 : k === "rt" || k === "rw" ? 3 : 255}
                     inputMode={k === "nik" || k === "no_kk" || k === "rt" || k === "rw" ? "numeric" : undefined}
-                    onChange={(e) => onUbah(k, e.target.value.toLocaleUpperCase("id-ID"))}
+                    onChange={(e) => onUbah(k, k === "nik" || k === "no_kk" || k === "rt" || k === "rw" ? e.target.value.replace(/\D/g, "") : e.target.value.toLocaleUpperCase("id-ID"))}
                   />
                 )}
               </Field>

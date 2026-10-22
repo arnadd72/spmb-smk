@@ -20,6 +20,20 @@ type Props = {
 
 const teks = (v: unknown) => (v === undefined || v === null ? "" : String(v));
 const kapitalSemua = (nilai: string) => nilai.toLocaleUpperCase("id-ID");
+const KUNCI_ANGKA_SAJA = new Set(["nisn", "nik", "nik_ayah", "nik_ibu", "no_kk", "rt", "rw", "ortu_rt", "ortu_rw"]);
+
+function batasPanjang(f: DefinisiField): number | undefined {
+  if (f.kunci === "nisn") return 10;
+  if (["nik", "nik_ayah", "nik_ibu", "no_kk"].includes(f.kunci)) return 16;
+  switch (f.tipe) {
+    case "tel": return 18;
+    case "email": return 255;
+    case "textarea": return 1000;
+    case "number": return 6;
+    case "text": return 255;
+    default: return undefined;
+  }
+}
 
 /** Satu field formulir sesuai tipenya (form builder dinamis, PRD 10.4). */
 export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Props) {
@@ -103,6 +117,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
               id={`${id}-lainnya`}
               name={f.kunci}
               value={nilaiPreset ? "" : nilaiSekarang}
+              maxLength={255}
               onChange={(e) => onChange(f.kunci, kapitalSemua(e.target.value))}
               disabled={disabled}
               placeholder="Contoh: kunjungan ke sekolah"
@@ -171,6 +186,22 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
   }
 
   const lebar = f.tipe === "textarea" ? "sm:col-span-2" : undefined;
+  const tinggiBadan = f.kunci === "tinggi_badan";
+  const angkaSaja = f.tipe === "number" || KUNCI_ANGKA_SAJA.has(f.kunci);
+  const input = (
+    <Input
+      name={f.kunci}
+      type={f.tipe === "date" ? "date" : f.tipe === "email" ? "email" : f.tipe === "tel" ? "tel" : "text"}
+      inputMode={angkaSaja ? "numeric" : undefined}
+      autoComplete={AUTOFILL[f.kunci]}
+      value={teks(nilai)}
+      maxLength={batasPanjang(f)}
+      onChange={(e) => onChange(f.kunci, angkaSaja ? e.target.value.replace(/\D/g, "") : f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)}
+      disabled={disabled}
+      placeholder={f.placeholder ?? undefined}
+      className={cn(f.tipe === "number" && "max-w-40", tinggiBadan && "pr-12")}
+    />
+  );
   return (
     <Field label={f.label} wajib={f.wajib} opsional={!f.wajib} bantuan={f.teksBantuan ?? undefined} galat={galat} className={lebar}>
       {f.tipe === "select" ? (
@@ -182,19 +213,14 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           name={f.kunci}
         />
       ) : f.tipe === "textarea" ? (
-        <Textarea value={teks(nilai)} onChange={(e) => onChange(f.kunci, kapitalSemua(e.target.value))} disabled={disabled} name={f.kunci} />
+        <Textarea value={teks(nilai)} maxLength={1000} onChange={(e) => onChange(f.kunci, kapitalSemua(e.target.value))} disabled={disabled} name={f.kunci} />
       ) : (
-        <Input
-          name={f.kunci}
-          type={f.tipe === "date" ? "date" : f.tipe === "email" ? "email" : f.tipe === "tel" ? "tel" : "text"}
-          inputMode={f.tipe === "number" ? "numeric" : f.kunci === "nisn" || f.kunci === "nik" || f.kunci === "no_kk" ? "numeric" : undefined}
-          autoComplete={AUTOFILL[f.kunci]}
-          value={teks(nilai)}
-          onChange={(e) => onChange(f.kunci, f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : f.tipe === "number" ? e.target.value.replace(/\D/g, "") : e.target.value)}
-          disabled={disabled}
-          placeholder={f.placeholder ?? undefined}
-          className={cn(f.tipe === "number" && "max-w-40")}
-        />
+        tinggiBadan ? (
+          <div className="relative max-w-40">
+            {input}
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-tinta-redup">cm</span>
+          </div>
+        ) : input
       )}
       {tandaDokumen}
     </Field>

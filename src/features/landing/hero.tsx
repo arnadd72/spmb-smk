@@ -198,9 +198,9 @@ export function Hero({
               </Link>
             </Magnetik>
             <Magnetik className="sm:inline-block">
-              <Link href="/cek-status" className="block">
+              <Link href="/edit-formulir" className="block">
                 <Button varian="bingkai" ukuran="lg" className="w-full sm:w-auto">
-                  Cek Status
+                  Edit Formulir
                 </Button>
               </Link>
             </Magnetik>

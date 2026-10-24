@@ -4,6 +4,7 @@ import { z } from "zod";
 
 /** Isian inti: dipakai kolom wajib, cek status, atau alur wizard, sehingga tidak boleh disembunyikan atau dijadikan opsional. */
 export const KUNCI_INTI = new Set(["nama_lengkap", "nisn", "tanggal_lahir", "setuju", "jurusan_1", "konfirmasi_final"]);
+export const KUNCI_WAJIB = new Set(["hobi_olahraga", "hobi_kesenian", "hobi_lain", "hobi_organisasi", "hobi_prestasi", "akta", "kk", "email"]);
 
 /** Langkah yang boleh diberi isian kustom, dan tipe yang didukung wizard. */
 export const LANGKAH_KUSTOM = [2, 5, 6, 7] as const;

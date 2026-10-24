@@ -1,5 +1,5 @@
 // Template email "Kode Pendaftaran SPMB Anda" (PRD v3.1 15.4): nomor menonjol, ringkasan, tautan halaman sukses bertoken,
-// Cek Status, grup WhatsApp, dan daftar berkas fisik. Gaya ditulis sebaris dan satu kolom agar tampil baik di klien email mana pun.
+// Edit Formulir, grup WhatsApp, dan daftar berkas fisik. Gaya ditulis sebaris dan satu kolom agar tampil baik di klien email mana pun.
 
 export type DataEmailKode = {
   nomor: string;
@@ -35,7 +35,7 @@ export function emailKodePendaftaran(d: DataEmailKode): { subjek: string; html: 
   const subjek = `Kode Pendaftaran SPMB Anda: ${d.nomor}`;
   const tautanSukses = d.aksesToken ? `${d.situs}/daftar/sukses/${d.aksesToken}` : null;
   const tautanFormulir = d.aksesToken ? `${d.situs}/api/v1/pendaftar/${d.aksesToken}/formulir?unduh=1` : null;
-  const tautanStatus = `${d.situs}/cek-status`;
+  const tautanEdit = `${d.situs}/edit-formulir`;
   const wa = d.waGroup?.startsWith("https://") ? d.waGroup : null;
 
   const ringkasan: [string, string][] = [
@@ -65,14 +65,14 @@ export function emailKodePendaftaran(d: DataEmailKode): { subjek: string; html: 
 ${ringkasan.map(([k, v]) => `<tr><td style="padding:5px 0;color:#666;width:42%;">${esc(k)}</td><td style="padding:5px 0;font-weight:700;">${esc(v)}</td></tr>`).join("\n")}
 </table></td></tr>
 <tr><td style="padding:16px 24px 4px;">
-${tautanSukses ? tombol(tautanSukses, "Buka halaman pendaftaran", true) : ""}${tautanFormulir ? tombol(tautanFormulir, "Unduh formulir (PDF)") : ""}${tombol(tautanStatus, "Cek status", !tautanSukses)}${wa ? tombol(wa, "Gabung grup WhatsApp") : ""}
+${tautanSukses ? tombol(tautanSukses, "Buka halaman pendaftaran", true) : ""}${tautanFormulir ? tombol(tautanFormulir, "Unduh formulir (PDF)") : ""}${tombol(tautanEdit, "Edit formulir", !tautanSukses)}${wa ? tombol(wa, "Gabung grup WhatsApp") : ""}
 </td></tr>
 <tr><td style="padding:16px 24px 8px;">
 <p style="margin:0 0 6px;font-size:15px;font-weight:700;">Berkas yang dibawa saat verifikasi${d.tanggalVerifikasi ? ` (${esc(d.tanggalVerifikasi)})` : ""}</p>
 <ul style="margin:0;padding-left:20px;font-size:14px;line-height:1.7;">${BERKAS_FISIK.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>
 </td></tr>
 <tr><td style="padding:16px 24px 24px;font-size:12px;color:#666;line-height:1.6;">
-Nomor pendaftaran dan tanggal lahir dipakai untuk melihat status di halaman Cek Status. Jangan bagikan tautan di atas kepada orang lain.${d.kontak ? `<br>Pertanyaan: ${esc(d.kontak)}` : ""}
+Nomor pendaftaran dan tanggal lahir dipakai untuk membuka halaman Edit Formulir. Jangan bagikan tautan di atas kepada orang lain.${d.kontak ? `<br>Pertanyaan: ${esc(d.kontak)}` : ""}
 </td></tr>
 </table></td></tr></table></body></html>`;
 
@@ -85,7 +85,7 @@ Nomor pendaftaran dan tanggal lahir dipakai untuk melihat status di halaman Cek 
     "",
     ...(tautanSukses ? [`Halaman pendaftaran: ${tautanSukses}`] : []),
     ...(tautanFormulir ? [`Unduh formulir (PDF): ${tautanFormulir}`] : []),
-    `Cek status: ${tautanStatus}`,
+    `Edit formulir: ${tautanEdit}`,
     ...(wa ? [`Grup WhatsApp: ${wa}`] : []),
     "",
     `Berkas yang dibawa saat verifikasi${d.tanggalVerifikasi ? ` (${d.tanggalVerifikasi})` : ""}:`,

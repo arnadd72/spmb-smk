@@ -130,12 +130,12 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     };
   }
 
-  if (ada("cek status") && ada("buat apa", "untuk apa", "fungsi", "guna", "manfaat", "dapat apa", "hasilnya", "muncul apa", "apa itu", "isinya")) {
+  if (ada("edit formulir", "ubah formulir") && ada("buat apa", "untuk apa", "fungsi", "guna", "manfaat", "cara", "bagaimana", "akses", "buka")) {
     return {
       sumber: "aturan",
       jawaban:
-        "Cek Status dipakai untuk memantau perkembangan pendaftaran Anda. Setelah memasukkan nomor pendaftaran dan tanggal lahir, Anda melihat statusnya. Pendaftaran yang terkirim langsung diterima, tanpa menunggu pemeriksaan panitia.",
-      tautan: [{ label: "Buka Cek Status", href: "/cek-status" }],
+        "Untuk mengedit data pendaftaran, masukkan nomor pendaftaran dan tanggal lahir pada halaman Edit Formulir. Setelah cocok, data formulir dapat diperbarui dan disimpan.",
+      tautan: [{ label: "Buka Edit Formulir", href: "/edit-formulir" }],
     };
   }
 
@@ -205,7 +205,7 @@ function instruksiSistem(k: Konteks): string {
     konfig.kontak ? `Kontak panitia: ${konfig.kontak}.` : "",
     konfig.persyaratan ? `Persyaratan: ${konfig.persyaratan.slice(0, 1200)}` : "",
     "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas; akta dan KK opsional, dibaca otomatis di HP untuk membantu mengisi dan hasilnya bisa diperbaiki; nilai rapor opsional, pendaftar memilih apakah ingin saran jurusan dari nilai rapor dan bila ya mengetik nilainya; saran jurusan bila nilai diisi atau pilih jurusan sendiri bila tidak; data murid dengan pas foto 3x4; data orang tua; data pendidikan, kesehatan, dan seragam; tinjau dan kirim). Ijazah fisik opsional. Setelah kirim pendaftar mendapat nomor pendaftaran, formulir PDF yang bisa diunduh atau dicetak, dan tombol bergabung ke grup WhatsApp pendaftar.",
-    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. (2) Cek Status di menu Cek Status: memasukkan nomor pendaftaran dan tanggal lahir untuk melihat tahap pendaftaran (pendaftaran yang terkirim langsung diterima, tanpa pemeriksaan panitia). (3) Jurusan, Berita, dan FAQ di menu situs.",
+    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. (2) Edit Formulir: masukkan nomor pendaftaran dan tanggal lahir untuk membuka serta memperbarui data formulir. (3) Jurusan, Berita, dan FAQ di menu situs.",
     konfig.waGroup.startsWith("https://")
       ? "Grup WhatsApp: pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal datang ke sekolah dan berkas yang dibawa disampaikan lewat grup ini. Tautan grup muncul di halaman pendaftaran berhasil setelah formulir dikirim."
       : "",

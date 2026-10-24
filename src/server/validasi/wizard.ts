@@ -69,6 +69,13 @@ function skemaPerKunci(kunci: string): z.ZodType | null {
     case "nik_ibu":
     case "no_kk":
       return z.string().regex(/^\d{16}$/, "Harus 16 digit angka.");
+    case "rt":
+    case "rw":
+    case "ortu_rt":
+    case "ortu_rw":
+      return z.string().regex(/^\d{1,3}$/, "RT/RW maksimal 3 digit angka.");
+    case "lama_belajar":
+      return z.string().regex(/^\d$/, "Lama belajar harus 1 digit angka.");
     case "tanggal_lahir":
       return tanggal;
     case "nama_lengkap":
@@ -85,7 +92,7 @@ function skemaPerTipe(f: DefinisiField): z.ZodType {
   const opsi = f.opsi?.map((o) => o.nilai) ?? [];
   switch (f.tipe) {
     case "number":
-      return z.coerce.number({ error: "Isi dengan angka." }).int("Isi dengan bilangan bulat.").min(0, "Tidak boleh negatif.").max(100000);
+      return z.coerce.number({ error: "Isi dengan angka." }).int("Isi dengan bilangan bulat.").min(0, "Tidak boleh negatif.").max(["tinggi_badan", "berat_badan"].includes(f.kunci) ? 999 : 100000);
     case "tel":
       return z.string().trim().regex(/^[0-9+\-\s]{8,18}$/, "Nomor telepon tidak valid.");
     case "email":

@@ -114,6 +114,30 @@ export async function seedFormField(prisma: PrismaClient) {
     where: { kunci: "tempat_lahir", teksBantuan: "Tulis nama kota atau kabupaten tempat lahir, sesuai akta. Contoh: BANYUMAS. Tanggal lahir diisi terpisah." },
     data: { teksBantuan: "Tulis nama kota atau kabupaten tempat lahir, sesuai akta. Contoh: BANYUMAS." },
   });
+  // Hapus placeholder lama belajar karena satuannya sudah tampil di sisi kanan input.
+  await prisma.formField.updateMany({
+    where: { kunci: "lama_belajar", placeholder: { in: ["3 tahun", "3"] } },
+    data: { placeholder: null },
+  });
+  await prisma.formField.updateMany({
+    where: { kunci: "lama_belajar", teksBantuan: "Contoh: 3 tahun." },
+    data: { teksBantuan: "Angka saja. Contoh: 3." },
+  });
+  // Dokumen pendaftaran ini wajib diunggah.
+  await prisma.formField.updateMany({
+    where: { kunci: { in: ["akta", "kk"] }, wajib: false },
+    data: { wajib: true },
+  });
+  // Hobi ini diwajibkan sesuai revisi formulir.
+  await prisma.formField.updateMany({
+    where: { kunci: { in: ["hobi_olahraga", "hobi_kesenian", "hobi_lain", "hobi_organisasi", "hobi_prestasi"] }, wajib: false },
+    data: { wajib: true },
+  });
+  // Email wajib agar kode pendaftaran dapat dikirim.
+  await prisma.formField.updateMany({
+    where: { kunci: "email", wajib: false },
+    data: { wajib: true },
+  });
   // Label yang berubah karena revisi sekolah (hanya bila belum disunting panitia).
   const labelBaru: Record<string, [string, string]> = {
     jurusan_1: ["Pilihan jurusan 1", "Pilihan jurusan"],

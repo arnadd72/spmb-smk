@@ -20,10 +20,13 @@ type Props = {
 
 const teks = (v: unknown) => (v === undefined || v === null ? "" : String(v));
 const kapitalSemua = (nilai: string) => nilai.toLocaleUpperCase("id-ID");
-const KUNCI_ANGKA_SAJA = new Set(["nisn", "nik", "nik_ayah", "nik_ibu", "no_kk", "rt", "rw", "ortu_rt", "ortu_rw"]);
+const KUNCI_ANGKA_SAJA = new Set(["nisn", "nik", "nik_ayah", "nik_ibu", "no_kk", "rt", "rw", "ortu_rt", "ortu_rw", "lama_belajar"]);
 
 function batasPanjang(f: DefinisiField): number | undefined {
   if (f.kunci === "nisn") return 10;
+  if (f.kunci === "lama_belajar") return 1;
+  if (["tinggi_badan", "berat_badan"].includes(f.kunci)) return 3;
+  if (["rt", "rw", "ortu_rt", "ortu_rw"].includes(f.kunci)) return 3;
   if (["nik", "nik_ayah", "nik_ibu", "no_kk"].includes(f.kunci)) return 16;
   switch (f.tipe) {
     case "tel": return 18;
@@ -186,7 +189,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
   }
 
   const lebar = f.tipe === "textarea" ? "sm:col-span-2" : undefined;
-  const tinggiBadan = f.kunci === "tinggi_badan";
+  const satuan = f.kunci === "tinggi_badan" ? "cm" : f.kunci === "berat_badan" ? "kg" : f.kunci === "lama_belajar" ? "tahun" : undefined;
   const angkaSaja = f.tipe === "number" || KUNCI_ANGKA_SAJA.has(f.kunci);
   const input = (
     <Input
@@ -198,8 +201,8 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
       maxLength={batasPanjang(f)}
       onChange={(e) => onChange(f.kunci, angkaSaja ? e.target.value.replace(/\D/g, "") : f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)}
       disabled={disabled}
-      placeholder={f.placeholder ?? undefined}
-      className={cn(f.tipe === "number" && "max-w-40", tinggiBadan && "pr-12")}
+      placeholder={f.kunci === "lama_belajar" ? undefined : f.placeholder ?? undefined}
+      className={cn((f.tipe === "number" || satuan) && "max-w-40", satuan && "pr-12")}
     />
   );
   return (
@@ -215,10 +218,10 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
       ) : f.tipe === "textarea" ? (
         <Textarea value={teks(nilai)} maxLength={1000} onChange={(e) => onChange(f.kunci, kapitalSemua(e.target.value))} disabled={disabled} name={f.kunci} />
       ) : (
-        tinggiBadan ? (
+        satuan ? (
           <div className="relative max-w-40">
             {input}
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-tinta-redup">cm</span>
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-sm text-tinta-redup">{satuan}</span>
           </div>
         ) : input
       )}

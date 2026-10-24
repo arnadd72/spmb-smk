@@ -14,7 +14,7 @@ import {
 import { kondisiPeserta, type FilterPeserta } from "@/server/services/pencarianPeserta";
 import { GalatApi } from "@/server/types/galat";
 import type { DefinisiField } from "@/server/validasi/wizard";
-import type { KonteksAksi } from "./konten";
+
 
 export { bacaFilter, kondisiPeserta, type FilterPeserta } from "@/server/services/pencarianPeserta";
 
@@ -191,7 +191,7 @@ function stabil(v: unknown): string {
 const samarkanAudit = (kunci: string, v: unknown) => (KOLOM_TERENKRIPSI.has(kunci) && typeof v === "string" ? samarkan(v, 2, 2) : v);
 
 /** Validasi dengan aturan yang sama seperti wizard, lalu simpan hanya yang berubah dan catat audit lama/baru. */
-export async function ubahPeserta(id: string, masukan: unknown, ctx: KonteksAksi) {
+export async function ubahPeserta(id: string, masukan: unknown, ctx: { userId?: string; ip?: string; aksi?: string }) {
   const pid = idPendaftar(id);
   const lama = await prisma.pendaftar.findUnique({ where: { id: pid }, include: { jurusan1: true, jurusan2: true } });
   if (!lama) throw GalatApi.tidakDitemukan("Pendaftar tidak ditemukan.");
@@ -248,7 +248,7 @@ export async function ubahPeserta(id: string, masukan: unknown, ctx: KonteksAksi
   await prisma.pendaftar.update({ where: { id: pid }, data: data as Prisma.PendaftarUpdateInput });
   await catatAudit({
     userId: ctx.userId,
-    aksi: "pendaftar.ubah",
+    aksi: ctx.aksi ?? "pendaftar.ubah",
     entitasTipe: "pendaftar",
     entitasId: pid.toString(),
     dataLama,

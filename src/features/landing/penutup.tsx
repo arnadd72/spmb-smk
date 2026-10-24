@@ -68,9 +68,9 @@ export function Penutup({ logo }: { logo: string }) {
             </Link>
           </Magnetik>
           <Magnetik className="sm:inline-block" kekuatan={0.4}>
-            <Link data-aksi href="/cek-status" className="block">
+            <Link data-aksi href="/edit-formulir" className="block">
               <Button varian="terang" ukuran="lg" className="w-full sm:w-auto">
-                Cek Status
+                Edit Formulir
               </Button>
             </Link>
           </Magnetik>

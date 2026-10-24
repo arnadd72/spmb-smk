@@ -6,7 +6,7 @@ import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatBobotJurusan, versiBobot, type HasilRekomendasi } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
-import { KUNCI_INTI } from "@/server/validasi/formField";
+import { KUNCI_INTI, KUNCI_WAJIB } from "@/server/validasi/formField";
 import { SUMBER_NILAI_RAPOR, bersihkanIsianOcr } from "@/server/validasi/ocr";
 import {
   KUNCI_FILE_KHUSUS,
@@ -128,7 +128,7 @@ export async function muatDefinisiField(): Promise<DefinisiField[]> {
       label: f.label,
       tipe: f.tipe as DefinisiField["tipe"],
       // Isian inti selalu tampil dan wajib walau tabel diubah langsung.
-      wajib: f.wajib || KUNCI_INTI.has(f.kunci),
+      wajib: f.wajib || KUNCI_INTI.has(f.kunci) || KUNCI_WAJIB.has(f.kunci),
       teksBantuan: f.teksBantuan,
       placeholder: f.placeholder,
       urutan: f.urutan,

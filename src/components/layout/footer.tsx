@@ -4,7 +4,7 @@ const tautanCepat: Array<[string, string]> = [
   ["/jurusan", "Program keahlian"],
   ["/#alur-daftar", "Alur pendaftaran"],
   ["/berita", "Berita dan agenda"],
-  ["/cek-status", "Cek status pendaftaran"],
+  ["/edit-formulir", "Edit formulir"],
   ["/kebijakan-privasi", "Kebijakan privasi"],
 ];
 

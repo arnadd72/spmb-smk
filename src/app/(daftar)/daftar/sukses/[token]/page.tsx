@@ -27,7 +27,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
       <SalinNomor nomor={r.nomor} />
 
       <p className="mt-6 rounded-kontrol bg-peringatan-latar px-3 py-2.5 text-sm font-medium text-peringatan">
-        Simpan nomor pendaftaran dan tautan halaman ini. Nomor dipakai untuk cek status bersama tanggal lahir.
+        Simpan nomor pendaftaran dan tautan halaman ini. Nomor dipakai untuk mengedit formulir dengan tanggal lahir.
       </p>
 
       {konfig.waGroup.startsWith("https://") && (
@@ -76,12 +76,13 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
           <li>Pendaftaran Anda langsung diterima, tanpa menunggu pemeriksaan panitia.</li>
           <li>Bawa akta dan kartu keluarga saat datang ke sekolah sesuai jadwal di grup WhatsApp. Rapor dapat dibawa bila tersedia, terutama jika Anda mengisi nilai rapor.</li>
           <li>Status pendaftaran bisa dilihat kapan saja lewat halaman Cek Status.</li>
+          <li>Perbarui data lewat halaman Edit Formulir.</li>
         </ol>
         <Link
-          href="/cek-status"
+          href="/edit-formulir"
           className="mt-5 inline-flex min-h-11 items-center rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt print:hidden"
         >
-          Buka Cek Status
+          Buka Edit Formulir
         </Link>
       </section>
     </div>

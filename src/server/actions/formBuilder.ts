@@ -1,7 +1,7 @@
 import { prisma } from "@/server/db/client";
 import { catatAudit } from "@/server/services/audit";
 import { GalatApi } from "@/server/types/galat";
-import { KUNCI_INTI, TIPE_BERPILIHAN, kunciDariLabel, skemaFieldBaru, skemaUbahField } from "@/server/validasi/formField";
+import { KUNCI_INTI, KUNCI_WAJIB, TIPE_BERPILIHAN, kunciDariLabel, skemaFieldBaru, skemaUbahField } from "@/server/validasi/formField";
 import type { KonteksAksi } from "./konten";
 
 // Form builder (PRD v3.1 Bagian 14): panitia mengatur tampil, wajib, label, urutan, dan menambah isian kustom.
@@ -35,7 +35,7 @@ const keBentuk = (f: Awaited<ReturnType<typeof prisma.formField.findMany>>[numbe
     opsi: Array.isArray(mentah) ? (mentah as { nilai: string; label: string }[]) : null,
     opsiDinamis: dinamis,
     tampil: f.tampil,
-    wajib: f.wajib,
+    wajib: f.wajib || KUNCI_WAJIB.has(f.kunci),
     terkunci: f.terkunci || KUNCI_INTI.has(f.kunci),
     urutan: f.urutan,
     isKustom: f.isKustom,
@@ -52,6 +52,9 @@ export async function ubahField(kunci: string, mentah: unknown, ctx: KonteksAksi
   if (!lama) throw GalatApi.tidakDitemukan("Isian tidak ditemukan.");
   const asli = keBentuk(lama);
   const input = skemaUbahField.parse(mentah);
+  if (KUNCI_WAJIB.has(kunci) && !input.wajib) {
+    throw GalatApi.validasi({ wajib: ["Isian ini wajib diisi dan tidak bisa dijadikan opsional."] });
+  }
 
   if (asli.terkunci && (!input.tampil || !input.wajib)) {
     throw GalatApi.validasi({ tampil: ["Isian inti ini terkunci: tidak bisa disembunyikan atau dijadikan opsional."] });

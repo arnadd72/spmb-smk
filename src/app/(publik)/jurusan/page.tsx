@@ -42,12 +42,12 @@ export default async function HalamanJurusan() {
           {jurusan.map((j, i) => {
             const t = TAMPIL_JURUSAN[j.kode] ?? TAMPIL_STANDAR;
             return (
-              <li key={j.kode}>
-                <Reveal tunda={i * 0.06}>
+              <li key={j.kode} className="h-full">
+                <Reveal tunda={i * 0.06} className="h-full">
                   <Link
                     href={`/jurusan/${j.kode.toLowerCase()}`}
                     className={cn(
-                      "group flex min-h-80 flex-col justify-between gap-8 rounded-kartu p-6 transition-transform duration-300 hover:-translate-y-1 sm:p-9",
+                      "group flex h-full min-h-80 flex-col justify-start gap-8 rounded-kartu p-6 transition-transform duration-300 hover:-translate-y-1 sm:p-9",
                       t.latar,
                       t.teks,
                     )}
@@ -55,10 +55,10 @@ export default async function HalamanJurusan() {
                     <p className={cn("font-display text-[clamp(4rem,9vw,7.5rem)] font-bold leading-[0.8] tracking-[-0.03em]", t.kode)}>
                       {j.kode}
                     </p>
-                    <div>
+                    <div className="flex flex-1 flex-col">
                       <h2 className="text-2xl font-bold leading-tight sm:text-3xl">{j.nama}</h2>
                       <p className="mt-2 max-w-[44ch] font-medium">{j.deskripsi}</p>
-                      <p className="mt-4 flex items-center justify-between gap-4 font-bold">
+                      <p className="mt-auto flex items-center justify-between gap-4 pt-4 font-bold">
                         <span className="angka">
                           Sisa {j.sisa} dari {j.kuota} kursi
                         </span>

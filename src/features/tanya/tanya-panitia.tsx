@@ -17,7 +17,7 @@ const TOMBOL_CEPAT = [
   { label: "Cara upload", tanya: "Bagaimana cara mengunggah rapor?" },
   { label: "Jurusan", tanya: "Jurusan apa saja yang ada?" },
   { label: "Rekomendasi", tanya: "Bagaimana rekomendasi jurusan dihitung?" },
-  { label: "Cek status", tanya: "Bagaimana cara mengecek status pendaftaran?" },
+  { label: "Edit formulir", tanya: "Bagaimana cara mengedit formulir pendaftaran?" },
 ];
 
 const SAPAAN: Pesan = {

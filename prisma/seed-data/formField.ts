@@ -53,8 +53,8 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(1, 30, "setuju", "Saya menyetujui pengumpulan dan pemrosesan data pribadi sesuai ketentuan yang tertera", "checkbox", { terkunci: true }),
 
   // Langkah 2: akta dan KK
-  f(2, 10, "akta", "Akta kelahiran", "file", opsional),
-  f(2, 20, "kk", "Kartu keluarga", "file", opsional),
+  f(2, 10, "akta", "Akta kelahiran", "file"),
+  f(2, 20, "kk", "Kartu keluarga", "file"),
   f(2, 30, "pas_foto", "Pas foto 3 x 4", "file", {
     ...opsional,
     teksBantuan: "Foto tampak depan berlatar merah (pas foto background merah), memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG.",
@@ -77,7 +77,7 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(5, 100, "tamat_tahun", "Tahun tamat", "select", { teksBantuan: "Pilih tahun kelulusan dari SMP/MTs.", opsi: TAHUN_TAMAT }),
   f(5, 110, "no_hp", "Nomor HP", "tel", { teksBantuan: "Nomor yang aktif, angka saja. Contoh: 081234567890.", placeholder: "081234567890" }),
   f(5, 111, "no_wa", "Nomor WhatsApp", "tel", { ...opsional, teksBantuan: "Boleh dikosongkan bila sama dengan nomor HP. Contoh: 081234567890." }),
-  f(5, 120, "email", "Email", "email", { ...opsional, teksBantuan: "Untuk menerima kode pendaftaran. Contoh: nama@gmail.com." }),
+  f(5, 120, "email", "Email", "email", { teksBantuan: "Untuk menerima kode pendaftaran. Contoh: nama@gmail.com." }),
   f(5, 125, "alamat", "Alamat", "text", { teksBantuan: "Nama jalan atau dusun, tanpa RT/RW dan desa. Contoh: DUSUN KRAJAN.", placeholder: "DUSUN KRAJAN" }),
   f(5, 130, "rt", "RT", "text", { teksBantuan: "Contoh: 003.", placeholder: "003" }),
   f(5, 131, "rw", "RW", "text", { teksBantuan: "Contoh: 005.", placeholder: "005" }),
@@ -118,16 +118,16 @@ export const FORM_FIELDS: FieldSeed[] = [
   f(7, 1, "smp_kecamatan", "Kecamatan sekolah asal", "text", { teksBantuan: "Contoh: WANGON.", placeholder: "WANGON" }),
   f(7, 2, "smp_kabupaten", "Kabupaten atau kota sekolah asal", "text", { teksBantuan: "Contoh: BANYUMAS.", placeholder: "BANYUMAS" }),
   f(7, 3, "smp_propinsi", "Provinsi sekolah asal", "text", { teksBantuan: "Contoh: JAWA TENGAH.", placeholder: "JAWA TENGAH" }),
-  f(7, 5, "lama_belajar", "Lama belajar", "text", { teksBantuan: "Contoh: 3 tahun.", placeholder: "3 tahun" }),
+  f(7, 5, "lama_belajar", "Lama belajar", "text", { teksBantuan: "Angka saja. Contoh: 3." }),
   f(7, 10, "golongan_darah", "Golongan darah", "select", { opsi: sama("A", "B", "AB", "O", "Tidak Tahu") }),
   f(7, 11, "tinggi_badan", "Tinggi badan", "number", { teksBantuan: "Angka saja, tidak perlu menulis satuan. Contoh: 165." }),
   f(7, 12, "berat_badan", "Berat badan", "number", { teksBantuan: "Angka saja, tidak perlu menulis satuan. Contoh: 52." }),
   f(7, 13, "penyakit_pernah_diderita", "Penyakit yang pernah diderita", "textarea", { ...opsional, teksBantuan: "Kosongkan bila tidak ada. Contoh: ASMA." }),
-  f(7, 14, "hobi_olahraga", "Hobi olahraga", "text", { ...opsional, teksBantuan: "Contoh: SEPAK BOLA." }),
-  f(7, 15, "hobi_kesenian", "Hobi kesenian", "text", { ...opsional, teksBantuan: "Contoh: HADRAH." }),
-  f(7, 16, "hobi_organisasi", "Organisasi yang diikuti", "text", { ...opsional, teksBantuan: "Contoh: OSIS, PRAMUKA." }),
-  f(7, 17, "hobi_prestasi", "Prestasi", "text", { ...opsional, teksBantuan: "Contoh: JUARA 2 LOMBA PIDATO TINGKAT KECAMATAN." }),
-  f(7, 18, "hobi_lain", "Hobi lain", "text", { ...opsional, teksBantuan: "Contoh: MEMBACA." }),
+  f(7, 14, "hobi_olahraga", "Hobi olahraga", "text", { teksBantuan: "Contoh: SEPAK BOLA." }),
+  f(7, 15, "hobi_kesenian", "Hobi kesenian", "text", { teksBantuan: "Contoh: HADRAH." }),
+  f(7, 16, "hobi_organisasi", "Organisasi yang diikuti", "text", { teksBantuan: "Contoh: OSIS, PRAMUKA." }),
+  f(7, 17, "hobi_prestasi", "Prestasi", "text", { teksBantuan: "Contoh: JUARA 2 LOMBA PIDATO TINGKAT KECAMATAN." }),
+  f(7, 18, "hobi_lain", "Hobi lain", "text", { teksBantuan: "Contoh: MEMBACA." }),
   f(7, 20, "ukuran_seragam", "Ukuran seragam", "select", { opsi: sama("M", "L", "XL", "XXL", "XXXL", "Jumbo") }),
 
   // Langkah 8: tinjau dan kirim

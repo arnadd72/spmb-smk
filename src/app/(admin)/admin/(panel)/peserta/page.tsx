@@ -3,7 +3,6 @@ import { ArrowDownIcon, ArrowUpIcon } from "@phosphor-icons/react/dist/ssr";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterPesertaForm } from "@/features/admin/peserta/filter-form";
 import { queryFilter } from "@/features/admin/peserta/query";
-import { StatusBadge } from "@/features/admin/peserta/status-badge";
 import { TombolSinkronSemua } from "@/features/admin/verifikasi/tombol-sinkron";
 import { cn } from "@/lib/cn";
 import { formatTanggal } from "@/lib/format";
@@ -18,7 +17,6 @@ export const metadata = { title: "Data peserta" };
 const KOLOM: { urut: NonNullable<FilterPeserta["urut"]>; label: string }[] = [
   { urut: "nomor", label: "Nomor" },
   { urut: "nama", label: "Nama" },
-  { urut: "status", label: "Status" },
   { urut: "dikirim", label: "Dikirim" },
 ];
 
@@ -96,9 +94,6 @@ export default async function HalamanPeserta({ searchParams }: PageProps<"/admin
                   <td className="px-3 py-2.5">{b.jurusan ?? "-"}</td>
                   <td className="angka whitespace-nowrap px-3 py-2.5 text-tinta-redup">{b.nik || "-"}</td>
                   <td className="angka whitespace-nowrap px-3 py-2.5 text-tinta-redup">{b.hp || "-"}</td>
-                  <td className="px-3 py-2.5">
-                    <StatusBadge status={b.status} />
-                  </td>
                   <td className="angka whitespace-nowrap px-3 py-2.5 text-tinta-redup">{formatTanggal(b.dikirim)}</td>
                   <td className="px-3 py-2.5 text-tinta-redup">{LABEL_NILAI[b.statusNilai as keyof typeof LABEL_NILAI]}</td>
                 </tr>

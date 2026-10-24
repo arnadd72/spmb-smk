@@ -19,7 +19,7 @@ const TAHAP: Tahap[] = [
   { judul: "Unggah dokumen", isi: "Akta dan kartu keluarga dapat diunggah bila tersedia. Nilai rapor opsional; foto hanya dibaca di HP dan tidak disimpan.", warna: "bg-mint text-ink", Ikon: UploadSimpleIcon },
   { judul: "Lihat saran jurusan", isi: "Saran dihitung bila nilai rapor diisi. Tanpa nilai, Anda tetap memilih jurusan sendiri.", warna: "bg-ink text-kertas", Ikon: ChartBarHorizontalIcon },
   { judul: "Kirim dan simpan nomor", isi: "Terima nomor pendaftaran dan formulir PDF yang bisa dicetak.", warna: "bg-jingga text-ink", Ikon: PaperPlaneTiltIcon },
-  { judul: "Bawa berkas ke sekolah", isi: "Panitia memeriksa berkas fisik yang tersedia dan memberi keputusan.", warna: "bg-primer text-kertas", Ikon: ClipboardTextIcon },
+  { judul: "Bawa berkas ke sekolah", isi: "Pendaftaran langsung diterima. Jadwal datang dan berkas yang dibawa diumumkan di grup WhatsApp pendaftar.", warna: "bg-primer text-kertas", Ikon: ClipboardTextIcon },
 ];
 
 export function AlurDaftar() {

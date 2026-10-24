@@ -58,7 +58,7 @@ export async function sisipPendaftar(nama: string, opsi: { status?: string; asal
       `INSERT INTO "Pendaftar"("nomorPendaftaran","aksesTokenHash","periode","namaLengkap","asalSekolah","statusVerifikasi",
         "nilaiRapor","nilaiRaporSumber","rekomendasiSkor","rekomendasiVersi","tanggalLahir","nisn","berkasMeta","updatedAt")
        VALUES ($1,$2,'2027/2028',$3,$4,$5::"StatusVerifikasi",$6,'manual','[]','uji','2011-05-17','1234567890',$7,now()) RETURNING id`,
-      [nomor, randomBytes(16).toString("hex"), nama, opsi.asalSekolah ?? "SMP Uji", opsi.status ?? "pending", JSON.stringify({ semester: [1, 2, 3, 4, 5], mapel: { matematika: { "1": 80 } } }), meta],
+      [nomor, randomBytes(16).toString("hex"), nama, opsi.asalSekolah ?? "SMP Uji", opsi.status ?? "approved", JSON.stringify({ semester: [1, 2, 3, 4, 5], mapel: { matematika: { "1": 80 } } }), meta],
     );
     return { id: String(r.rows[0].id), nomor };
   } finally {

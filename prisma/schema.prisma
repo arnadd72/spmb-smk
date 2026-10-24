@@ -156,7 +156,8 @@ model Pendaftar {
   aksesTokenHash   String           @unique
   periode          String
   sumber           Sumber           @default(daring)
-  statusVerifikasi StatusVerifikasi @default(pending)
+  /// Sejak PRD 1.3 butir 62 setiap pendaftar langsung diterima (approved); pending, revision, rejected hanya ada di data lama.
+  statusVerifikasi StatusVerifikasi @default(approved)
   statusNilai      StatusNilai      @default(belumDicek)
   catatanVerifikasi String?
   catatanPenolakan  String?

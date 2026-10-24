@@ -6,7 +6,8 @@ import { cn } from "@/lib/cn";
 import { kontrolDasar } from "./input";
 import { useFieldProps } from "./field";
 
-export type OpsiSelect = { nilai: string; label: string };
+/** `nonaktif`: tampil di daftar tetapi tidak bisa dipilih (mis. jurusan yang kuotanya penuh). */
+export type OpsiSelect = { nilai: string; label: string; nonaktif?: boolean };
 
 type SelectProps = {
   opsi: OpsiSelect[];
@@ -49,7 +50,8 @@ export function Select({
               <RadixSelect.Item
                 key={o.nilai}
                 value={o.nilai}
-                className="flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-kontrol px-3 text-base text-tinta outline-none data-[highlighted]:bg-permukaan-alt data-[state=checked]:font-semibold"
+                disabled={o.nonaktif}
+                className="flex min-h-11 cursor-pointer items-center justify-between gap-2 rounded-kontrol px-3 text-base text-tinta outline-none data-[disabled]:cursor-not-allowed data-[disabled]:text-tinta-redup data-[highlighted]:bg-permukaan-alt data-[state=checked]:font-semibold"
               >
                 <RadixSelect.ItemText>{o.label}</RadixSelect.ItemText>
                 <RadixSelect.ItemIndicator>

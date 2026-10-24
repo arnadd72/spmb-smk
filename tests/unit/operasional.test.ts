@@ -92,11 +92,12 @@ describe("kuota", () => {
   });
 
   it("wizard memberi tahu kuota penuh mengikuti definisi yang sama", async () => {
+    // Draf diisi dulu: sejak PRD 1.3 butir 62 memilih jurusan yang sudah penuh ditolak.
+    const { token } = await buatDraf();
+    await isiLengkap(token);
     await prisma.jurusan.update({ where: { kode: "AKL" }, data: { kuota: 1 } });
     const akl = await prisma.jurusan.findUniqueOrThrow({ where: { kode: "AKL" } });
     await buatPendaftarUji({ nomor: "SPMB-2027-0001", jurusan1Id: akl.id });
-    const { token } = await buatDraf();
-    await isiLengkap(token);
     expect((await rekomendasiDraf(token)).kuotaPenuh).toEqual(["AKL"]);
   });
 });
@@ -136,10 +137,11 @@ describe("input manual pendaftar luring", () => {
     expect((await daftarPeserta({ q: "3302010101010001", sumber: "luring" }, "2027/2028")).baris.map((b) => b.nomor)).toEqual(["SPMB-2027-0002"]);
   });
 
-  it("tanpa nilai rapor: saran jurusan kosong, status nilai belum dicek; status awal bisa menunggu verifikasi", async () => {
+  it("tanpa nilai rapor: saran jurusan kosong, status nilai belum dicek; tetap langsung diterima walau diminta menunggu", async () => {
+    // status_awal tidak dikenal lagi (PRD 1.3 butir 62): semua pendaftar langsung diterima.
     const h = await buatPendaftarManual({ ...(await isianValid()), jurusan_1: "AKL", status_awal: "pending" }, ctx);
     const p = await prisma.pendaftar.findUniqueOrThrow({ where: { id: BigInt(h.id) } });
-    expect([p.statusVerifikasi, p.statusNilai, p.rekomendasiJurusanId, p.diverifikasiOlehId]).toEqual(["pending", "belumDicek", null, null]);
+    expect([p.statusVerifikasi, p.statusNilai, p.rekomendasiJurusanId]).toEqual(["approved", "belumDicek", null]);
     expect(p.rekomendasiSkor).toEqual([]);
   });
 

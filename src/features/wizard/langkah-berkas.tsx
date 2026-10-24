@@ -332,7 +332,7 @@ export function LangkahAkta({
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
       <p className="text-tinta-redup">
         Unggah foto atau pindaian yang jelas dan tidak terpotong. Dokumen dibaca otomatis di HP
-        Anda, dan hasilnya bisa Anda perbaiki. Berkas ini hanya dilihat panitia untuk verifikasi.
+        Anda, dan hasilnya bisa Anda perbaiki. Berkas ini hanya dilihat panitia.
       </p>
       {slot.map((s) => {
         const ocr = s.kunci === "akta" || s.kunci === "kk" ? s.kunci : null;
@@ -571,8 +571,7 @@ export function LangkahRapor({
           </ul>
 
           <p className="text-sm text-tinta-redup">
-            Jika mengisi nilai, panitia dapat mencocokkannya dengan rapor asli saat verifikasi atau
-            daftar ulang.
+            Jika mengisi nilai, panitia dapat mencocokkannya dengan rapor asli saat daftar ulang.
           </p>
         </>
       )}

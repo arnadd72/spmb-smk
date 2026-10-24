@@ -20,16 +20,14 @@ const ABU = rgb(0.45, 0.45, 0.45);
 const KOLOM = [
   { judul: "No", lebar: 26, rata: "kanan" as const },
   { judul: "No. Pendaftaran", lebar: 92 },
-  { judul: "Nama", lebar: 170 },
+  { judul: "Nama", lebar: 216 },
   { judul: "NISN", lebar: 66 },
-  { judul: "Asal Sekolah", lebar: 150 },
+  { judul: "Asal Sekolah", lebar: 196 },
   { judul: "Pil. 1", lebar: 38 },
   { judul: "Pil. 2", lebar: 38 },
-  { judul: "Status", lebar: 92 },
   { judul: "Dikirim", lebar: 70 },
 ];
 
-const STATUS = { pending: "Menunggu", approved: "Diterima", revision: "Perlu revisi", rejected: "Ditolak" } as const;
 const NILAI = { belumDicek: "belum dicek", sesuai: "sesuai", dikoreksi: "dikoreksi" } as const;
 
 const tanggalPendek = (d: Date) => new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Jakarta" }).format(d);
@@ -38,7 +36,6 @@ const tanggalPanjang = (d: Date) => new Intl.DateTimeFormat("id-ID", { day: "num
 /** Keterangan filter yang dipakai, untuk subjudul laporan. */
 export function ringkasFilter(f: FilterPeserta, periodeAktif: string): string {
   const bagian = [`Periode ${f.periode === "semua" ? "semua" : (f.periode ?? periodeAktif)}`];
-  if (f.status) bagian.push(`status ${STATUS[f.status].toLowerCase()}`);
   if (f.nilai) bagian.push(`nilai ${NILAI[f.nilai]}`);
   if (f.jurusan) bagian.push(`pilihan 1 ${f.jurusan}`);
   if (f.sumber) bagian.push(`sumber ${f.sumber}`);
@@ -120,7 +117,6 @@ export async function buatRekapPdf(filter: FilterPeserta, periodeAktif: string):
       p.asalSekolah ?? "",
       p.jurusan1?.kode ?? "",
       p.jurusan2?.kode ?? "",
-      STATUS[p.statusVerifikasi],
       tanggalPendek(p.createdAt),
     ];
     let x = x0;

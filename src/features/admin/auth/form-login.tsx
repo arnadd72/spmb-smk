@@ -35,7 +35,8 @@ export function FormLogin() {
   }
 
   return (
-    <form onSubmit={handleSubmit(kirim)} noValidate className="flex flex-col gap-5">
+    // method="post": bila JS gagal dimuat (mis. aset dev diblokir), form HTML biasa tidak menaruh username dan password di URL.
+    <form method="post" onSubmit={handleSubmit(kirim)} noValidate className="flex flex-col gap-5">
       {galatUmum && (
         <p role="alert" className="rounded-kontrol bg-bahaya-latar px-3 py-2.5 text-sm font-semibold text-bahaya">
           {galatUmum}

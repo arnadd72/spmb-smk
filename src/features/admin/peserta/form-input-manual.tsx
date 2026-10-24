@@ -3,11 +3,10 @@
 import { useRef, useState, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Input, kontrolDasar } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { Bidang } from "@/features/wizard/bidang";
 import { NAMA_LANGKAH, fieldBiasa, skemaLangkah, skemaNilaiRapor, type DefinisiField } from "@/features/wizard/schema-client";
 import { ApiError, apiFetch } from "@/lib/api-client";
-import { cn } from "@/lib/cn";
 
 const TANPA = "-";
 
@@ -26,7 +25,6 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
     return d;
   });
   const [rapor, setRapor] = useState<Record<string, Record<string, string>>>(Object.fromEntries(mapel.map((m) => [m.kode, Object.fromEntries(semester.map((s) => [String(s), ""]))])));
-  const [statusAwal, setStatusAwal] = useState<"approved" | "pending">("approved");
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [sibuk, setSibuk] = useState(false);
@@ -44,7 +42,7 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
   async function kirim(e: SyntheticEvent) {
     e.preventDefault();
     setGalatUmum(undefined);
-    const isi: Record<string, unknown> = { ...nilai, nilai_rapor: muatanRapor(), status_awal: statusAwal };
+    const isi: Record<string, unknown> = { ...nilai, nilai_rapor: muatanRapor() };
     if (isi.jurusan_2 === TANPA) isi.jurusan_2 = "";
 
     const peta: Record<string, string> = {};
@@ -130,19 +128,7 @@ export function FormInputManual({ fields, mapel, semester }: Props) {
         </ul>
       </section>
 
-      <section aria-labelledby="bagian-status">
-        <h2 id="bagian-status" className="border-b border-garis pb-2 text-lg font-bold text-ink">
-          Status awal
-        </h2>
-        <label className="mt-4 flex max-w-sm flex-col gap-1.5 text-sm font-semibold text-tinta">
-          Status pendaftar
-          <select value={statusAwal} onChange={(e) => setStatusAwal(e.target.value as "approved" | "pending")} className={cn(kontrolDasar, "font-normal")}>
-            <option value="approved">Diterima (berkas diverifikasi langsung di tempat)</option>
-            <option value="pending">Menunggu verifikasi</option>
-          </select>
-        </label>
-        <p className="mt-2 text-sm text-tinta-redup">Berkas (akta, KK, rapor) dapat diunggah dari halaman detail setelah data tersimpan.</p>
-      </section>
+      <p className="text-sm text-tinta-redup">Pendaftar langsung berstatus Diterima. Berkas (akta, KK, rapor) dapat diunggah dari halaman detail setelah data tersimpan.</p>
 
       <div className="sticky bottom-0 -mx-4 flex flex-col gap-3 border-t border-garis bg-latar/95 px-4 py-3 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between lg:-mx-6 lg:px-6">
         <div className="min-h-6 text-sm" aria-live="polite">

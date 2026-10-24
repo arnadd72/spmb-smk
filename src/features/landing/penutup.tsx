@@ -57,7 +57,7 @@ export function Penutup({ logo }: { logo: string }) {
           Siapkan data diri, <span className="text-kuning">mulai</span> hari ini.
         </h2>
         <p data-aksi className="mt-6 max-w-[46ch] text-base text-kertas/80 lg:text-lg">
-          Sudah mendaftar? Masukkan nomor pendaftaran dan tanggal lahir untuk melihat status verifikasi.
+          Sudah mendaftar? Masukkan nomor pendaftaran dan tanggal lahir untuk melihat status pendaftaran.
         </p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
           <Magnetik className="sm:inline-block" kekuatan={0.4}>

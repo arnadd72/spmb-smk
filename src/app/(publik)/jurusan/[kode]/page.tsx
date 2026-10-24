@@ -74,7 +74,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
             ))}
           </dl>
           <p className="mt-4 text-sm text-tinta-redup">
-            Kursi yang penuh tidak menutup pendaftaran. Keputusan akhir ada di panitia.
+            Bila kuota penuh, jurusan ini tidak bisa dipilih saat mendaftar sampai panitia menambah kuotanya.
           </p>
         </Reveal>
 

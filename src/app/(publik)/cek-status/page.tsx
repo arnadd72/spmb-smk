@@ -14,7 +14,7 @@ export default function HalamanCekStatus() {
           Cek status pendaftaran
         </h1>
         <p className="mt-4 max-w-[52ch] text-tinta-redup">
-          Masukkan nomor pendaftaran dan tanggal lahir peserta untuk melihat perkembangan verifikasi.
+          Masukkan nomor pendaftaran dan tanggal lahir peserta untuk melihat status pendaftaran.
         </p>
         <div className="mt-10 max-w-xl">
           <FormCekStatus />

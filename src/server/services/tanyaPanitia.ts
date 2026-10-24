@@ -125,7 +125,7 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     return {
       sumber: "aturan",
       jawaban:
-        "Ya, pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal verifikasi, berkas yang dibawa, dan hasil seleksi disampaikan lewat grup ini, jadi pendaftar yang belum bergabung bisa tertinggal informasi. Tautan grup muncul di halaman \"Pendaftaran berhasil dikirim\" setelah formulir dikirim.",
+        "Ya, pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal datang ke sekolah dan berkas yang dibawa disampaikan lewat grup ini, jadi pendaftar yang belum bergabung bisa tertinggal informasi. Tautan grup muncul di halaman \"Pendaftaran berhasil dikirim\" setelah formulir dikirim.",
       tautan: [{ label: "Mulai mendaftar", href: "/daftar" }],
     };
   }
@@ -134,7 +134,7 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     return {
       sumber: "aturan",
       jawaban:
-        "Cek Status dipakai untuk memantau perkembangan pendaftaran Anda. Setelah memasukkan nomor pendaftaran dan tanggal lahir, Anda melihat tahapnya: formulir terkirim, panitia memeriksa, sampai keputusan keluar.",
+        "Cek Status dipakai untuk memantau perkembangan pendaftaran Anda. Setelah memasukkan nomor pendaftaran dan tanggal lahir, Anda melihat statusnya. Pendaftaran yang terkirim langsung diterima, tanpa menunggu pemeriksaan panitia.",
       tautan: [{ label: "Buka Cek Status", href: "/cek-status" }],
     };
   }
@@ -156,7 +156,7 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
 
   if (ada("kuota", "daya tampung", "sisa kursi", "sisa kuota", "kursi")) {
     const baris = k.jurusan.map((j) => `${j.kode}: sisa ${j.sisa} dari ${j.kuota}`).join("; ");
-    return { sumber: "aturan", jawaban: `Daya tampung jurusan (tahun ajaran ${k.konfig.tahunAjaran}): ${baris}. Kuota tidak menghalangi pendaftaran; keputusan akhir ada di panitia.`, tautan: [{ label: "Lihat jurusan", href: "/jurusan" }] };
+    return { sumber: "aturan", jawaban: `Daya tampung jurusan (tahun ajaran ${k.konfig.tahunAjaran}): ${baris}. Jurusan yang kuotanya penuh tidak bisa dipilih sampai panitia menambah kuotanya.`, tautan: [{ label: "Lihat jurusan", href: "/jurusan" }] };
   }
 
   if (ada("jurusan apa", "program keahlian", "daftar jurusan", "ada jurusan", "pilihan jurusan apa")) {
@@ -192,9 +192,9 @@ function instruksiSistem(k: Konteks): string {
     konfig.kontak ? `Kontak panitia: ${konfig.kontak}.` : "",
     konfig.persyaratan ? `Persyaratan: ${konfig.persyaratan.slice(0, 1200)}` : "",
     "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas; akta dan KK opsional, dibaca otomatis di HP untuk membantu mengisi dan hasilnya bisa diperbaiki; nilai rapor opsional, pendaftar memilih apakah ingin saran jurusan dari nilai rapor dan bila ya mengetik nilainya; saran jurusan bila nilai diisi atau pilih jurusan sendiri bila tidak; data murid dengan pas foto 3x4; data orang tua; data pendidikan, kesehatan, dan seragam; tinjau dan kirim). Ijazah fisik opsional. Setelah kirim pendaftar mendapat nomor pendaftaran, formulir PDF yang bisa diunduh atau dicetak, dan tombol bergabung ke grup WhatsApp pendaftar.",
-    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. (2) Cek Status di menu Cek Status: memasukkan nomor pendaftaran dan tanggal lahir untuk melihat tahap pendaftaran (formulir terkirim, panitia memeriksa, keputusan keluar). (3) Jurusan, Berita, dan FAQ di menu situs.",
+    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. (2) Cek Status di menu Cek Status: memasukkan nomor pendaftaran dan tanggal lahir untuk melihat tahap pendaftaran (pendaftaran yang terkirim langsung diterima, tanpa pemeriksaan panitia). (3) Jurusan, Berita, dan FAQ di menu situs.",
     konfig.waGroup.startsWith("https://")
-      ? "Grup WhatsApp: pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal verifikasi, berkas yang dibawa, dan hasil seleksi disampaikan lewat grup ini. Tautan grup muncul di halaman pendaftaran berhasil setelah formulir dikirim."
+      ? "Grup WhatsApp: pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal datang ke sekolah dan berkas yang dibawa disampaikan lewat grup ini. Tautan grup muncul di halaman pendaftaran berhasil setelah formulir dikirim."
       : "",
     "Jurusan:",
     ...k.jurusan.map((j) => `- ${j.kode} ${j.nama}: ${j.deskripsi} (kuota ${j.kuota}, sisa ${j.sisa})`),

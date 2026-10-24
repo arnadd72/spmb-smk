@@ -165,7 +165,7 @@ test.describe("wizard pendaftaran manual", () => {
     await expect(page.getByText("Nomor pendaftaran atau tanggal lahir tidak cocok.")).toBeVisible();
     await page.getByLabel("Tanggal lahir").fill("2011-05-17");
     await page.getByRole("button", { name: "Cek status" }).click();
-    await expect(page.getByText("Menunggu verifikasi")).toBeVisible();
+    await expect(page.getByText("Diterima", { exact: true })).toBeVisible(); // langsung diterima (PRD 1.3 butir 62)
     await expect(page.getByText(NAMA)).toBeVisible();
     await axe(page);
   });

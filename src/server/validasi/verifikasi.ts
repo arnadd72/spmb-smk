@@ -1,20 +1,6 @@
 import { z } from "zod";
 
-// Aksi verifikasi panitia (PRD v3.1 13.4). Dipakai server (otoritatif) dan form admin.
-
-const catatan = (label: string) =>
-  z
-    .string({ error: `${label} wajib diisi.` })
-    .trim()
-    .min(5, `${label} minimal 5 karakter.`)
-    .max(1000, `${label} maksimal 1000 karakter.`);
-
-export const skemaVerifikasi = z.discriminatedUnion("aksi", [
-  z.object({ aksi: z.literal("setujui") }),
-  z.object({ aksi: z.literal("revisi"), catatan: catatan("Catatan revisi") }),
-  z.object({ aksi: z.literal("tolak"), catatan: catatan("Alasan penolakan") }),
-]);
-export type InputVerifikasi = z.infer<typeof skemaVerifikasi>;
+// Pemeriksaan nilai rapor oleh panitia: "nilai sesuai" atau koreksi sel. Dipakai server (otoritatif) dan panel nilai admin.
 
 const nilaiSel = z.union([z.string(), z.number()]).nullish();
 

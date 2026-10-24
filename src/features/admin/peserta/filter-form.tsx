@@ -48,17 +48,6 @@ export function FilterPesertaForm({ filter, jurusan, periodeAktif, aksi = "/admi
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Pilih
-          nama="status"
-          label="Status"
-          nilai={filter.status}
-          opsi={[
-            ["pending", "Menunggu verifikasi"],
-            ["approved", "Diterima"],
-            ["revision", "Perlu revisi"],
-            ["rejected", "Ditolak"],
-          ]}
-        />
-        <Pilih
           nama="nilai"
           label="Status nilai"
           nilai={filter.nilai}

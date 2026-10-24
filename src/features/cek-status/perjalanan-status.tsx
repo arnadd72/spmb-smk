@@ -1,15 +1,16 @@
 "use client";
 
 import { useRef, type ComponentType } from "react";
-import { MagnifyingGlassIcon, PaperPlaneTiltIcon, SealCheckIcon } from "@phosphor-icons/react";
+import { BuildingsIcon, PaperPlaneTiltIcon, SealCheckIcon } from "@phosphor-icons/react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 
 type Tahap = { judul: string; isi: string; Ikon: ComponentType<{ className?: string; weight?: "duotone" | "regular"; "aria-hidden"?: boolean }> };
 
 const TAHAP: Tahap[] = [
   { judul: "Formulir terkirim", isi: "Nomor pendaftaran terbit begitu Anda menekan Kirim di akhir pendaftaran.", Ikon: PaperPlaneTiltIcon },
-  { judul: "Panitia memeriksa", isi: "Berkas fisik dicocokkan dengan nilai rapor yang Anda isi.", Ikon: MagnifyingGlassIcon },
-  { judul: "Keputusan keluar", isi: "Diterima, perlu revisi, atau ditolak, lengkap dengan catatan panitia.", Ikon: SealCheckIcon },
+  // Tanpa verifikasi panitia: pendaftaran yang terkirim langsung diterima (PRD 1.3 butir 62).
+  { judul: "Langsung diterima", isi: "Pendaftaran yang terkirim otomatis berstatus Diterima, tanpa menunggu pemeriksaan panitia.", Ikon: SealCheckIcon },
+  { judul: "Datang ke sekolah", isi: "Jadwal datang dan berkas yang dibawa diumumkan di grup WhatsApp pendaftar.", Ikon: BuildingsIcon },
 ];
 
 // Tanpa JS atau dengan reduced motion, semua tahap tampil penuh (keadaan akhir). GSAP hanya meredupkan

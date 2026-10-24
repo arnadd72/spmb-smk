@@ -3,7 +3,6 @@ import { WarningCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { BatangProgres, GrafikPerHari } from "@/features/admin/dashboard/grafik";
-import { StatusBadge } from "@/features/admin/peserta/status-badge";
 import { formatTanggal } from "@/lib/format";
 import { ambilDashboard } from "@/server/actions/dashboard";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
@@ -71,9 +70,7 @@ async function RingkasanPendaftar() {
   const d = await ambilDashboard();
   const kartu = [
     { label: "Total pendaftar", nilai: d.total, href: "/admin/peserta" },
-    { label: "Menunggu verifikasi", nilai: d.pending, href: "/admin/peserta?status=pending" },
-    { label: "Diterima", nilai: d.approved, href: "/admin/peserta?status=approved" },
-    { label: "Revisi atau ditolak", nilai: d.revisiAtauDitolak, href: "/admin/peserta?status=revision" },
+    // Semua pendaftar langsung diterima (PRD 1.3 butir 62, 63): tidak ada kartu status, jumlahnya sama dengan total.
     { label: "Nilai belum dicek", nilai: d.nilaiBelumDicek, href: "/admin/peserta?nilai=belumDicek" },
   ];
   const maksSebaran = Math.max(1, ...d.perJurusan.flatMap((j) => [j.terdaftar, j.rekomendasi]));
@@ -108,7 +105,7 @@ async function RingkasanPendaftar() {
         </ul>
       )}
 
-      <ul className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+      <ul className="mt-6 grid gap-3 sm:grid-cols-2">
         {kartu.map((k) => (
           <li key={k.label}>
             <Link href={k.href} className="block rounded-kartu border border-garis bg-permukaan p-4 hover:bg-permukaan-alt">
@@ -200,7 +197,6 @@ async function RingkasanPendaftar() {
                   <th scope="col" className="px-4 py-2.5 font-semibold">Nomor</th>
                   <th scope="col" className="px-4 py-2.5 font-semibold">Nama</th>
                   <th scope="col" className="px-4 py-2.5 font-semibold">Jurusan</th>
-                  <th scope="col" className="px-4 py-2.5 font-semibold">Status</th>
                   <th scope="col" className="px-4 py-2.5 font-semibold">Dikirim</th>
                 </tr>
               </thead>
@@ -214,9 +210,6 @@ async function RingkasanPendaftar() {
                     </td>
                     <td className="px-4 py-2.5">{t.nama}</td>
                     <td className="px-4 py-2.5">{t.jurusan ?? "-"}</td>
-                    <td className="px-4 py-2.5">
-                      <StatusBadge status={t.status} />
-                    </td>
                     <td className="angka px-4 py-2.5 text-tinta-redup">{formatTanggal(t.dikirim)}</td>
                   </tr>
                 ))}

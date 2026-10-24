@@ -81,7 +81,7 @@ test.describe("admin: input manual dan kelola berkas", () => {
     await expect(page).toHaveURL(/\/admin\/peserta\/\d+\?baru=1$/);
     await expect(page.getByRole("heading", { level: 1, name: nama })).toBeVisible();
     await expect(page.getByText(/Pendaftar luring tersimpan dengan nomor SPMB-\d{4}-\d{4}/)).toBeVisible();
-    await expect(page.getByText("Diterima").first()).toBeVisible();
+    await expect(page.getByText(/Dimasukkan oleh /)).toBeVisible(); // tanpa status (PRD 1.3 butir 63); pemasuk data luring tetap tercatat
 
     // Unggah akta lewat pemilih berkas, tampil dengan penanda belum di Drive
     const [pilih] = await Promise.all([page.waitForEvent("filechooser"), page.getByRole("button", { name: "Ganti akta" }).click()]);

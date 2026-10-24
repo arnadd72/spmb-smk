@@ -3,7 +3,8 @@
 import { useState, type SyntheticEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useKurangiGerak } from "@/components/motion/use-kurangi-gerak";
 import { ArrowLeftIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,7 @@ export type KartuRekomendasi = {
 const NADA = { "Paling Sesuai": "sukses", "Juga Sesuai": "info", Alternatif: "netral", "Data Kurang": "peringatan" } as const;
 
 function Bar({ nilai, tunda }: { nilai: number; tunda: number }) {
-  const kurangi = useReducedMotion();
+  const kurangi = useKurangiGerak();
   return (
     <div className="h-2 overflow-hidden rounded-full bg-permukaan-alt" aria-hidden>
       <motion.div
@@ -50,8 +51,11 @@ export function LangkahJurusan({
   awal: { jurusan_1?: string };
 }) {
   const router = useRouter();
-  const reduce = useReducedMotion();
-  const [j1, setJ1] = useState(awal.jurusan_1 ?? kartu.find((k) => k.label === "Paling Sesuai")?.kode ?? "");
+  const reduce = useKurangiGerak();
+  // Jurusan yang kuotanya penuh tidak bisa dipilih dan tidak dipilihkan otomatis (PRD 1.3 butir 62).
+  const bisaDipilih = (kode: string | undefined) => (kode && !kuotaPenuh.includes(kode) ? kode : "");
+  const [j1, setJ1] = useState(bisaDipilih(awal.jurusan_1) || bisaDipilih(kartu.find((k) => k.label === "Paling Sesuai")?.kode));
+  const opsiTampil = opsi.map((o) => (kuotaPenuh.includes(o.nilai) ? { ...o, label: `${o.label} (kuota penuh)`, nonaktif: true } : o));
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
@@ -75,7 +79,6 @@ export function LangkahJurusan({
     }
   }
 
-  const penuh = [j1].filter((k) => kuotaPenuh.includes(k));
 
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
@@ -129,12 +132,12 @@ export function LangkahJurusan({
       </ol>
 
       <Field label="Pilihan jurusan" wajib bantuan="Pilih satu jurusan." galat={galat.jurusan_1} className="max-w-md">
-        <Select opsi={opsi} nilai={j1} onChange={setJ1} name="jurusan_1" />
+        <Select opsi={opsiTampil} nilai={j1} onChange={setJ1} name="jurusan_1" />
       </Field>
 
-      {penuh.length > 0 && (
+      {kuotaPenuh.length > 0 && (
         <p className="rounded-kontrol bg-peringatan-latar px-3 py-2.5 text-sm font-medium text-peringatan">
-          Kuota {penuh.join(" dan ")} saat ini sudah terisi. Anda tetap bisa mendaftar; keputusan akhir ada di panitia.
+          Kuota {kuotaPenuh.join(" dan ")} sudah penuh, jadi belum bisa dipilih. Hubungi panitia bila tetap ingin masuk jurusan tersebut.
         </p>
       )}
       {galatUmum && <PesanGalat pesan={galatUmum} />}

@@ -34,7 +34,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         <div className="mt-5 rounded-kartu border-2 border-primer bg-mint p-5 print:hidden" data-wajib-wa>
           <p className="font-bold text-ink">Wajib bergabung ke grup WhatsApp pendaftar</p>
           <p className="mt-1 text-sm text-ink">
-            Pengumuman jadwal verifikasi, berkas yang dibawa, dan hasil seleksi disampaikan lewat grup ini. Pendaftar yang belum bergabung
+            Pengumuman jadwal datang ke sekolah dan berkas yang dibawa disampaikan lewat grup ini. Pendaftar yang belum bergabung
             bisa tertinggal informasi.
           </p>
           <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-ink">
@@ -73,9 +73,9 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
           Selanjutnya
         </h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-tinta">
-          <li>Panitia memverifikasi data dan berkas Anda.</li>
-          <li>Bawa akta dan kartu keluarga saat verifikasi. Rapor dapat dibawa bila tersedia, terutama jika Anda mengisi nilai rapor.</li>
-          <li>Pantau hasilnya lewat halaman Cek Status.</li>
+          <li>Pendaftaran Anda langsung diterima, tanpa menunggu pemeriksaan panitia.</li>
+          <li>Bawa akta dan kartu keluarga saat datang ke sekolah sesuai jadwal di grup WhatsApp. Rapor dapat dibawa bila tersedia, terutama jika Anda mengisi nilai rapor.</li>
+          <li>Status pendaftaran bisa dilihat kapan saja lewat halaman Cek Status.</li>
         </ol>
         <Link
           href="/cek-status"

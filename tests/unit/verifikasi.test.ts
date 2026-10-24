@@ -45,19 +45,13 @@ import {
   sinkronSemuaTertunda,
 } from "@/server/actions/berkas";
 import { ambilPeserta } from "@/server/actions/peserta";
-import {
-  antreanVerifikasi,
-  pendaftarBerikutnya,
-  periksaNilai,
-  putuskanVerifikasi,
-} from "@/server/actions/verifikasi";
+import { periksaNilai } from "@/server/actions/verifikasi";
 import { prisma } from "@/server/db/client";
 import { buatDraf } from "@/server/services/draf";
 import { kirimPendaftaran } from "@/server/services/pendaftaran";
 import { simpanPengaturan } from "@/server/services/pengaturan";
 import type { GalatApi } from "@/server/types/galat";
 import { seedFormField, seedReferensi } from "../../prisma/seed-lib";
-import { buatPendaftarUji } from "../fixture-pendaftar";
 import { isiLengkap, PNG } from "../fixture-wizard";
 
 const ctx = { userId: "1", ip: "127.0.0.1" };
@@ -121,85 +115,10 @@ async function baca(aliran: Readable): Promise<Buffer> {
   return Buffer.concat(bagian);
 }
 
-describe("keputusan verifikasi", () => {
-  it("setujui, revisi, dan tolak mengubah status, mencatat verifikator dan audit lama/baru", async () => {
-    const p = await buatPendaftarUji({ nomor: "SPMB-2027-0001" });
-    const id = p.id.toString();
-
-    await putuskanVerifikasi(id, { aksi: "revisi", catatan: "Foto rapor kurang jelas" }, ctx);
-    let b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect([
-      b.statusVerifikasi,
-      b.catatanVerifikasi,
-      b.catatanPenolakan,
-      b.diverifikasiOlehId,
-    ]).toEqual(["revision", "Foto rapor kurang jelas", null, BigInt(1)]);
-    expect(b.diverifikasiAt).toBeInstanceOf(Date);
-
-    await putuskanVerifikasi(id, { aksi: "tolak", catatan: "Di luar zonasi" }, ctx);
-    b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect([b.statusVerifikasi, b.catatanVerifikasi, b.catatanPenolakan]).toEqual([
-      "rejected",
-      null,
-      "Di luar zonasi",
-    ]);
-
-    await putuskanVerifikasi(id, { aksi: "setujui" }, ctx);
-    b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect([b.statusVerifikasi, b.catatanVerifikasi, b.catatanPenolakan]).toEqual([
-      "approved",
-      null,
-      null,
-    ]);
-
-    const audit = await prisma.auditLog.findMany({
-      where: { entitasId: id },
-      orderBy: { id: "asc" },
-    });
-    expect(audit.map((a) => a.aksi)).toEqual([
-      "pendaftar.revisi",
-      "pendaftar.tolak",
-      "pendaftar.setujui",
-    ]);
-    expect((audit[0].dataLama as { status: string }).status).toBe("pending");
-    expect((audit[0].dataBaru as { status: string }).status).toBe("revision");
-  });
-
-  it("revisi dan tolak wajib punya catatan; aksi asing dan pendaftar tidak ada ditolak", async () => {
-    const p = await buatPendaftarUji();
-    await expect(putuskanVerifikasi(p.id.toString(), { aksi: "revisi" }, ctx)).rejects.toThrow();
-    await expect(
-      putuskanVerifikasi(p.id.toString(), { aksi: "tolak", catatan: "x" }, ctx),
-    ).rejects.toThrow(/minimal 5/);
-    await expect(putuskanVerifikasi(p.id.toString(), { aksi: "hapus" }, ctx)).rejects.toThrow();
-    expect((await galat(putuskanVerifikasi("987654", { aksi: "setujui" }, ctx))).status).toBe(404);
-    expect(
-      (await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).statusVerifikasi,
-    ).toBe("pending");
-  });
-
-  it("antrean: yang menunggu saja, paling lama dulu; berikutnya melewati yang sedang dibuka", async () => {
-    const lama = await buatPendaftarUji({
-      nomor: "SPMB-2027-0001",
-      createdAt: new Date("2027-01-01T00:00:00Z"),
-    });
-    const baru = await buatPendaftarUji({
-      nomor: "SPMB-2027-0002",
-      createdAt: new Date("2027-01-03T00:00:00Z"),
-    });
-    await buatPendaftarUji({
-      nomor: "SPMB-2027-0003",
-      status: "approved",
-      createdAt: new Date("2026-12-01T00:00:00Z"),
-    });
-
-    const a = await antreanVerifikasi();
-    expect(a.total).toBe(2);
-    expect(a.daftar.map((x) => x.nomor)).toEqual(["SPMB-2027-0001", "SPMB-2027-0002"]);
-    expect(await pendaftarBerikutnya()).toBe(lama.id.toString());
-    expect(await pendaftarBerikutnya(lama.id.toString())).toBe(baru.id.toString());
-    await putuskanVerifikasi(baru.id.toString(), { aksi: "setujui" }, ctx);
-    expect(await pendaftarBerikutnya(lama.id.toString())).toBeNull();
+describe("tanpa verifikasi panitia (PRD 1.3 butir 62)", () => {
+  it("pendaftar dari wizard langsung diterima, tanpa pemeriksa dan tanpa catatan", async () => {
+    const p = await pendaftarWizard();
+    expect([p.statusVerifikasi, p.diverifikasiOlehId, p.catatanVerifikasi, p.catatanPenolakan]).toEqual(["approved", null, null, null]);
   });
 });
 

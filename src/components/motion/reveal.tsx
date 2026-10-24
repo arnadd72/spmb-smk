@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useKurangiGerak } from "@/components/motion/use-kurangi-gerak";
 import type { ReactNode } from "react";
 
 type RevealProps = {
@@ -12,7 +13,7 @@ type RevealProps = {
 
 /** Muncul saat masuk viewport: hanya opacity dan transform, statis bila reduced motion. */
 export function Reveal({ children, className, tunda = 0 }: RevealProps) {
-  const kurangiGerak = useReducedMotion();
+  const kurangiGerak = useKurangiGerak();
   if (kurangiGerak) return <div className={className}>{children}</div>;
 
   return (

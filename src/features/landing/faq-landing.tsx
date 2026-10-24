@@ -1,7 +1,8 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useKurangiGerak } from "@/components/motion/use-kurangi-gerak";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { cn } from "@/lib/cn";
@@ -11,7 +12,7 @@ export function FaqLanding({ faq }: { faq: FaqData[] }) {
   const akar = useRef<HTMLElement>(null);
   const [buka, setBuka] = useState<string | null>(null);
   const prefix = useId();
-  const kurangiGerak = useReducedMotion();
+  const kurangiGerak = useKurangiGerak();
 
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {

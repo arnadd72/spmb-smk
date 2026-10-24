@@ -6,7 +6,9 @@ import { Card } from "@/components/ui/card";
 import { labelAksi } from "@/features/admin/audit/label";
 import { BatangProgres } from "@/features/admin/dashboard/grafik";
 import { KelolaBerkas } from "@/features/admin/peserta/kelola-berkas";
-import { StatusBadge } from "@/features/admin/peserta/status-badge";
+import { PanelNilai } from "@/features/admin/verifikasi/panel-nilai";
+import { PenampilBerkas } from "@/features/admin/verifikasi/penampil-berkas";
+import { TombolSinkron } from "@/features/admin/verifikasi/tombol-sinkron";
 import { formatTanggal } from "@/lib/format";
 import { ambilBerkasPendaftar } from "@/server/actions/berkas";
 import { ambilPeserta } from "@/server/actions/peserta";
@@ -14,13 +16,13 @@ import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
 import { prisma } from "@/server/db/client";
 import { muatDefinisiField } from "@/server/services/draf";
+import { mapelBerbobot, muatBobotJurusan } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
-import { NAMA_LANGKAH, rataMapel, type DefinisiField } from "@/server/validasi/wizard";
+import { NAMA_LANGKAH, type DefinisiField, type NilaiRapor } from "@/server/validasi/wizard";
 
 export const metadata = { title: "Detail pendaftar" };
 
 type Skor = { kode: string; nama: string; skor: number; label: string; penjelasan?: string; rincian: { kode: string; nama: string; bobot: number; nilai: number; kontribusi: number }[] };
-type Rapor = { semester: number[]; mapel: Record<string, Record<string, number>> };
 
 const LABEL_NILAI = { belumDicek: "Belum dicek", sesuai: "Sesuai dengan rapor", dikoreksi: "Dikoreksi panitia" } as const;
 
@@ -44,13 +46,17 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
     if (e instanceof GalatApi && e.status === 404) notFound();
     throw e;
   }
-  const [fields, mapel, berkas] = await Promise.all([
+  const [fields, semuaMapel, berkas, bobot] = await Promise.all([
     muatDefinisiField(),
     prisma.mataPelajaran.findMany({ select: { kode: true, nama: true } }),
     ambilBerkasPendaftar(id),
+    muatBobotJurusan(),
   ]);
-  const namaMapel = new Map(mapel.map((m) => [m.kode, m.nama]));
-  const rapor = p.nilaiRapor as Rapor;
+  const namaMapel = new Map(semuaMapel.map((m) => [m.kode, m.nama]));
+  const rapor = p.nilaiRapor as NilaiRapor;
+  // Baris panel nilai: mapel berbobot ditambah mapel yang diisi pendaftar (pindahan dari halaman Verifikasi, PRD 1.3 butir 62).
+  const mapelNilai = [...new Set([...mapelBerbobot(bobot).map((m) => m.kode), ...Object.keys(rapor.mapel)])].map((k) => ({ kode: k, nama: namaMapel.get(k) ?? k }));
+  const raporAsli = (p.nilaiRaporKoreksi as { asli?: NilaiRapor } | null)?.asli;
   const skor = (p.rekomendasiSkor as Skor[]) ?? [];
 
   const bagian = [1, 5, 6, 7].map((l) => ({
@@ -82,12 +88,6 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
-            href={`/admin/verifikasi/${p.id}`}
-            className="inline-flex min-h-11 items-center gap-2 rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt"
-          >
-            Verifikasi
-          </Link>
-          <Link
             href={`/admin/peserta/${p.id}/ubah`}
             className="inline-flex min-h-11 items-center gap-2 rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt"
           >
@@ -108,22 +108,16 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          <h2 className="text-lg font-bold text-ink">Status</h2>
+          {/* Tanpa status pendaftaran: semua pendaftar langsung diterima (PRD 1.3 butir 62, 63). */}
+          <h2 className="text-lg font-bold text-ink">Nilai rapor</h2>
           <div className="mt-3 flex flex-wrap items-center gap-3">
-            <StatusBadge status={p.status} />
             <Badge nada={p.statusNilai === "sesuai" ? "sukses" : p.statusNilai === "dikoreksi" ? "peringatan" : "netral"}>
               Nilai: {LABEL_NILAI[p.statusNilai as keyof typeof LABEL_NILAI]}
             </Badge>
           </div>
-          {(p.catatanVerifikasi || p.catatanPenolakan) && (
-            <p className="mt-3 rounded-kontrol bg-permukaan-alt px-3 py-2.5 text-sm">
-              <span className="font-semibold">Catatan panitia: </span>
-              {p.catatanPenolakan ?? p.catatanVerifikasi}
-            </p>
-          )}
-          {p.diverifikasiOleh && p.diverifikasiAt && (
+          {p.sumber === "luring" && p.diverifikasiOleh && p.diverifikasiAt && (
             <p className="mt-3 text-sm text-tinta-redup">
-              Diverifikasi oleh {p.diverifikasiOleh} pada {formatTanggal(p.diverifikasiAt)}.
+              Dimasukkan oleh {p.diverifikasiOleh} pada {formatTanggal(p.diverifikasiAt)}.
             </p>
           )}
         </Card>
@@ -203,39 +197,34 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
           ))}
         </ul>
 
-        <h3 className="mt-6 text-base font-bold text-ink">
-          Nilai rapor <span className="text-sm font-normal text-tinta-redup">(sumber: {p.nilaiRaporSumber})</span>
-        </h3>
-        <div className="relative mt-2 overflow-x-auto">
-          <table className="w-full min-w-[30rem] text-left text-sm">
-            <caption className="sr-only">Nilai rapor per mata pelajaran dan semester</caption>
-            <thead className="border-b border-garis text-tinta-redup">
-              <tr>
-                <th scope="col" className="py-2 pr-3 font-semibold">Mata pelajaran</th>
-                {rapor.semester.map((s) => (
-                  <th key={s} scope="col" className="px-2 py-2 text-center font-semibold">Sem {s}</th>
-                ))}
-                <th scope="col" className="py-2 pl-3 text-right font-semibold">Rata-rata</th>
-              </tr>
-            </thead>
-            <tbody>
-              {Object.entries(rapor.mapel).map(([kode, sel]) => (
-                <tr key={kode} className="border-b border-garis last:border-0">
-                  <th scope="row" className="py-2 pr-3 font-medium">{namaMapel.get(kode) ?? kode}</th>
-                  {rapor.semester.map((s) => (
-                    <td key={s} className="angka px-2 py-2 text-center">{sel[String(s)] ?? "-"}</td>
-                  ))}
-                  <td className="angka py-2 pl-3 text-right font-bold">{rataMapel(sel)?.toFixed(1) ?? "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </Card>
+
+      <section aria-label="Berkas dan nilai rapor" className="mt-4 grid gap-4 lg:grid-cols-2">
+        <div className="min-w-0 lg:sticky lg:top-20 lg:self-start">
+          <h2 className="mb-2 text-lg font-bold text-ink">Lihat berkas</h2>
+          <PenampilBerkas id={p.id} berkas={berkas} />
+          {p.berkasSinkron !== "selesai" && (
+            <div className="mt-3">
+              <TombolSinkron id={p.id} />
+            </div>
+          )}
+        </div>
+        <Card className="min-w-0">
+          <PanelNilai
+            id={p.id}
+            semester={rapor.semester}
+            mapel={mapelNilai}
+            nilai={rapor.mapel}
+            asli={raporAsli?.mapel}
+            statusNilai={p.statusNilai as "belumDicek" | "sesuai" | "dikoreksi"}
+            sumber={p.nilaiRaporSumber}
+          />
+        </Card>
+      </section>
 
       <div className="mt-4 grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="text-lg font-bold text-ink">Berkas</h2>
+          <h2 className="text-lg font-bold text-ink">Kelola berkas</h2>
           <p className="mt-1 text-sm text-tinta-redup">
             Sinkron ke Drive:{" "}
             <Badge nada={p.berkasSinkron === "selesai" ? "sukses" : p.berkasSinkron === "gagal" ? "bahaya" : "peringatan"}>{p.berkasSinkron}</Badge>

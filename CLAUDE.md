@@ -51,3 +51,7 @@ Satu aplikasi Next.js full-stack (Vercel, Prisma, Postgres). Tidak ada lagi Lara
   jadi aman dijalankan saat `npm run dev` terhubung ke Supabase. Pertama kali: `npm run db:start` lalu `npm run db:test:siapkan`.
   Playwright menolak jalan bila `DATABASE_URL` bukan Postgres lokal berakhiran `_test`. Contoh isi `.env.test` ada di `.env.example`.
 - Prisma: `npm run db:migrate`, `npm run db:seed`.
+  **Cek `DATABASE_URL` dan `DIRECT_URL` di `.env` sebelum perintah Prisma apa pun.** `.env` bisa mengarah ke
+  Supabase yang dipakai bersama tim. Ke Supabase hanya boleh `npx prisma migrate deploy`, setelah file migrasinya
+  di-push dan pemilik proyek setuju. Jangan jalankan `prisma migrate dev`/`db:migrate`/`db:seed` ke Supabase:
+  bila riwayat migrasi tidak cocok, Prisma menawarkan reset yang menghapus seluruh data.

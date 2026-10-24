@@ -18,6 +18,7 @@ import {
   type BerkasDraf,
 } from "@/server/services/draf";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
+import { pastikanKuotaTersedia } from "@/server/services/kuota";
 import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
@@ -94,10 +95,14 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
     const nomor = await nomorBerikut(tx, tahun);
     // Kunci advisory nomor sudah dipegang: hitung kuota gelombang aman dari kirim bersamaan.
     const gelombangId = await tetapkanGelombang(tx, konfig.tahunAjaran, { blokir: true });
+    // Pendaftar langsung diterima, jadi kuota jurusan ditegakkan di sini, di bawah kunci yang sama (PRD 1.3 butir 62).
+    await pastikanKuotaTersedia(tx, konfig.tahunAjaran, BigInt(jurusan1));
 
     await tx.pendaftar.create({
       data: {
         nomorPendaftaran: nomor,
+        // Langsung diterima, tanpa antrean verifikasi panitia (PRD 1.3 butir 62).
+        statusVerifikasi: "approved",
         gelombangId,
         aksesTokenHash: hashToken(aksesToken),
         periode: konfig.tahunAjaran,

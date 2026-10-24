@@ -19,7 +19,6 @@ const LANGKAH = [1, 4, 5, 6, 7];
 
 export async function buatPendaftarManual(masukan: unknown, ctx: KonteksAksi) {
   const mentah = (masukan ?? {}) as Record<string, unknown>;
-  const statusAwal = mentah.status_awal === "pending" ? "pending" : "approved";
 
   const konteks = await konteksValidasi();
   const hasil: Record<string, unknown> = {};
@@ -66,8 +65,10 @@ export async function buatPendaftarManual(masukan: unknown, ctx: KonteksAksi) {
         aksesTokenHash: hashToken(randomBytes(32).toString("hex")),
         periode,
         sumber: "luring",
-        statusVerifikasi: statusAwal,
-        ...(statusAwal === "approved" ? { diverifikasiOlehId: BigInt(ctx.userId), diverifikasiAt: new Date() } : {}),
+        // Semua pendaftar langsung diterima (PRD 1.3 butir 62); panitia yang memasukkan data luring tetap dicatat.
+        statusVerifikasi: "approved",
+        diverifikasiOlehId: BigInt(ctx.userId),
+        diverifikasiAt: new Date(),
         statusNilai: adaNilai ? "sesuai" : "belumDicek",
         namaLengkap: String(hasil.nama_lengkap),
         ...kolom,
@@ -90,7 +91,7 @@ export async function buatPendaftarManual(masukan: unknown, ctx: KonteksAksi) {
     aksi: "pendaftar.input_manual",
     entitasTipe: "pendaftar",
     entitasId: baru.id.toString(),
-    dataBaru: { nomor: baru.nomorPendaftaran, nama: baru.namaLengkap, status: statusAwal },
+    dataBaru: { nomor: baru.nomorPendaftaran, nama: baru.namaLengkap, status: "approved" },
     ip: ctx.ip,
   });
   return { id: baru.id.toString(), nomor: baru.nomorPendaftaran };

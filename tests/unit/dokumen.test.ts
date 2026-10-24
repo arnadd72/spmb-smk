@@ -116,7 +116,7 @@ describe("ekspor XLSX", () => {
     expect(sel("Rata-rata Matematika")).toBe(81); // fixture: semester 1 = 80, semester 2 = 82
     expect(typeof sel("Skor AKL")).toBe("number");
     expect(["AKL", "MPLB", "LPK3", "TKR"]).toContain(sel("Saran Jurusan"));
-    expect(sel("Status Verifikasi")).toBe("Menunggu");
+    expect(kolom("Status Verifikasi")).toBe(-1); // kolom status dihapus (PRD 1.3 butir 63)
     expect(sel("Ukuran sepatu")).toBe("42");
     expect(ws.autoFilter).toBeTruthy();
   });
@@ -159,7 +159,7 @@ describe("rekap PDF", () => {
     const { pdf, jumlah } = await buatRekapPdf({ status: "rejected" }, AKTIF);
     expect(jumlah).toBe(0);
     expect(await isiHalaman(pdf, 1)).toContain(tampil("Tidak ada pendaftar yang cocok dengan filter ini."));
-    expect(ringkasFilter({ status: "approved", jurusan: "AKL", q: "budi" }, AKTIF)).toBe('Periode 2027/2028, status diterima, pilihan 1 AKL, kata kunci "budi"');
+    expect(ringkasFilter({ jurusan: "AKL", q: "budi" }, AKTIF)).toBe('Periode 2027/2028, pilihan 1 AKL, kata kunci "budi"'); // status tidak lagi disaring (PRD 1.3 butir 63)
   });
 });
 

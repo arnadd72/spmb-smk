@@ -1,6 +1,7 @@
 "use client";
 
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { useKurangiGerak } from "@/components/motion/use-kurangi-gerak";
 import type { ReactNode } from "react";
 
 type PageTransitionProps = {
@@ -12,7 +13,7 @@ type PageTransitionProps = {
 
 /** Geser + fade antar langkah wizard, 250 ms (PRD 10.4, 16.5). Statis bila reduced motion. */
 export function PageTransition({ kunci, children, className }: PageTransitionProps) {
-  const kurangiGerak = useReducedMotion();
+  const kurangiGerak = useKurangiGerak();
   if (kurangiGerak) return <div className={className}>{children}</div>;
 
   return (

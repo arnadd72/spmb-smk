@@ -52,7 +52,6 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
     nama: "Pendaftar",
     item: [
       { label: "Data Peserta", href: "/admin/peserta", ket: "Daftar semua pendaftar", ikon: "peserta", peran: PENDAFTAR, siap: true },
-      { label: "Verifikasi", href: "/admin/verifikasi", ket: "Periksa data dan putuskan status", ikon: "verifikasi", peran: PENDAFTAR, siap: true },
       { label: "Input Manual", href: "/admin/input-manual", ket: "Daftarkan siswa yang datang langsung", ikon: "manual", peran: PENDAFTAR, siap: true },
       { label: "Ekspor Data", href: "/admin/ekspor", ket: "Unduh data ke Excel atau PDF", ikon: "ekspor", peran: PENDAFTAR, siap: true },
     ],

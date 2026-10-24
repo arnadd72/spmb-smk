@@ -2,6 +2,9 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { masukSebagai, sisipPendaftar } from "./masuk";
 
+// Pemeriksaan berkas dan nilai rapor di halaman detail peserta. Menu Verifikasi dan keputusan status dihapus:
+// sejak PRD 1.3 butir 62 setiap pendaftar langsung diterima.
+
 async function axe(page: Page) {
   await page.waitForLoadState("networkidle");
   await page.waitForTimeout(400);
@@ -9,18 +12,15 @@ async function axe(page: Page) {
   expect(hasil.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
 }
 
-test.describe("admin: verifikasi", () => {
-  test("antrean, penampil berkas, nilai sesuai, revisi (catatan wajib), lalu setujui", async ({ page }) => {
+test.describe("admin: periksa berkas dan nilai di detail peserta", () => {
+  test("penampil berkas, nilai sesuai, dan koreksi nilai di detail peserta; menu Verifikasi tidak ada", async ({ page }) => {
     test.setTimeout(120_000);
-    const a = await sisipPendaftar(`Uji E2E Peserta Verif ${Date.now()}`, { berkas: true });
+    const a = await sisipPendaftar(`Uji E2E Peserta Periksa ${Date.now()}`, { berkas: true });
     await masukSebagai(page, "panitia");
 
-    // Antrean memuat pendaftar menunggu
-    await page.goto("/admin/verifikasi");
-    await expect(page.getByRole("heading", { name: "Verifikasi", exact: true })).toBeVisible();
-    await expect(page.getByRole("link", { name: a.nomor })).toBeVisible();
-    await page.getByRole("link", { name: a.nomor }).click();
-    await expect(page).toHaveURL(new RegExp(`/admin/verifikasi/${a.id}$`));
+    await page.goto(`/admin/peserta/${a.id}`);
+    await expect(page.getByRole("navigation").getByRole("link", { name: /^Verifikasi/ })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Verifikasi", exact: true })).toHaveCount(0);
 
     // Penampil: gambar dimuat lewat backend, ada penanda belum di Drive, kontrol zoom bekerja
     const gambar = page.getByRole("img", { name: /Akta kelahiran: akta\.png/ });
@@ -43,35 +43,23 @@ test.describe("admin: verifikasi", () => {
     await page.getByLabel(/Matematika semester 2/).fill("150");
     await page.getByRole("button", { name: "Simpan koreksi nilai" }).click();
     await expect(page.getByText("Maksimal 100.")).toBeVisible();
-    await page.getByLabel(/Matematika semester 2/).fill("");
 
-    // Revisi wajib catatan
-    await page.getByRole("button", { name: "Perlu revisi" }).click();
-    await page.getByRole("button", { name: "Kirim permintaan revisi" }).click();
-    await expect(page.getByText(/Catatan revisi minimal 5 karakter/)).toBeVisible();
-    await page.getByLabel(/Catatan revisi/).fill("Foto akta kurang jelas, unggah ulang.");
-    await page.getByRole("button", { name: "Kirim permintaan revisi" }).click();
-    await expect(page.getByText("Permintaan revisi dikirim.")).toBeVisible();
-
-    // Setujui
-    await page.getByRole("button", { name: "Setujui" }).click();
-    await expect(page.getByText("Pendaftar disetujui.")).toBeVisible();
-
-    // Hasil terlihat di detail dan riwayat
-    await page.goto(`/admin/peserta/${a.id}`);
-    await expect(page.getByText("Diterima").first()).toBeVisible();
-    await expect(page.getByText("Pendaftar disetujui")).toBeVisible();
-    await expect(page.getByText("Diminta revisi").first()).toBeVisible();
+    // Pembukaan berkas tercatat di riwayat
+    await page.reload();
     await expect(page.getByText("Berkas dilihat").first()).toBeVisible();
+
+    // Halaman antrean verifikasi sudah tidak ada
+    const lama = await page.goto("/admin/verifikasi");
+    expect(lama?.status()).toBe(404);
   });
 
   for (const lebar of [360, 1440]) {
-    test(`halaman review ${lebar}px: tanpa gulir horizontal dan lolos axe`, async ({ page }) => {
+    test(`detail peserta ${lebar}px: tanpa gulir horizontal dan lolos axe`, async ({ page }) => {
       await page.setViewportSize({ width: lebar, height: 900 });
       const a = await sisipPendaftar(`Uji E2E Peserta Layar ${lebar}`, { berkas: true });
       await masukSebagai(page, "panitia");
-      await page.goto(`/admin/verifikasi/${a.id}`);
-      await expect(page.getByRole("heading", { name: "Keputusan" })).toBeVisible();
+      await page.goto(`/admin/peserta/${a.id}`);
+      await expect(page.getByRole("heading", { name: "Lihat berkas" })).toBeVisible();
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(lebar);
       await axe(page);
     });
@@ -81,13 +69,13 @@ test.describe("admin: verifikasi", () => {
     const a = await sisipPendaftar(`Uji E2E Peserta Akses ${Date.now()}`, { berkas: true });
     const url = `/api/v1/admin/peserta/${a.id}/berkas?kunci=akta&i=0`;
 
-    const tanpaSesi = await browser.newContext();
-    expect((await tanpaSesi.request.get(`http://localhost:3000${url}`)).status()).toBe(401);
+    const tanpaSesi = await browser.newContext({ baseURL: test.info().project.use.baseURL });
+    expect((await tanpaSesi.request.get(url)).status()).toBe(401);
     await tanpaSesi.close();
 
     await masukSebagai(page, "konten");
     expect((await page.request.get(url)).status()).toBe(403);
-    await page.goto("/admin/verifikasi");
+    await page.goto(`/admin/peserta/${a.id}`);
     await expect(page).toHaveURL(/\/admin\?akses=ditolak$/);
   });
 });

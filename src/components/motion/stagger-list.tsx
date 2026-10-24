@@ -1,6 +1,7 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
+import { motion } from "motion/react";
+import { useKurangiGerak } from "@/components/motion/use-kurangi-gerak";
 import type { ReactNode } from "react";
 
 type StaggerListProps = {
@@ -12,7 +13,7 @@ type StaggerListProps = {
 
 /** Daftar yang masuk berurutan (mis. kartu rekomendasi, PRD 10.4 Langkah 4). */
 export function StaggerList({ children, className, jeda = 0.06 }: StaggerListProps) {
-  const kurangiGerak = useReducedMotion();
+  const kurangiGerak = useKurangiGerak();
 
   if (kurangiGerak) {
     return (

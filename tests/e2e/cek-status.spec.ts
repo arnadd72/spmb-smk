@@ -19,7 +19,7 @@ test.describe("panel perjalanan pendaftaran", () => {
     await page.goto("/cek-status");
     await expect(page.getByRole("heading", { name: "Perjalanan satu pendaftaran" })).toBeVisible();
     await expect(page.locator("[data-tahap]")).toHaveCount(3);
-    await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Formulir terkirim", "Panitia memeriksa", "Keputusan keluar"]);
+    await expect(page.getByRole("heading", { level: 3 })).toHaveText(["Formulir terkirim", "Langsung diterima", "Datang ke sekolah"]);
   });
 
   test("animasi berjalan: titik tahap berpindah dari mati ke menyala", async ({ page }) => {

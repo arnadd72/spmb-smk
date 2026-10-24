@@ -7,7 +7,7 @@ import { rataMapel, type DefinisiField, type NilaiRapor } from "@/server/validas
 import { GalatApi } from "@/server/types/galat";
 
 // Ekspor XLSX pendaftar (PRD v3.1 15.2): semua kolom Bagian A-D, alamat terurai, rata-rata nilai rapor per mapel,
-// saran jurusan, status, dan isian kustom. Header hijau NU, NIK/NISN/HP sebagai teks supaya angka nol depan aman.
+// saran jurusan, dan isian kustom (tanpa kolom status: semua pendaftar langsung diterima, PRD 1.3 butir 63). Header hijau NU, NIK/NISN/HP sebagai teks supaya angka nol depan aman.
 
 export const MAKS_BARIS_EKSPOR = 10_000;
 const HIJAU = "FF057A3C";
@@ -61,7 +61,6 @@ export async function buatXlsx(filter: FilterPeserta, periodeAktif: string): Pro
     { header: "Periode", lebar: 11, nilai: (p) => p.periode },
     { header: "Gelombang", lebar: 14, nilai: (p) => p.gelombang?.nama ?? "" },
     { header: "Sumber", lebar: 9, nilai: (p) => p.sumber },
-    { header: "Status Verifikasi", lebar: 16, nilai: (p) => ({ pending: "Menunggu", approved: "Diterima", revision: "Perlu revisi", rejected: "Ditolak" })[p.statusVerifikasi] },
     { header: "Catatan Panitia", lebar: 28, nilai: (p) => p.catatanPenolakan ?? p.catatanVerifikasi ?? "" },
     { header: "Pilihan Jurusan 1", lebar: 12, nilai: (p) => p.jurusan1?.kode ?? "" },
     { header: "Pilihan Jurusan 2", lebar: 12, nilai: (p) => p.jurusan2?.kode ?? "" },

@@ -228,6 +228,42 @@ describe("submit pendaftaran", () => {
     expect(new Set(hasil.map((h) => h.nomor)).size).toBe(3);
   });
 
+  describe("kuota jurusan ditegakkan karena pendaftar langsung diterima (PRD 1.3 butir 62)", () => {
+    const aturKuota = (kuota: number) => prisma.jurusan.update({ where: { kode: "AKL" }, data: { kuota } });
+    afterAll(async () => {
+      await aturKuota(72);
+    });
+
+    it("jurusan penuh ditolak saat kirim dan saat menyimpan langkah jurusan; terbuka lagi setelah kuota dinaikkan", async () => {
+      await aturKuota(1);
+      const a = (await buatDraf()).token;
+      const b = (await buatDraf()).token;
+      await isiLengkap(a);
+      await isiLengkap(b); // keduanya memilih AKL saat kuota masih kosong
+
+      await kirimPendaftaran(a, true);
+      const g = await galat(kirimPendaftaran(b, true));
+      expect([g.status, g.code, g.errors?.jurusan_1?.[0]]).toEqual([409, "KUOTA_PENUH", "Kuota jurusan AKL sudah penuh. Pilih jurusan lain."]);
+      expect((await galat(simpanLangkah(b, 4, { jurusan_1: "AKL" }))).code).toBe("KUOTA_PENUH");
+      expect((await rekomendasiDraf(b)).kuotaPenuh).toEqual(["AKL"]);
+      expect(await prisma.pendaftar.count()).toBe(1);
+
+      await aturKuota(2);
+      const { nomor } = await kirimPendaftaran(b, true);
+      expect((await prisma.pendaftar.findUniqueOrThrow({ where: { nomorPendaftaran: nomor } })).statusVerifikasi).toBe("approved");
+    });
+
+    it("dua pengiriman bersamaan untuk sisa satu kursi: hanya satu yang diterima", async () => {
+      await aturKuota(1);
+      const tokens = await Promise.all([buatDraf(), buatDraf()].map(async (p) => (await p).token));
+      for (const t of tokens) await isiLengkap(t);
+      const hasil = await Promise.allSettled(tokens.map((t) => kirimPendaftaran(t, true)));
+      expect(hasil.filter((h) => h.status === "fulfilled")).toHaveLength(1);
+      expect(hasil.filter((h) => h.status === "rejected").map((h) => ((h as PromiseRejectedResult).reason as GalatApi).code)).toEqual(["KUOTA_PENUH"]);
+      expect(await prisma.pendaftar.count()).toBe(1);
+    });
+  });
+
   it("menolak submit tanpa konfirmasi final atau sebelum semua langkah selesai", async () => {
     const { token } = await buatDraf();
     expect((await galat(kirimPendaftaran(token, true))).code).toBe("STEP_LOCKED");
@@ -265,7 +301,7 @@ describe("cek status", () => {
     const { nomor } = await kirimPendaftaran(token, true);
 
     const ok = await cekStatus({ nomor, tanggalLahir: "2011-05-17" }, "1.1.1.1");
-    expect(ok.status).toBe("pending");
+    expect(ok.status).toBe("approved"); // langsung diterima (PRD 1.3 butir 62)
     expect(ok.jurusan1).toContain("AKL");
 
     const salahTanggal = await galat(cekStatus({ nomor, tanggalLahir: "2011-05-18" }, "1.1.1.1"));

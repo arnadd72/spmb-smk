@@ -139,7 +139,7 @@ describe("jawabPertanyaan: fitur situs yang sering ditanyakan", () => {
       const r = await jawabPertanyaan(q, "ip-grup");
       expect(r.sumber).toBe("aturan");
       expect(r.jawaban).toMatch(/wajib bergabung ke grup WhatsApp/);
-      expect(r.jawaban).toMatch(/hasil seleksi/);
+      expect(r.jawaban).toMatch(/jadwal datang ke sekolah/);
       expect(r.jawaban).not.toMatch(/telepon/); // bukan jawaban kontak
       expect(r.jawaban).not.toContain("chat.whatsapp.com"); // tautan tidak dibocorkan lewat obrolan
     }
@@ -155,7 +155,7 @@ describe("jawabPertanyaan: fitur situs yang sering ditanyakan", () => {
       const r = await jawabPertanyaan(q, "ip-status");
       expect(r.sumber).toBe("aturan");
       expect(r.jawaban).toMatch(/memantau perkembangan/);
-      expect(r.jawaban).toMatch(/keputusan keluar/);
+      expect(r.jawaban).toMatch(/langsung diterima/);
       expect(r.tautan?.[0].href).toBe("/cek-status");
     }
     // Pertanyaan cara tetap dijawab FAQ.

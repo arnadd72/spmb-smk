@@ -1,7 +1,7 @@
 import { daftarGelombang, keadaanDariGelombang, pesanTutup, type KeadaanPendaftaran } from "@/server/services/gelombang";
 import { prisma } from "@/server/db/client";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
-import { terdaftarPerJurusan } from "@/server/services/kuota";
+import { pastikanKuotaTersedia, terdaftarPerJurusan } from "@/server/services/kuota";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatBobotJurusan, versiBobot, type HasilRekomendasi } from "@/server/services/rekomendasi";
@@ -353,6 +353,11 @@ export async function simpanLangkah(token: string | undefined, langkah: number, 
 
   const ctx = await konteksValidasi();
   const bersih = validasiLangkah(langkah, input, bacaBerkas(baris), ctx);
+  // Jurusan yang kuotanya penuh tidak bisa dipilih (PRD 1.3 butir 62).
+  if (typeof bersih.jurusan_1 === "string") {
+    const j = await prisma.jurusan.findUnique({ where: { kode: bersih.jurusan_1 }, select: { id: true } });
+    if (j) await pastikanKuotaTersedia(prisma, ctx.konfig.tahunAjaran, j.id);
+  }
 
   const data = bacaData(baris);
   data[String(langkah)] = bersih;

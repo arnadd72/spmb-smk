@@ -91,6 +91,12 @@ describe("jawabPertanyaan: aturan dan FAQ", () => {
     expect((await jawabPertanyaan("nomor kontak panitia?")).jawaban).toContain("0812-0000-1111");
     expect((await jawabPertanyaan("whatsapp panitia mana")).jawaban).toContain("0812-0000-1111");
 
+    // "jalur masuk" tidak boleh jatuh ke FAQ akun lewat kata "masuk".
+    const jalur = await jawabPertanyaan("ada berapa jalur masuk?");
+    expect(jalur.sumber).toBe("aturan");
+    expect(jalur.jawaban).toMatch(/satu alur pendaftaran/);
+    expect(jalur.jawaban).not.toMatch(/akun/);
+
     const j = await jawabPertanyaan("jurusan apa saja yang ada?");
     expect(j.jawaban).toContain("AKL");
     expect(j.jawaban).toContain("TKR");

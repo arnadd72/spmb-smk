@@ -154,6 +154,15 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     };
   }
 
+  // Situs hanya punya satu alur pendaftaran. Tanpa aturan ini, "jalur masuk" jatuh ke FAQ akun karena kata "masuk".
+  if (ada("jalur", "jalur masuk", "jalur pendaftaran")) {
+    return {
+      sumber: "aturan",
+      jawaban: `Di situs ini hanya ada satu alur pendaftaran online untuk semua calon murid, lalu memilih salah satu dari ${k.jurusan.length} program keahlian. Situs tidak membedakan jalur seperti prestasi atau afirmasi. Bila Anda menanyakan jalur khusus di luar situs, silakan hubungi panitia.`,
+      tautan: [{ label: "Mulai mendaftar", href: "/daftar" }],
+    };
+  }
+
   if (ada("kuota", "daya tampung", "sisa kursi", "sisa kuota", "kursi")) {
     const baris = k.jurusan.map((j) => `${j.kode}: sisa ${j.sisa} dari ${j.kuota}`).join("; ");
     return { sumber: "aturan", jawaban: `Daya tampung jurusan (tahun ajaran ${k.konfig.tahunAjaran}): ${baris}. Jurusan yang kuotanya penuh tidak bisa dipilih sampai panitia menambah kuotanya.`, tautan: [{ label: "Lihat jurusan", href: "/jurusan" }] };

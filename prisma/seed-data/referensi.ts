@@ -74,7 +74,7 @@ export const FAQ = [
   {
     pertanyaan: "Apakah saya perlu membuat akun untuk mendaftar?",
     jawaban: "Tidak perlu. Pendaftaran dilakukan tanpa akun. Setelah mengirim formulir, Anda mendapat nomor pendaftaran dan tautan halaman sukses. Simpan keduanya.",
-    keywords: ["akun", "login", "daftar", "registrasi", "masuk"],
+    keywords: ["akun", "login", "daftar", "registrasi"],
     kategori: "Pendaftaran",
   },
   {

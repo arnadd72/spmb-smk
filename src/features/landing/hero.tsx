@@ -111,9 +111,9 @@ export function Hero({
       const teks = el.querySelector<HTMLElement>("[data-teks]");
 
       // Masuk: huruf judul naik dari balik topeng baris, lalu sisanya menyusul.
-      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines", linesClass: "baris", charsClass: "huruf" }) : null;
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,words,chars", mask: "lines", linesClass: "baris", wordsClass: "kata-utuh", charsClass: "huruf" }) : null;
       const masuk = gsap.timeline({ delay: 0.15 });
-      if (split) masuk.from(split.chars, { yPercent: 115, rotate: 6, duration: 0.9, ease: "expo.out", stagger: 0.018 });
+      if (split) masuk.from(split.chars, { yPercent: 115, duration: 0.8, ease: "expo.out", stagger: 0.012 });
       masuk
         .from("[data-masuk]", { opacity: 0, y: 18, duration: 0.6, ease: "power3.out", stagger: 0.08 }, "-=0.55")
         .from(foto, { yPercent: 14, duration: 1.1, ease: "expo.out" }, "-=0.9");

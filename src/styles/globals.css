@@ -148,6 +148,12 @@
     margin-bottom: -0.14em;
   }
 
+  /* Kata hasil SplitText: tidak boleh terputus di tengah kata saat baris dibungkus. */
+  .kata-utuh {
+    display: inline-block;
+    white-space: nowrap;
+  }
+
   h1,
   h2,
   h3,

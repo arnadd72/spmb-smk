@@ -13,7 +13,7 @@ export function Penutup({ logo }: { logo: string }) {
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-penutup]");
-      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,chars", mask: "lines", linesClass: "baris" }) : null;
+      const split = judul ? SplitText.create(judul, { aria: "none", type: "lines,words,chars", mask: "lines", linesClass: "baris", wordsClass: "kata-utuh" }) : null;
       if (split) {
         gsap.from(split.chars, {
           yPercent: 120,

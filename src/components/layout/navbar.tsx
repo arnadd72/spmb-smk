@@ -27,13 +27,14 @@ export function Navbar({ logo }: { logo: string }) {
   }, [buka]);
 
   return (
+    <>
     <header className="sticky top-0 z-30 border-b border-garis bg-latar/95 backdrop-blur-sm">
       <div className="wadah flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="flex items-center gap-3 font-display text-lg font-extrabold leading-none text-primer-tua">
+        <Link href="/" className="flex items-center min-w-0 gap-3 font-display text-base font-extrabold leading-tight text-primer-tua sm:text-lg sm:leading-none">
           <GambarLogo src={logo} width={40} height={40} className="size-10 object-contain" priority />
           <span>
             SMK Ma&apos;arif NU 1 Wangon
-            <span className="mt-1 block text-xs font-semibold tracking-wide text-tinta-redup">SPMB</span>
+            <span className="mt-0.5 block text-xs sm:mt-1 font-semibold tracking-wide text-tinta-redup">SPMB</span>
           </span>
         </Link>
 
@@ -65,11 +66,13 @@ export function Navbar({ logo }: { logo: string }) {
           </button>
         </div>
       </div>
+    </header>
 
+      {/* Di luar <header>: backdrop-blur membuat elemen fixed relatif ke header (tinggi 64px), bukan layar. */}
       {buka && (
         <div
           id="menu-mobile"
-          className="fixed inset-x-0 bottom-0 top-16 z-20 overflow-y-auto bg-latar px-4 py-6 lg:hidden"
+          className="fixed inset-x-0 bottom-0 top-16 z-[60] overflow-y-auto bg-latar px-4 py-6 lg:hidden"
         >
           <nav aria-label="Menu utama" className="flex flex-col">
             {tautan.map((t) => (
@@ -90,6 +93,6 @@ export function Navbar({ logo }: { logo: string }) {
           </Link>
         </div>
       )}
-    </header>
+    </>
   );
 }

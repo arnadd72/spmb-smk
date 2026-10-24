@@ -7,7 +7,6 @@ import { GambarKonten } from "@/features/berita/gambar-konten";
 import { TAMPIL_JURUSAN, TAMPIL_STANDAR } from "@/features/jurusan/tampil";
 import { fotoJurusan } from "@/lib/aset-bawaan";
 import { cn } from "@/lib/cn";
-import { formatAngka } from "@/lib/format";
 import { ambilDaftarJurusan, ambilJurusanPublik } from "@/server/actions/ambilPublik";
 
 export const revalidate = 300;
@@ -34,7 +33,6 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
   const t = TAMPIL_JURUSAN[j.kode] ?? TAMPIL_STANDAR;
   const foto = fotoJurusan(j.kode, j.nama, j.gambar);
   const lainnya = (await ambilDaftarJurusan().catch(() => [])).filter((x) => x.kode !== j.kode);
-  const bobotMaks = Math.max(...j.mapelUtama.map((m) => m.bobot), 0.01);
 
   return (
     <article>
@@ -79,24 +77,14 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
         </Reveal>
 
         <Reveal tunda={0.06} className="rounded-kartu border border-garis bg-permukaan p-6 lg:p-8">
-          <h2 className="text-2xl font-bold text-ink">Nilai rapor yang berpengaruh</h2>
-          {j.mapelUtama.length === 0 ? (
-            <p className="mt-4 text-tinta-redup">Bobot mata pelajaran belum diatur.</p>
-          ) : (
-            <ul className="mt-5 flex flex-col gap-4">
-              {j.mapelUtama.map((m) => (
-                <li key={m.nama}>
-                  <div className="flex items-baseline justify-between gap-3 text-sm font-semibold text-ink">
-                    <span>{m.nama}</span>
-                    <span className="angka">{formatAngka(m.bobot * 100, 0)}%</span>
-                  </div>
-                  <div className="mt-1.5 h-2.5 overflow-hidden rounded-full bg-permukaan-alt">
-                    <div className="h-full rounded-full bg-primer" style={{ width: `${(m.bobot / bobotMaks) * 100}%` }} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
+          <h2 className="text-2xl font-bold text-ink">Cocok dengan minatmu?</h2>
+          <p className="mt-4 text-tinta-redup">
+            Coba tes minat bakat: 15 pertanyaan singkat untuk melihat jurusan yang paling sesuai dengan minatmu. Tes yang sama juga ada di
+            langkah 3 pendaftaran.
+          </p>
+          <Link href="/tes-minat-bakat" className="mt-5 inline-flex min-h-11 items-center font-semibold text-primer-tua underline underline-offset-4">
+            Mulai tes minat bakat
+          </Link>
         </Reveal>
 
         <Reveal tunda={0.12} className="rounded-kartu border border-garis bg-permukaan p-6 lg:p-8">
@@ -124,7 +112,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
       <div className="wadah pb-16 lg:pb-24">
         <div className="flex flex-col items-start justify-between gap-6 rounded-kartu bg-ink p-7 text-kertas sm:p-10 lg:flex-row lg:items-center">
           <p className="max-w-[28ch] font-display text-3xl font-bold leading-tight lg:text-4xl">
-            Tertarik dengan {j.kode}? Daftar dan lihat kecocokan nilai rapor Anda.
+            Tertarik dengan {j.kode}? Daftar sekarang, tanpa perlu membuat akun.
           </p>
           <Link href="/daftar" className="w-full sm:w-auto">
             <Button ukuran="lg" className="w-full sm:w-auto">

@@ -12,7 +12,6 @@ export const GET = tangani(async () => {
       status: konfig.status,
       buka: konfig.buka,
       tutup: konfig.tutup,
-      semester: konfig.semester,
       langkah: NAMA_LANGKAH.map((nama, i) => ({
         nomor: i + 1,
         nama,

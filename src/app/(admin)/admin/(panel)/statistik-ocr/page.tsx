@@ -5,7 +5,7 @@ import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
 
 export const metadata = { title: "Statistik OCR" };
 
-const NAMA = { akta: "Akta kelahiran", kk: "Kartu keluarga", rapor: "Rapor" } as const;
+const NAMA = { akta: "Akta kelahiran", kk: "Kartu keluarga" } as const;
 
 export default async function HalamanStatistikOcr() {
   await wajibPeranHalaman(...PERAN.sistem);

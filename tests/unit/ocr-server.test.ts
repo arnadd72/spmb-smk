@@ -11,7 +11,6 @@ import { ambilDraf, buatDraf, simpanLangkah, unggahBerkas } from "@/server/servi
 import { MAKS_CATATAN_PER_JAM, catatHasilOcr } from "@/server/services/ocr";
 import { kirimPendaftaran } from "@/server/services/pendaftaran";
 import { simpanPengaturan } from "@/server/services/pengaturan";
-import { muatBobotJurusan } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 import { bersihkanIsianOcr } from "@/server/validasi/ocr";
 import { seedFormField, seedReferensi } from "../../prisma/seed-lib";
@@ -68,7 +67,7 @@ describe("bersihkanIsianOcr", () => {
   });
 });
 
-describe("saran OCR di draf (langkah 2) dan asal nilai rapor (langkah 3)", () => {
+describe("saran OCR di draf (langkah 2)", () => {
   it("langkah 2 menyimpan saran isian yang sudah disaring dan tetap bisa diambil kembali", async () => {
     const { token } = await buatDraf();
     await isiLengkap(token);
@@ -84,51 +83,33 @@ describe("saran OCR di draf (langkah 2) dan asal nilai rapor (langkah 3)", () =>
     expect((await ambilDraf(token))?.data["2"].ocr).toBeUndefined();
   });
 
-  it("asal nilai rapor tersimpan ke pendaftar saat submit, dan saran OCR tidak bocor ke data kustom", async () => {
+  it("saran OCR dan jawaban tes minat bakat tidak bocor ke data kustom saat submit", async () => {
     const { token } = await buatDraf();
     await isiLengkap(token);
-    const bobot = await muatBobotJurusan();
-    const mapel = [...new Set(bobot.flatMap((j) => j.bobot.map((m) => m.kode)))];
     await simpanLangkah(token, 2, { ocr: { nik: "3302010101010009" } });
-    await simpanLangkah(token, 3, {
-      nilai_rapor: { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80, "2": 82 }])) },
-      sumber_nilai: "ocr_dikoreksi",
-    });
-    await simpanLangkah(token, 8 - 1, (await ambilDraf(token))!.data["7"]);
     const { nomor } = await kirimPendaftaran(token, true);
     const p = await prisma.pendaftar.findUniqueOrThrow({ where: { nomorPendaftaran: nomor } });
-    expect(p.nilaiRaporSumber).toBe("ocr_dikoreksi");
-    expect(JSON.stringify(p.dataKustom ?? {})).not.toMatch(/ocr|sumber_nilai/);
-  });
-
-  it("asal nilai rapor yang tidak dikenal dianggap manual", async () => {
-    const { token } = await buatDraf();
-    await isiLengkap(token);
-    const bobot = await muatBobotJurusan();
-    const mapel = [...new Set(bobot.flatMap((j) => j.bobot.map((m) => m.kode)))];
-    await simpanLangkah(token, 3, { nilai_rapor: { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80 }])) }, sumber_nilai: "google" });
-    expect((await ambilDraf(token))?.data["3"].sumber_nilai).toBe("manual");
+    expect(JSON.stringify(p.dataKustom ?? {})).not.toMatch(/ocr|minat/);
   });
 });
 
 describe("foto rapor tidak disimpan (PRD butir 40)", () => {
-  it("unggah berkas rapor ditolak dan langkah 3 tersimpan tanpa berkas", async () => {
+  it("unggah berkas rapor ditolak", async () => {
     const { token } = await buatDraf();
     await isiLengkap(token);
     expect((await galat(unggahBerkas(token, "rapor", PNG, "rapor.png"))).status).toBe(422);
     const draf = await ambilDraf(token);
     expect(draf?.berkas.rapor).toBeUndefined();
-    expect(draf?.data["3"].nilai_rapor).toBeDefined();
   });
 
-  it("pendaftaran terkirim tanpa berkas rapor, nilainya tersimpan", async () => {
+  it("pendaftaran terkirim tanpa berkas rapor maupun nilai rapor (PRD 1.3 butir 65)", async () => {
     const { token } = await buatDraf();
     await isiLengkap(token);
     const { nomor } = await kirimPendaftaran(token, true);
     const p = await prisma.pendaftar.findUniqueOrThrow({ where: { nomorPendaftaran: nomor } });
     expect(p.raporFileIds).toBeNull();
     expect(JSON.stringify(p.berkasMeta)).not.toMatch(/rapor/);
-    expect(p.nilaiRapor).not.toBeNull();
+    expect(p.nilaiRapor).toEqual({});
   });
 });
 
@@ -145,7 +126,7 @@ describe("catatHasilOcr", () => {
 
   it("mencatat sebab gagal (waktu habis)", async () => {
     const { token } = await buatDraf();
-    await catatHasilOcr(token, { jenis: "rapor", sukses: false, durasiMs: 40000, galat: "waktu_habis" });
+    await catatHasilOcr(token, { jenis: "akta", sukses: false, durasiMs: 40000, galat: "waktu_habis" });
     const [b] = await prisma.ocrHasil.findMany();
     expect(b.sukses).toBe(false);
     expect(b.confidence).toMatchObject({ _galat: "waktu_habis" });

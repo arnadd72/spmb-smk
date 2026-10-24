@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { Prisma, type PrismaClient } from "../src/generated/prisma/client";
 import { FORM_FIELDS } from "./seed-data/formField";
-import { BOBOT, FAQ, JURUSAN, MAPEL } from "./seed-data/referensi";
+import { FAQ, JURUSAN } from "./seed-data/referensi";
 
 // Seed idempoten: boleh dijalankan berulang tanpa menduplikasi atau menimpa perubahan panitia
 // pada konten yang sudah ada (jurusan, mapel, bobot, form field hanya dibuat bila belum ada).
@@ -56,34 +56,11 @@ export async function seedReferensi(prisma: PrismaClient) {
       update: {},
     });
   }
-
-  for (const [i, m] of MAPEL.entries()) {
-    await prisma.mataPelajaran.upsert({
-      where: { kode: m.kode },
-      create: { ...m, urutan: i + 1 },
-      update: {},
-    });
-  }
-
-  const jurusan = await prisma.jurusan.findMany();
-  const mapel = await prisma.mataPelajaran.findMany();
-  for (const [kodeJurusan, bobot] of Object.entries(BOBOT)) {
-    const j = jurusan.find((x) => x.kode === kodeJurusan);
-    if (!j) throw new Error(`Jurusan ${kodeJurusan} tidak ada.`);
-    for (const [kodeMapel, nilai] of Object.entries(bobot)) {
-      const m = mapel.find((x) => x.kode === kodeMapel);
-      if (!m) throw new Error(`Mata pelajaran ${kodeMapel} tidak ada.`);
-      await prisma.bobotJurusan.upsert({
-        where: { jurusanId_mataPelajaranId: { jurusanId: j.id, mataPelajaranId: m.id } },
-        create: { jurusanId: j.id, mataPelajaranId: m.id, bobot: nilai },
-        update: {},
-      });
-    }
-  }
+  // Mata pelajaran dan bobot tidak di-seed lagi: saran jurusan kini dari tes minat bakat (PRD 1.3 butir 65).
 }
 
 export async function seedFormField(prisma: PrismaClient) {
-  await prisma.formField.deleteMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun", "ayah_ttl", "ibu_ttl", "jurusan_2", "nilai_ujian"] } } });
+  await prisma.formField.deleteMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun", "ayah_ttl", "ibu_ttl", "jurusan_2", "nilai_ujian", "nilai_rapor"] } } });
   for (const f of FORM_FIELDS) {
     const { opsi, ...sisa } = f;
     await prisma.formField.upsert({

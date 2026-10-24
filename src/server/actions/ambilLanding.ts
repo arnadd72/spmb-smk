@@ -12,8 +12,6 @@ export type JurusanLanding = {
   prospekKarir: string[];
   keunggulan: string[];
   kuota: number;
-  /** Mata pelajaran yang paling berpengaruh pada rekomendasi, urut bobot terbesar. */
-  mapelUtama: string[];
   /** Foto pilihan admin; null memakai foto bawaan situs. */
   gambar: string | null;
 };
@@ -54,11 +52,7 @@ const array = (v: unknown): string[] => (Array.isArray(v) ? v.filter((x): x is s
 export async function ambilDataLanding(): Promise<DataLanding> {
   try {
     const [jurusan, faq, berita, agenda, galeri, heroTambahan, testimoni, konfig, aset] = await Promise.all([
-      prisma.jurusan.findMany({
-        where: { isActive: true },
-        orderBy: { urutan: "asc" },
-        include: { bobot: { include: { mataPelajaran: true }, orderBy: { bobot: "desc" }, take: 3 } },
-      }),
+      prisma.jurusan.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } }),
       prisma.faq.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" }, take: 6 }),
       ambilDaftarBerita(3),
       ambilAgendaMendatang(3),
@@ -80,7 +74,6 @@ export async function ambilDataLanding(): Promise<DataLanding> {
         prospekKarir: array(j.prospekKarir),
         keunggulan: array(j.keunggulan),
         kuota: j.kuota,
-        mapelUtama: j.bobot.map((b) => b.mataPelajaran.nama),
         gambar: j.gambar,
       })),
       faq: faq.map((f) => ({ id: f.id.toString(), pertanyaan: f.pertanyaan, jawaban: f.jawaban })),

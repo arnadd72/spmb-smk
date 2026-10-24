@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { PDFDocument, StandardFonts, clip, endPath, popGraphicsState, pushGraphicsState, rectangle, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { prisma } from "@/server/db/client";
 import { dekripsi, hashToken } from "@/server/services/kripto";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
@@ -215,6 +215,22 @@ const Y = (y: number) => TINGGI_HALAMAN - y;
 /** Kotak pas foto di template-dasar.pdf halaman 2 (koordinat PDF, sumbu Y dari bawah). */
 const KOTAK_PAS_FOTO = { x: 286, bawah: 273.57, w: 68.5, h: 75 };
 
+/**
+ * Letak pas foto: bingkai 3:4 di tengah kotak template (kotaknya sendiri lebih lebar dari 3:4), lalu foto
+ * diperkecil agar muat utuh di bingkai itu. Foto 3x4 mengisi bingkai penuh; foto berbentuk lain tidak terpotong.
+ */
+export function letakPasFoto(lebarGambar: number, tinggiGambar: number) {
+  const k = KOTAK_PAS_FOTO;
+  const dalamW = k.w - 1.6;
+  const dalamH = k.h - 1.6; // jangan menimpa garis kotak template
+  const bingkaiH = Math.min(dalamH, (dalamW * 4) / 3);
+  const bingkaiW = (bingkaiH * 3) / 4;
+  const skala = Math.min(bingkaiW / lebarGambar, bingkaiH / tinggiGambar);
+  const width = lebarGambar * skala;
+  const height = tinggiGambar * skala;
+  return { x: k.x + (k.w - width) / 2, y: k.bawah + (k.h - height) / 2, width, height };
+}
+
 function tandai(page: PDFPage, k: Kotak, teks?: string, font?: PDFFont) {
   const tengahX = (k.x0 + k.x1) / 2;
   if (teks && font) {
@@ -285,16 +301,11 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
   if (d.ukuranSeragam && KOTAK_SERAGAM[d.ukuranSeragam]) tandai(p2, KOTAK_SERAGAM[d.ukuranSeragam]);
 
   // Pas foto: isi kotak "Pas photo 3 x 4" di template halaman 2 (kotak 68,5 x 75 pt; garis kotak tetap milik template).
+  // Foto utuh dalam bingkai 3:4 (letakPasFoto), tidak lagi diperbesar memenuhi kotak sehingga kepala terpotong.
   if (d.pasFoto && d.pasFoto.length > 0) {
     const jpeg = await sharp(Buffer.from(d.pasFoto)).rotate().resize({ height: 600, withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
     const gambar = await doc.embedJpg(jpeg);
-    const k = KOTAK_PAS_FOTO;
-    const skala = Math.max(k.w / gambar.width, k.h / gambar.height);
-    const lebar = gambar.width * skala;
-    const tinggi = gambar.height * skala;
-    p2.pushOperators(pushGraphicsState(), rectangle(k.x + 0.8, k.bawah + 0.8, k.w - 1.6, k.h - 1.6), clip(), endPath());
-    p2.drawImage(gambar, { x: k.x + (k.w - lebar) / 2, y: k.bawah + (k.h - tinggi) / 2, width: lebar, height: tinggi });
-    p2.pushOperators(popGraphicsState());
+    p2.drawImage(gambar, letakPasFoto(gambar.width, gambar.height));
   }
 
   return { pdf: await doc.save(), jejak };

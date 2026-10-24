@@ -59,11 +59,6 @@ function Panel({ j }: { j: JurusanLanding }) {
         </p>
         <h3 className="mt-4 max-w-[24ch] text-lg font-bold leading-tight sm:text-xl lg:text-2xl">{j.nama}</h3>
         <p className="mt-2 max-w-[48ch] text-sm lg:text-[0.9375rem]">{j.deskripsi}</p>
-        {j.mapelUtama.length > 0 && (
-          <p className="mt-2 max-w-[48ch] text-[0.8125rem]">
-            <span className="font-bold">Nilai rapor yang paling berpengaruh:</span> {j.mapelUtama.join(", ")}.
-          </p>
-        )}
         <ul className="mt-3 flex flex-wrap gap-1.5">
           {j.prospekKarir.map((k) => (
             <li key={k} className="rounded-full border border-current/40 px-2.5 py-0.5 text-xs font-semibold">

@@ -4,7 +4,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { PDFArray, PDFDocument, PDFRawStream, decodePDFRawStream } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { buatFormulirPdf, nilaiSlot, type DataFormulir } from "@/server/services/pdf/formulir";
+import { buatFormulirPdf, letakPasFoto, nilaiSlot, type DataFormulir } from "@/server/services/pdf/formulir";
 import { SLOT_TEKS } from "@/server/services/pdf/peta-formulir";
 import { terbilang } from "@/server/services/pdf/terbilang";
 
@@ -143,6 +143,28 @@ describe("PDF formulir (PRD 15.1)", () => {
     const doc = await PDFDocument.load(pdf);
     expect(doc.getPageCount()).toBe(3);
     expect(pdf.length).toBeGreaterThan(tanpa.length);
+  });
+
+  it("pas foto utuh dalam bingkai 3:4 di dalam kotak, tidak terpotong", () => {
+    const kotak = { x: 286, bawah: 273.57, w: 68.5, h: 75 };
+    const dalam = (l: ReturnType<typeof letakPasFoto>) => {
+      expect(l.x).toBeGreaterThanOrEqual(kotak.x + 0.8);
+      expect(l.y).toBeGreaterThanOrEqual(kotak.bawah + 0.8);
+      expect(l.x + l.width).toBeLessThanOrEqual(kotak.x + kotak.w - 0.8);
+      expect(l.y + l.height).toBeLessThanOrEqual(kotak.bawah + kotak.h - 0.8);
+    };
+    // Foto 3x4 mengisi bingkai 3:4 setinggi kotak, rasio tetap.
+    const pas = letakPasFoto(300, 400);
+    dalam(pas);
+    expect(pas.width / pas.height).toBeCloseTo(3 / 4, 5);
+    expect(pas.height).toBeCloseTo(kotak.h - 1.6, 5);
+    // Foto berbentuk lain tetap utuh (rasio aslinya) dan tidak keluar bingkai.
+    for (const [w, h] of [[1080, 1920], [1200, 800], [500, 500]]) {
+      const l = letakPasFoto(w, h);
+      dalam(l);
+      expect(l.width / l.height).toBeCloseTo(w / h, 5);
+      expect(l.width).toBeLessThanOrEqual(pas.width + 1e-9);
+    }
   });
 
   it("karakter di luar WinAnsi diganti aman, tidak melempar galat", async () => {

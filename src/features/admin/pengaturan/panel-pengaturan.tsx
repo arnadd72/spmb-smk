@@ -23,7 +23,6 @@ const KELOMPOK: { judul: string; field: DefPengaturan[] }[] = [
       { kunci: "gelombang_buka", label: "Pendaftaran dibuka", tipe: "tanggal" },
       { kunci: "gelombang_tutup", label: "Pendaftaran ditutup", tipe: "tanggal" },
       { kunci: "tanggal_verifikasi_fisik", label: "Tanggal verifikasi berkas fisik", tipe: "tanggal", bantuan: "Tercetak di tanda terima berkas." },
-      { kunci: "semester_rapor", label: "Semester rapor yang dipakai", tipe: "teks", bantuan: "Nomor semester dipisah koma, mis. 1,2,3,4,5." },
     ],
   },
   {

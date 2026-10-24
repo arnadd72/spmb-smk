@@ -4,15 +4,14 @@ import { apiFetch } from "@/lib/api-client";
 import { GalatOcr, bacaDokumen, type HasilBaca, type KodeGalatOcr, type Tahap } from "@/lib/ocr/mesin";
 import { parseAkta } from "@/lib/ocr/parser/akta";
 import { parseKk } from "@/lib/ocr/parser/kk";
-import { parseRapor, type HasilRapor } from "@/lib/ocr/parser/rapor";
-import type { FieldOcr, HasilParser, JenisOcr, Keyakinan, MapelRef } from "@/lib/ocr/tipe";
+import type { FieldOcr, HasilParser, JenisOcr, Keyakinan } from "@/lib/ocr/tipe";
 
 // Penghubung wizard dengan OCR di browser (PRD v4 Bagian 11): jalankan, parse, catat ringkasan ke server.
 // Gagal apa pun menghasilkan { ok: false } dan UI beralih ke isi manual; tidak pernah melempar ke pemanggil.
 
 export type HasilBacaDokumen<T> = { ok: true; hasil: T; durasiMs: number } | { ok: false; kode: KodeGalatOcr };
 
-export type KonteksOcr = { namaMurid: string; tanggalLahir: string; mapel: MapelRef[] };
+export type KonteksOcr = { namaMurid: string; tanggalLahir: string };
 
 export type HasilIsian = { fields: HasilParser; peringatan: string[] };
 
@@ -71,18 +70,6 @@ export async function bacaKk(berkas: File, k: KonteksOcr, onTahap?: (t: Tahap) =
   const sukses = adaIsi(h.fields);
   catat("kk", sukses, r.hasil.durasiMs, ringkasKeyakinan(h.fields));
   return sukses ? { ok: true, hasil: { fields: h.fields, peringatan: h.peringatan }, durasiMs: r.hasil.durasiMs } : { ok: false, kode: "gagal" };
-}
-
-export async function bacaRapor(berkas: File, k: KonteksOcr, onTahap?: (t: Tahap) => void): Promise<HasilBacaDokumen<HasilRapor>> {
-  const r = await baca(berkas, onTahap);
-  if (!r.ok) {
-    catat("rapor", false, r.durasiMs, {}, r.kode);
-    return r;
-  }
-  const h = parseRapor(r.hasil.baris, k.mapel);
-  const sukses = Object.keys(h.nilai).length > 0;
-  catat("rapor", sukses, r.hasil.durasiMs, Object.fromEntries(Object.entries(h.nilai).map(([kode, s]) => [kode, s.keyakinan])));
-  return sukses ? { ok: true, hasil: h, durasiMs: r.hasil.durasiMs } : { ok: false, kode: "gagal" };
 }
 
 /** Pesan ramah untuk pendaftar saat OCR tidak bisa dipakai (PRD 11.5): selalu mengarah ke isi manual. */

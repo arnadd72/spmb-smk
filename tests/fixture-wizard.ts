@@ -1,5 +1,5 @@
 import { muatDefinisiField, simpanLangkah, unggahBerkas } from "@/server/services/draf";
-import { muatBobotJurusan } from "@/server/services/rekomendasi";
+import { SOAL_MINAT } from "@/server/validasi/minat";
 import type { DefinisiField } from "@/server/validasi/wizard";
 
 export const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
@@ -18,6 +18,12 @@ export function nilaiValid(f: DefinisiField): unknown {
     ibu_tanggal_lahir: "1983-07-12",
     jurusan_1: "AKL",
     jurusan_2: "TKR",
+    // Isian angka dibatasi sejak commit aae4f0c dan 9ca8344.
+    rt: "003",
+    rw: "005",
+    ortu_rt: "003",
+    ortu_rw: "005",
+    lama_belajar: "3",
   };
   if (f.kunci in khusus) return khusus[f.kunci];
   switch (f.tipe) {
@@ -39,16 +45,21 @@ export function nilaiValid(f: DefinisiField): unknown {
   }
 }
 
+/** Jawaban tes minat bakat contoh: 10 jawaban B (AKL) dan 5 jawaban D (TKR), jadi saran utama AKL. */
+export const JAWABAN_MINAT_CONTOH = SOAL_MINAT.map((_, i) => (i < 10 ? 1 : 3));
+
 export async function isiLengkap(token: string, tanpaJurusan2 = false) {
   const fields = await muatDefinisiField();
-  const bobot = await muatBobotJurusan();
-  const mapel = [...new Set(bobot.flatMap((j) => j.bobot.map((m) => m.kode)))];
 
   for (let n = 1; n <= 7; n++) {
-    if (n === 2) await unggahBerkas(token, "akta", PNG, "scan.png");
+    if (n === 2) {
+      // Akta dan KK wajib sejak commit 9ca8344.
+      await unggahBerkas(token, "akta", PNG, "scan.png");
+      await unggahBerkas(token, "kk", PNG, "kk.png");
+    }
     const isi: Record<string, unknown> = {};
     for (const f of fields.filter((x) => x.langkah === n && x.tipe !== "file" && x.tipe !== "tabel")) isi[f.kunci] = nilaiValid(f);
-    if (n === 3) isi.nilai_rapor = { mapel: Object.fromEntries(mapel.map((k) => [k, { "1": 80, "2": 82 }])) };
+    if (n === 3) isi.minat = JAWABAN_MINAT_CONTOH;
     if (n === 4 && tanpaJurusan2) delete isi.jurusan_2;
     await simpanLangkah(token, n, isi);
   }

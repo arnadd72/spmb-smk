@@ -80,7 +80,7 @@ async function isiHalaman(pdf: Uint8Array, h: number): Promise<string> {
 const tampil = (t: string) => `<${Buffer.from(t, "latin1").toString("hex").toUpperCase()}> Tj`;
 
 describe("ekspor XLSX", () => {
-  it("memuat semua bagian, header hijau, NIK sebagai teks, nilai rapor rata-rata, saran jurusan, dan kolom kustom", async () => {
+  it("memuat semua bagian, header hijau, NIK sebagai teks, dan kolom kustom; tanpa nilai rapor dan saran jurusan", async () => {
     await prisma.formField.create({ data: { kunci: "kustom_ukuran_sepatu", langkah: 5, label: "Ukuran sepatu", tipe: "text", urutan: 999, tampil: true, wajib: false, isKustom: true } });
     const { token } = await buatDraf();
     await isiLengkap(token);
@@ -113,9 +113,8 @@ describe("ekspor XLSX", () => {
     expect(sel("Nama Lengkap")).toBe("Ahmad Fauzi");
     expect(sel("Jenis Kelamin")).toBe("Laki-laki");
     expect(sel("Penghasilan Orang Tua")).toBe("Kurang dari Rp500.000");
-    expect(sel("Rata-rata Matematika")).toBe(81); // fixture: semester 1 = 80, semester 2 = 82
-    expect(typeof sel("Skor AKL")).toBe("number");
-    expect(["AKL", "MPLB", "LPK3", "TKR"]).toContain(sel("Saran Jurusan"));
+    // Nilai rapor dan saran jurusan tidak diekspor lagi (PRD 1.3 butir 65).
+    for (const k of ["Rata-rata Matematika", "Skor AKL", "Saran Jurusan", "Status Nilai", "Versi Bobot"]) expect(kolom(k), k).toBe(-1);
     expect(kolom("Status Verifikasi")).toBe(-1); // kolom status dihapus (PRD 1.3 butir 63)
     expect(sel("Ukuran sepatu")).toBe("42");
     expect(ws.autoFilter).toBeTruthy();

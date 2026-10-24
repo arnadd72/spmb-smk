@@ -187,7 +187,7 @@ export function Hero({
 
         <div className="mt-5 flex flex-col gap-5 sm:mt-6 lg:mt-8 lg:flex-row lg:items-end lg:justify-between">
           <p data-masuk className="max-w-[40ch] text-base leading-relaxed text-ink/75 sm:text-lg">
-            SMK Pusat Keunggulan di Wangon, Banyumas. Daftar tanpa akun; nilai rapor opsional untuk saran jurusan.
+            SMK Pusat Keunggulan di Wangon, Banyumas. Daftar tanpa akun; tes minat bakat opsional untuk saran jurusan.
           </p>
           <div data-masuk className="flex flex-col gap-3 sm:flex-row">
             <Magnetik className="sm:inline-block">

@@ -173,7 +173,9 @@ describe("login diaudit; audit log dan statistik OCR", () => {
       await prisma.ocrHasil.create({ data: { jenis, durasiMs: ms, sukses, fields: {}, confidence: {} } });
     }
     const s = await statistikOcr();
-    expect([s.total, s.bulanIni]).toEqual([4, 4]);
+    // Catatan lama OCR rapor tidak dihitung lagi (PRD 1.3 butir 65).
+    expect([s.total, s.bulanIni]).toEqual([3, 3]);
+    expect(s.perJenis.map((j) => j.jenis)).toEqual(["akta", "kk"]);
     const akta = s.perJenis.find((j) => j.jenis === "akta")!;
     expect([akta.jumlah, akta.sukses, akta.p50, akta.p95]).toEqual([3, 2, 300, 900]);
     expect(s.perJenis.find((j) => j.jenis === "kk")!.jumlah).toBe(0);

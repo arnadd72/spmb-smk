@@ -83,9 +83,8 @@ describe("daftar peserta: pencarian dan filter", () => {
     expect(await nomorDari({ q: "3302010101010009" })).toEqual([]);
   });
 
-  it("filter status, status nilai, jurusan, sumber, dan sinkron berkas", async () => {
+  it("filter status, jurusan, sumber, dan sinkron berkas", async () => {
     expect(await nomorDari({ status: "approved" })).toEqual(["SPMB-2027-0002"]);
-    expect(await nomorDari({ nilai: "sesuai" })).toEqual(["SPMB-2027-0002"]);
     expect(await nomorDari({ jurusan: "AKL" })).toEqual(["SPMB-2027-0001"]);
     expect(await nomorDari({ sumber: "luring" })).toEqual(["SPMB-2027-0002"]);
     expect(await nomorDari({ sinkron: "gagal" })).toEqual(["SPMB-2027-0003"]);

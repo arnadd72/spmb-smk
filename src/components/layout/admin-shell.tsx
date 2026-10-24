@@ -5,7 +5,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useId, useState, type ReactNode } from "react";
 import {
   ArrowSquareOutIcon,
-  BookOpenIcon,
   CalendarBlankIcon,
   CalendarDotsIcon,
   CaretRightIcon,
@@ -51,7 +50,6 @@ const IKON: Record<IkonMenu, Icon> = {
   testimoni: ChatCircleTextIcon,
   faq: QuestionIcon,
   jurusan: GraduationCapIcon,
-  mapel: BookOpenIcon,
   formulir: ListChecksIcon,
   pengaturan: GearSixIcon,
   ocr: ScanIcon,

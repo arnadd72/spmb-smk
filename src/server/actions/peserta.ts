@@ -30,7 +30,6 @@ export type BarisPeserta = {
   asalSekolah: string | null;
   jurusan: string | null;
   status: string;
-  statusNilai: string;
   sumber: string;
   sinkron: string;
   nik: string;
@@ -79,7 +78,6 @@ export async function daftarPeserta(f: FilterPeserta, periodeAktif: string): Pro
       asalSekolah: p.asalSekolah,
       jurusan: p.jurusan1?.kode ?? null,
       status: p.statusVerifikasi,
-      statusNilai: p.statusNilai,
       sumber: p.sumber,
       sinkron: p.berkasSinkron,
       nik: samarkan(bukaAman(p.nik), 4, 4),
@@ -121,7 +119,7 @@ export function nilaiPendaftar(p: Record<string, unknown>, jurusan: { j1?: strin
 export async function ambilPeserta(id: string) {
   const p = await prisma.pendaftar.findUnique({
     where: { id: idPendaftar(id) },
-    include: { jurusan1: true, jurusan2: true, rekomendasi: true, diverifikasiOleh: { select: { name: true } } },
+    include: { jurusan1: true, jurusan2: true, diverifikasiOleh: { select: { name: true } } },
   });
   if (!p) throw GalatApi.tidakDitemukan("Pendaftar tidak ditemukan.");
 
@@ -142,7 +140,6 @@ export async function ambilPeserta(id: string) {
     periode: p.periode,
     sumber: p.sumber,
     status: p.statusVerifikasi,
-    statusNilai: p.statusNilai,
     catatanVerifikasi: p.catatanVerifikasi,
     catatanPenolakan: p.catatanPenolakan,
     diverifikasiOleh: p.diverifikasiOleh?.name ?? null,
@@ -152,12 +149,6 @@ export async function ambilPeserta(id: string) {
     waLink: wa ? `https://wa.me/${nomorWa(wa)}` : null,
     jurusan1: p.jurusan1 ? { kode: p.jurusan1.kode, nama: p.jurusan1.nama } : null,
     jurusan2: p.jurusan2 ? { kode: p.jurusan2.kode, nama: p.jurusan2.nama } : null,
-    rekomendasi: p.rekomendasi ? { kode: p.rekomendasi.kode, nama: p.rekomendasi.nama } : null,
-    rekomendasiSkor: p.rekomendasiSkor as unknown,
-    rekomendasiVersi: p.rekomendasiVersi,
-    nilaiRapor: p.nilaiRapor as unknown,
-    nilaiRaporSumber: p.nilaiRaporSumber,
-    nilaiRaporKoreksi: p.nilaiRaporKoreksi as unknown,
     berkasSinkron: p.berkasSinkron,
     berkasMeta: p.berkasMeta as unknown,
     dataKustom: (p.dataKustom ?? {}) as Record<string, unknown>,

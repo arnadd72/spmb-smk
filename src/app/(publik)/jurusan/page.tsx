@@ -29,8 +29,8 @@ export default async function HalamanJurusan() {
         Program keahlian
       </h1>
       <p className="mt-5 max-w-[52ch] text-lg text-tinta-redup lg:text-xl">
-        Pilih jurusan yang sesuai minat dan nilai rapor. Setiap jurusan menampilkan daya tampung dan mata pelajaran yang paling
-        berpengaruh pada saran jurusan.
+        Pilih jurusan yang sesuai minatmu. Setiap jurusan menampilkan daya tampung dan prospek kariernya. Belum yakin? Coba tes minat
+        bakat.
       </p>
 
       {jurusan.length === 0 ? (

@@ -46,17 +46,7 @@ export function FilterPesertaForm({ filter, jurusan, periodeAktif, aksi = "/admi
         </button>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Pilih
-          nama="nilai"
-          label="Status nilai"
-          nilai={filter.nilai}
-          opsi={[
-            ["belumDicek", "Belum dicek"],
-            ["sesuai", "Sesuai"],
-            ["dikoreksi", "Dikoreksi"],
-          ]}
-        />
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Pilih nama="jurusan" label="Jurusan pilihan 1" nilai={filter.jurusan} opsi={jurusan.map((k) => [k, k])} />
         <Pilih
           nama="sumber"

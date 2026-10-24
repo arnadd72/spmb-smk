@@ -93,16 +93,29 @@ test.describe("wizard pendaftaran manual", () => {
     await expect(page).toHaveURL(/\/langkah\/2$/);
     await page.locator("[data-berkas=akta]").setInputFiles({ name: "akta.png", mimeType: "image/png", buffer: PNG });
     await expect(page.getByText("terunggah")).toBeVisible();
+    // KK wajib sejak commit 9ca8344.
+    await page.locator("[data-berkas=kk]").setInputFiles({ name: "kk.png", mimeType: "image/png", buffer: PNG });
+    await expect(page.getByText("terunggah")).toHaveCount(2);
     await axe(page);
     await lanjut(page);
 
-    // Langkah 3: nilai rapor opsional
+    // Langkah 3: tes minat bakat opsional (PRD 1.3 butir 65). Jawab D (TKR) di semua soal.
     await expect(page).toHaveURL(/\/langkah\/3$/);
+    await page.getByRole("radio", { name: /Ya, saya ikut tes minat bakat/ }).check();
+    for (let i = 1; i <= 15; i++) {
+      await expect(page.getByText(`Pertanyaan ${i} dari 15`)).toBeVisible();
+      await page.locator("#tes-minat-bakat input[type=radio]").nth(3).check();
+      await page.getByRole("button", { name: i === 15 ? "Lihat hasil" : "Lanjut", exact: true }).click();
+    }
+    await expect(page.getByRole("heading", { name: "Hasil minatmu" })).toBeVisible();
+    await axe(page);
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/4$/);
 
-    // Tanpa nilai rapor, tidak ada skor palsu; pilih jurusan secara mandiri.
-    await expect(page.getByText(/tidak ada skor rekomendasi/i)).toBeVisible();
+    // Saran dari tes: TKR paling sesuai dan langsung terpilih; pendaftar tetap boleh mengganti.
+    await expect(page.getByText(/dihitung dari jawaban tes minat bakat/)).toBeVisible();
+    await expect(page.locator("li").filter({ hasText: "Paling Sesuai" }).first()).toContainText("TKR");
+    await expect(page.getByRole("combobox").first()).toContainText("TKR");
     await page.getByRole("combobox").first().click();
     await page.getByRole("option", { name: /AKL/ }).click();
     await axe(page);

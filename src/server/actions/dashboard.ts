@@ -14,7 +14,6 @@ export type DataDashboard = {
   pending: number;
   approved: number;
   revisiAtauDitolak: number;
-  nilaiBelumDicek: number;
   perJurusan: KartuJurusan[];
   perHari: { tanggal: string; jumlah: number }[];
   terbaru: PendaftarTerbaru[];
@@ -35,9 +34,8 @@ export async function ambilDashboard(): Promise<DataDashboard> {
   const periode = konfig.tahunAjaran;
   const where = { periode };
 
-  const [perStatus, nilaiBelumDicek, jurusan, terpakai, rekomendasi, perHariMentah, terbaru, gagal, menunggu, drive] = await Promise.all([
+  const [perStatus, jurusan, terpakai, rekomendasi, perHariMentah, terbaru, gagal, menunggu, drive] = await Promise.all([
     prisma.pendaftar.groupBy({ by: ["statusVerifikasi"], where, _count: { _all: true } }),
-    prisma.pendaftar.count({ where: { ...where, statusNilai: "belumDicek" } }),
     prisma.jurusan.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } }),
     terdaftarPerJurusan(periode),
     prisma.pendaftar.groupBy({ by: ["rekomendasiJurusanId"], where, _count: { _all: true } }),
@@ -86,7 +84,6 @@ export async function ambilDashboard(): Promise<DataDashboard> {
     pending: hitung("pending"),
     approved: hitung("approved"),
     revisiAtauDitolak: hitung("revision") + hitung("rejected"),
-    nilaiBelumDicek,
     perJurusan,
     perHari,
     terbaru: terbaru.map((p) => ({

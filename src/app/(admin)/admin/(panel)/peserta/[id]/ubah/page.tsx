@@ -30,7 +30,7 @@ export default async function UbahPendaftar({ params }: PageProps<"/admin/pesert
       </p>
       <h1 className="mt-2 text-3xl font-bold text-ink">Ubah data pendaftar</h1>
       <p className="mt-1 text-tinta-redup">
-        Perubahan dicatat di riwayat beserta data lama dan barunya. Berkas dan nilai rapor diubah lewat halaman verifikasi.
+        Perubahan dicatat di riwayat beserta data lama dan barunya. Berkas diganti di bagian Kelola berkas pada halaman detail.
       </p>
       <div className="mt-6">
         <FormUbahPeserta id={p.id} fields={fields} nilai={p.nilai} />

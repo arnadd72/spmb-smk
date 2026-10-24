@@ -12,7 +12,8 @@ import { dekripsi, enkripsi } from "@/server/services/kripto";
 import { cekStatus, kirimPendaftaran, ambilRingkasanSukses } from "@/server/services/pendaftaran";
 import { formulirDariToken } from "@/server/services/pdf/formulir";
 import { simpanPengaturan } from "@/server/services/pengaturan";
-import { hitungRekomendasi, muatBobotJurusan } from "@/server/services/rekomendasi";
+import { hitungRekomendasi, muatJurusanAktif } from "@/server/services/rekomendasi";
+import { JURUSAN_MINAT, SOAL_MINAT, VERSI_MINAT } from "@/server/validasi/minat";
 import { skemaLangkah } from "@/server/validasi/wizard";
 import { GalatApi } from "@/server/types/galat";
 import { seedFormField, seedReferensi } from "../../prisma/seed-lib";
@@ -38,6 +39,14 @@ afterAll(async () => {
   await prisma.$disconnect();
 });
 
+/** Isi langkah 1 dan 2 (Akta dan KK wajib) agar langkah 3 terbuka. */
+async function sampaiLangkah3(token: string) {
+  await simpanLangkah(token, 1, { nama_lengkap: "Siti Aminah", nisn: "1234567890", tanggal_lahir: "2011-02-03", setuju: true });
+  await unggahBerkas(token, "akta", PNG, "akta.png");
+  await unggahBerkas(token, "kk", PNG, "kk.png");
+  await simpanLangkah(token, 2, {});
+}
+
 const galat = async (p: Promise<unknown>) => {
   try {
     await p;
@@ -47,7 +56,7 @@ const galat = async (p: Promise<unknown>) => {
   throw new Error("Seharusnya melempar galat.");
 };
 
-describe("rekomendasi jurusan (PRD 12.4)", () => {
+describe("rekomendasi jurusan dari tes minat bakat (PRD 1.3 butir 65)", () => {
   it("membaca pilihan FKK dari draf lama sebagai LPK3", () => {
     const baris = {
       data: { v: enkripsi(JSON.stringify({ "4": { jurusan_1: "FKK", jurusan_2: "AKL" } })) },
@@ -55,71 +64,52 @@ describe("rekomendasi jurusan (PRD 12.4)", () => {
     expect(bacaData(baris)["4"]).toEqual({ jurusan_1: "LPK3", jurusan_2: "AKL" });
   });
 
-  it("tanpa nilai rapor, rekomendasi kosong dan pilihan jurusan tetap manual", async () => {
+  it("tanpa tes minat bakat, rekomendasi kosong dan pilihan jurusan tetap manual", async () => {
     const { token } = await buatDraf();
-    await simpanLangkah(token, 1, { nama_lengkap: "Siti Aminah", nisn: "1234567890", tanggal_lahir: "2011-02-03", setuju: true });
-    await simpanLangkah(token, 2, {});
-    await simpanLangkah(token, 3, { nilai_rapor: { mapel: {} }, sumber_nilai: "manual" });
+    await sampaiLangkah3(token);
+    await simpanLangkah(token, 3, { minat: [] });
     expect((await rekomendasiDraf(token)).peringkat).toEqual([]);
     await simpanLangkah(token, 4, { jurusan_1: "AKL", jurusan_2: "" });
     expect((await ambilDraf(token))?.data["4"]?.jurusan_1).toBe("AKL");
   });
 
-  it("Matematika dan IPS tinggi menjadikan AKL paling sesuai", async () => {
-    const bobot = await muatBobotJurusan();
-    const dasar = { "1": 75 };
-    const r = hitungRekomendasi(
-      {
-        semester: [1],
-        mapel: {
-          matematika: { "1": 90 }, ips: { "1": 86 }, b_indonesia: { "1": 80 }, ipa: { "1": 70 },
-          b_inggris: dasar, informatika: dasar, prakarya: dasar, pai: dasar,
-        },
-      },
-      bobot,
-    );
-    expect(r.peringkat[0].kode).toBe("AKL");
-    expect(r.peringkat[0].label).toBe("Paling Sesuai");
+  it("jawaban tes tersimpan di draf dan jurusan dengan jawaban terbanyak paling sesuai", async () => {
+    const { token } = await buatDraf();
+    await sampaiLangkah3(token);
+    // Pilihan D (TKR) 9 kali, C (LPK3) 4 kali, sisanya dilewati: tes boleh dikerjakan sebagian.
+    await simpanLangkah(token, 3, { minat: [3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2] });
+    const minat = (await ambilDraf(token))?.data["3"]?.minat as (number | null)[];
+    expect(minat).toHaveLength(SOAL_MINAT.length);
+    expect(minat.slice(-2)).toEqual([null, null]);
+    const r = await rekomendasiDraf(token);
+    expect(r.versi).toBe(VERSI_MINAT);
+    expect(r.peringkat.map((p) => [p.kode, p.poin, p.label])).toEqual([
+      ["TKR", 9, "Paling Sesuai"],
+      ["LPK3", 4, "Juga Sesuai"],
+      // Seri nol poin diurutkan sesuai urutan jurusan.
+      ["AKL", 0, "Alternatif"],
+      ["MPLB", 0, "Alternatif"],
+    ]);
+    expect(r.peringkat[0].skor).toBeCloseTo(69.2, 1);
   });
 
-  it("IPA dan Matematika tinggi menempatkan LPK3 atau TKR di peringkat 1-2, bukan AKL", async () => {
-    const bobot = await muatBobotJurusan();
-    const dasar = { "1": 75 };
-    const r = hitungRekomendasi(
-      {
-        semester: [1],
-        mapel: { ipa: { "1": 92 }, matematika: { "1": 85 }, ips: dasar, b_indonesia: dasar, b_inggris: dasar, informatika: dasar, prakarya: dasar, pai: dasar },
-      },
-      bobot,
-    );
-    expect(["LPK3", "TKR"]).toContain(r.peringkat[0].kode);
-    expect(r.peringkat[0].kode).not.toBe("AKL");
+  it("nilai seri tertinggi sama-sama Paling Sesuai", async () => {
+    const jurusan = await muatJurusanAktif();
+    const r = hitungRekomendasi([0, 1, 0, 1], jurusan).peringkat;
+    expect(r.filter((p) => p.label === "Paling Sesuai").map((p) => p.kode).sort()).toEqual(["AKL", "MPLB"]);
   });
 
-  it("rapor tanpa Informatika tetap dihitung dengan bobot dibagi ulang", async () => {
-    const bobot = await muatBobotJurusan();
-    const dasar = { "1": 80 };
-    const r = hitungRekomendasi(
-      { semester: [1], mapel: { matematika: dasar, ips: dasar, b_indonesia: dasar, b_inggris: dasar } },
-      bobot,
-    );
-    const akl = r.peringkat.find((p) => p.kode === "AKL");
-    expect(akl?.skor).toBe(80);
-    expect(akl?.rincian.reduce((a, m) => a + m.bobot, 0)).toBeCloseTo(1, 1);
+  it("jawaban di luar A-D atau lebih dari 15 soal ditolak", async () => {
+    const { token } = await buatDraf();
+    await sampaiLangkah3(token);
+    expect((await galat(simpanLangkah(token, 3, { minat: [4] }))).errors?.minat).toBeDefined();
+    expect((await galat(simpanLangkah(token, 3, { minat: Array(SOAL_MINAT.length + 1).fill(0) }))).errors?.minat).toBeDefined();
+    expect((await galat(simpanLangkah(token, 3, { minat: "AKL" }))).errors?.minat).toBeDefined();
   });
 
-  it("jurusan dengan lebih dari 50% bobot tanpa data diberi label Data Kurang", async () => {
-    const bobot = await muatBobotJurusan();
-    const r = hitungRekomendasi({ semester: [1], mapel: { matematika: { "1": 80 } } }, bobot);
-    expect(r.peringkat.find((p) => p.kode === "LPK3")?.label).toBe("Data Kurang");
-  });
-
-  it("versi berubah saat bobot diubah", async () => {
-    const bobot = await muatBobotJurusan();
-    const a = hitungRekomendasi({ semester: [1], mapel: {} }, bobot).versi;
-    const ubah = structuredClone(bobot);
-    ubah[0].bobot[0].bobot += 0.05;
-    expect(hitungRekomendasi({ semester: [1], mapel: {} }, ubah).versi).not.toBe(a);
+  it("soal tes sama dengan halaman publik: 15 soal, tiap soal 4 pilihan A-D", () => {
+    expect(SOAL_MINAT).toHaveLength(15);
+    for (const s of SOAL_MINAT) expect(s.opsi).toHaveLength(JURUSAN_MINAT.length);
   });
 });
 
@@ -207,6 +197,10 @@ describe("submit pendaftaran", () => {
     expect(dekripsi(p.noHp as string)).toBe("081234567890");
     expect(p.aksesTokenHash).not.toBe(hasil.aksesToken);
     expect(p.berkasSinkron).toBe("menunggu"); // Drive belum terhubung di test
+    // Saran dihitung ulang di server dari jawaban tes; nilai rapor tidak lagi diisi (PRD 1.3 butir 65).
+    expect((await prisma.jurusan.findUnique({ where: { id: p.rekomendasiJurusanId! } }))?.kode).toBe("AKL");
+    expect(p.rekomendasiVersi).toBe(VERSI_MINAT);
+    expect(p.nilaiRapor).toEqual({});
 
     const b = (await buatDraf()).token;
     await isiLengkap(b);

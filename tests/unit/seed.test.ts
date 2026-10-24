@@ -1,6 +1,6 @@
 // @vitest-environment node
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { ambilJurusanDenganBobot, ambilMataPelajaran } from "@/server/actions/ambilReferensi";
+import { ambilJurusanRingkas } from "@/server/actions/ambilReferensi";
 import { prisma } from "@/server/db/client";
 import { seedFaq, seedFormField, seedReferensi } from "../../prisma/seed-lib";
 
@@ -21,7 +21,7 @@ afterAll(async () => {
 
 describe("seed referensi", () => {
   it("4 jurusan dengan kuota sesuai PRD (72, 72, 72, 108)", async () => {
-    const j = await ambilJurusanDenganBobot();
+    const j = await ambilJurusanRingkas();
     expect(j.map((x) => [x.kode, x.kuota])).toEqual([
       ["AKL", 72],
       ["MPLB", 72],
@@ -31,25 +31,9 @@ describe("seed referensi", () => {
     expect(j.find((x) => x.kode === "LPK3")?.nama).toBe("Layanan Penunjang Kefarmasian Klinis dan Komunitas");
   });
 
-  it("total bobot tiap jurusan tepat 1,00", async () => {
-    for (const j of await ambilJurusanDenganBobot()) {
-      expect(j.totalBobot, `bobot ${j.kode}`).toBe(1);
-    }
-  });
-
-  it("bobot AKL: matematika terbesar (0,40)", async () => {
-    const akl = (await ambilJurusanDenganBobot()).find((j) => j.kode === "AKL")!;
-    expect(akl.bobot[0]).toMatchObject({ kode: "matematika", bobot: 0.4 });
-  });
-
-  it("17 mata pelajaran, IPA dan IPS terpadu (tidak dipecah), alias tersedia", async () => {
-    const m = await ambilMataPelajaran();
-    expect(m).toHaveLength(17);
-    const kode = m.map((x) => x.kode);
-    expect(kode).toContain("ipa");
-    expect(kode).toContain("ips");
-    expect(kode).not.toContain("ipa_biologi");
-    expect(m.find((x) => x.kode === "ipa")?.alias).toContain("ilmu pengetahuan alam");
+  it("mata pelajaran dan bobot tidak di-seed lagi (PRD 1.3 butir 65)", async () => {
+    expect(await prisma.mataPelajaran.count()).toBe(0);
+    expect(await prisma.bobotJurusan.count()).toBe(0);
   });
 
   it("seed idempoten: dijalankan lagi tidak menduplikasi", async () => {
@@ -57,7 +41,6 @@ describe("seed referensi", () => {
     await seedFormField(prisma);
     await seedFaq(prisma);
     expect(await prisma.jurusan.count()).toBe(4);
-    expect(await prisma.bobotJurusan.count()).toBe(19);
     expect(await prisma.faq.count()).toBe(6);
   });
 
@@ -70,11 +53,10 @@ describe("seed referensi", () => {
 });
 
 describe("seed form field", () => {
-  it("nilai_rapor terkunci tetapi opsional", async () => {
-    for (const kunci of ["nilai_rapor"]) {
-      const f = await prisma.formField.findUniqueOrThrow({ where: { kunci } });
-      expect(f).toMatchObject({ terkunci: true, wajib: false, langkah: 3 });
-    }
+  it("isian nilai rapor dihapus, termasuk dari basis data lama (PRD 1.3 butir 65)", async () => {
+    await prisma.formField.create({ data: { kunci: "nilai_rapor", langkah: 3, label: "Nilai rapor", tipe: "tabel", urutan: 20, terkunci: true } });
+    await seedFormField(prisma);
+    expect(await prisma.formField.findUnique({ where: { kunci: "nilai_rapor" } })).toBeNull();
   });
 
   it("sumber informasi pendaftar wajib dipilih", async () => {
@@ -89,9 +71,9 @@ describe("seed form field", () => {
     expect(fields.filter((f) => f.tipe === "date").map((f) => f.kunci)).toEqual(expect.arrayContaining(["ayah_tanggal_lahir", "ibu_tanggal_lahir"]));
   });
 
-  it("langkah 1 sampai 8 semuanya punya field, kunci unik, urutan terisi", async () => {
+  it("langkah 1 sampai 8 punya field kecuali langkah 3 (tes minat bakat), kunci unik, urutan terisi", async () => {
     const semua = await prisma.formField.findMany();
-    for (let l = 1; l <= 8; l++) expect(semua.some((f) => f.langkah === l), `langkah ${l}`).toBe(true);
+    for (let l = 1; l <= 8; l++) expect(semua.some((f) => f.langkah === l), `langkah ${l}`).toBe(l !== 3);
     expect(new Set(semua.map((f) => f.kunci)).size).toBe(semua.length);
   });
 

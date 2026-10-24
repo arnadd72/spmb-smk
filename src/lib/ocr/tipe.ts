@@ -11,6 +11,5 @@ export type FieldOcr = { nilai: string; keyakinan: Keyakinan };
 
 export type HasilParser = Record<string, FieldOcr>;
 
-export type JenisOcr = "akta" | "kk" | "rapor";
+export type JenisOcr = "akta" | "kk";
 
-export type MapelRef = { kode: string; nama: string; alias: string[] };

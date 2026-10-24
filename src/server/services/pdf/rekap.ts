@@ -28,15 +28,12 @@ const KOLOM = [
   { judul: "Dikirim", lebar: 70 },
 ];
 
-const NILAI = { belumDicek: "belum dicek", sesuai: "sesuai", dikoreksi: "dikoreksi" } as const;
-
 const tanggalPendek = (d: Date) => new Intl.DateTimeFormat("id-ID", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Asia/Jakarta" }).format(d);
 const tanggalPanjang = (d: Date) => new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }).format(d);
 
 /** Keterangan filter yang dipakai, untuk subjudul laporan. */
 export function ringkasFilter(f: FilterPeserta, periodeAktif: string): string {
   const bagian = [`Periode ${f.periode === "semua" ? "semua" : (f.periode ?? periodeAktif)}`];
-  if (f.nilai) bagian.push(`nilai ${NILAI[f.nilai]}`);
   if (f.jurusan) bagian.push(`pilihan 1 ${f.jurusan}`);
   if (f.sumber) bagian.push(`sumber ${f.sumber}`);
   if (f.sinkron) bagian.push(`sinkron berkas ${f.sinkron}`);

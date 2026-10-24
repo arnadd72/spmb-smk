@@ -1,17 +1,18 @@
 import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { Stepper } from "@/components/ui/stepper";
-import { LangkahAkta, LangkahRapor, type BerkasKlien } from "@/features/wizard/langkah-berkas";
+import { LangkahAkta, type BerkasKlien } from "@/features/wizard/langkah-berkas";
 import { LangkahForm, type Salinan } from "@/features/wizard/langkah-form";
 import { LangkahJurusan } from "@/features/wizard/langkah-jurusan";
+import { LangkahMinat } from "@/features/wizard/langkah-minat";
 import { LangkahTinjau, type BagianTinjau } from "@/features/wizard/langkah-tinjau";
 import { TombolMulaiUlang } from "@/features/wizard/mulai-daftar";
-import { NAMA_LANGKAH, TOTAL_LANGKAH, rataMapel, type DefinisiField, type NilaiRapor } from "@/features/wizard/schema-client";
+import { NAMA_LANGKAH, TOTAL_LANGKAH, type DefinisiField, type JawabanMinat } from "@/features/wizard/schema-client";
 import { Transisi } from "@/features/wizard/transisi";
 import { formatTanggal } from "@/lib/format";
 import { NAMA_COOKIE_DRAF, ambilDraf, ambilKonfigWizard, muatDefinisiField, rekomendasiDraf, type Berkas } from "@/server/services/draf";
-import { muatMapelUntukOcr } from "@/server/services/ocr";
-import { mapelBerbobot, muatBobotJurusan } from "@/server/services/rekomendasi";
+import { SOAL_MINAT, jumlahTerjawab, peringkatMinat } from "@/server/validasi/minat";
+import { muatJurusanAktif } from "@/server/services/rekomendasi";
 
 export const metadata = { title: "Pendaftaran", robots: { index: false } };
 
@@ -81,31 +82,21 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       />
     );
   } else if (n === 3) {
-    const [konfig, bobot] = await Promise.all([ambilKonfigWizard(), muatBobotJurusan()]);
-    const mapelRapor = mapelBerbobot(bobot);
-    const mapelOcr = await muatMapelUntukOcr(mapelRapor.map((m) => m.kode));
-    const aliasMapel = new Map(mapelOcr.map((m) => [m.kode, m.alias]));
-    isi = (
-      <LangkahRapor
-        mapel={mapelRapor.map((m) => ({ kode: m.kode, nama: m.nama, alias: aliasMapel.get(m.kode) ?? [] }))}
-        semester={konfig.semester}
-        awal={awal.nilai_rapor as NilaiRapor | undefined}
-      />
-    );
+    isi = <LangkahMinat awal={awal.minat as JawabanMinat | undefined} />;
   } else if (n === 4) {
     const rekom = await rekomendasiDraf(token);
     const opsi = doLangkah.find((f) => f.kunci === "jurusan_1")?.opsi ?? [];
     isi = (
       <LangkahJurusan
-        kartu={rekom.peringkat.map((p) => ({ kode: p.kode, nama: p.nama, skor: p.skor, label: p.label, penjelasan: p.penjelasan, rincian: p.rincian }))}
+        kartu={rekom.peringkat.map((p) => ({ kode: p.kode, nama: p.nama, skor: p.skor, poin: p.poin, label: p.label, penjelasan: p.penjelasan }))}
         kuotaPenuh={rekom.kuotaPenuh}
         opsi={opsi}
         awal={{ jurusan_1: awal.jurusan_1 as string | undefined }}
       />
     );
   } else if (n === 8) {
-    const bobot = await muatBobotJurusan();
-    const rapor = draf.data["3"]?.nilai_rapor as NilaiRapor | undefined;
+    const minat = draf.data["3"]?.minat as JawabanMinat | undefined;
+    const saran = peringkatMinat(minat, await muatJurusanAktif()).filter((p) => p.label === "Paling Sesuai");
     const bagian: BagianTinjau[] = [1, 4, 5, 6, 7].map((l) => ({
       judul: NAMA_LANGKAH[l - 1],
       langkah: l,
@@ -114,16 +105,14 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
         .map((f) => ({ label: f.label, nilai: tampilNilai(f, draf.data[String(l)]?.[f.kunci]) })),
     }));
     bagian.splice(1, 0, {
-      judul: "Berkas dan nilai rapor",
+      judul: "Berkas dan tes minat bakat",
       langkah: 3,
       baris: [
         { label: "Akta kelahiran", nilai: draf.berkas.akta ? "Terunggah" : "Tidak diunggah" },
         { label: "Kartu keluarga", nilai: draf.berkas.kk ? "Terunggah" : "Tidak diunggah" },
         { label: "Pas foto", nilai: draf.berkas.pas_foto ? "Terunggah" : "Tidak diunggah" },
-        ...mapelBerbobot(bobot).map((m) => {
-          const r = rataMapel(rapor?.mapel[m.kode]);
-          return { label: `Rata-rata ${m.nama}`, nilai: r === null ? "" : r.toFixed(1) };
-        }),
+        { label: "Tes minat bakat", nilai: jumlahTerjawab(minat) > 0 ? `${jumlahTerjawab(minat)} dari ${SOAL_MINAT.length} soal dijawab` : "Tidak ikut" },
+        { label: "Saran dari tes", nilai: saran.map((p) => p.kode).join(", ") },
       ],
     });
     isi = <LangkahTinjau bagian={bagian} />;

@@ -60,8 +60,7 @@ export const FORM_FIELDS: FieldSeed[] = [
     teksBantuan: "Foto tampak depan berlatar merah (pas foto background merah), memakai seragam sekolah asal, rapi, tanpa topi. Foto ini otomatis dicetak di formulir pendaftaran. Format JPG atau PNG.",
   }),
 
-  // Langkah 3: nilai rapor (terkunci selama rekomendasi aktif). Foto rapor tidak diunggah, hanya nilainya.
-  f(3, 20, "nilai_rapor", "Nilai rapor", "tabel", { ...opsional, terkunci: true }),
+  // Langkah 3: tes minat bakat, soalnya tetap di kode (server/validasi/minat.ts), bukan isian form builder.
 
   // Langkah 4: pilihan jurusan
   f(4, 10, "jurusan_1", "Pilihan jurusan", "select", { opsi: { dinamis: "jurusan" } }),

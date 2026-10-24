@@ -3,14 +3,12 @@ export {
   NAMA_LANGKAH,
   TOTAL_LANGKAH,
   fieldBiasa,
-  rataMapel,
   skemaLangkah,
-  skemaNilaiRapor,
   skemaNilaiUjian,
   skemaCekStatus,
   KUNCI_NILAI_UJIAN,
   type DefinisiField,
   type InputCekStatus,
-  type NilaiRapor,
   type OpsiField,
 } from "@/server/validasi/wizard";
+export type { JawabanMinat } from "@/server/validasi/minat";

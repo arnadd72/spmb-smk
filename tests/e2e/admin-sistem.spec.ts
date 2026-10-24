@@ -13,7 +13,6 @@ test.describe("admin sistem: halaman dan aksesibilitas", () => {
   for (const [lebar, halaman] of [
     [1440, "/admin/akun-admin"],
     [1440, "/admin/audit-log"],
-    [1440, "/admin/mata-pelajaran"],
     [1440, "/admin/isian-formulir"],
     [1440, "/admin/jurusan-dan-bobot"],
     [1440, "/admin/statistik-ocr"],
@@ -34,7 +33,7 @@ test.describe("admin sistem: halaman dan aksesibilitas", () => {
 
   test("panitia dan operator konten tidak bisa membuka halaman sistem", async ({ page }) => {
     await masukSebagai(page, "panitia");
-    for (const h of ["/admin/akun-admin", "/admin/audit-log", "/admin/mata-pelajaran", "/admin/isian-formulir", "/admin/statistik-ocr"]) {
+    for (const h of ["/admin/akun-admin", "/admin/audit-log", "/admin/isian-formulir", "/admin/statistik-ocr", "/admin/jurusan-dan-bobot"]) {
       await page.goto(h);
       await expect(page, h).toHaveURL(/\/admin\?akses=ditolak$/);
     }
@@ -93,63 +92,15 @@ test.describe("admin sistem: akun admin", () => {
   });
 });
 
-test.describe("admin sistem: mata pelajaran, bobot, dan form builder", () => {
-  test("tambah lalu hapus mata pelajaran", async ({ page }) => {
+test.describe("admin sistem: jurusan dan form builder", () => {
+  test("menu Mata Pelajaran dan editor bobot sudah dihapus (PRD 1.3 butir 65)", async ({ page }) => {
     await masukSebagai(page, "superadmin");
-    await page.goto("/admin/mata-pelajaran");
-    await page.getByRole("button", { name: "Tambah mata pelajaran" }).click();
-    await page.getByRole("button", { name: "Simpan" }).click();
-    await expect(page.getByText(/Kode 2-30 karakter/)).toBeVisible();
-
-    const kode = `uji_e2e_${Date.now().toString(36)}`;
-    await page.getByLabel(/^Kode/).fill(kode);
-    await page.getByLabel(/^Nama/).fill("Uji E2E Mapel");
-    await page.getByLabel("Alias").fill("Uji Mapel\nMapel Uji");
-    await page.getByRole("button", { name: "Simpan" }).click();
-    await expect(page.getByText("Mata pelajaran ditambahkan.")).toBeVisible();
-    await expect(page.getByRole("row", { name: /Uji E2E Mapel/ })).toContainText("uji mapel, mapel uji");
-
-    // Yang dipakai bobot tidak bisa dihapus
-    await page.getByRole("button", { name: "Hapus Matematika" }).click();
-    await page.getByRole("button", { name: "Ya, hapus" }).click();
-    await expect(page.getByText(/masih dipakai bobot jurusan/)).toBeVisible();
-
-    await page.getByRole("button", { name: "Hapus Uji E2E Mapel" }).click();
-    await page.getByRole("button", { name: "Ya, hapus" }).click();
-    await expect(page.getByText("Mata pelajaran dihapus.")).toBeVisible();
-    await expect(page.getByRole("row", { name: /Uji E2E Mapel/ })).toHaveCount(0);
-  });
-
-  test("editor bobot: pratinjau skor langsung berubah, normalisasi, simpan, lalu dipulihkan", async ({ page }) => {
-    test.setTimeout(120_000);
-    await masukSebagai(page, "superadmin");
+    expect((await page.request.get("/admin/mata-pelajaran")).status()).toBe(404);
     await page.goto("/admin/jurusan-dan-bobot");
-    await expect(page.getByRole("heading", { name: "Bobot saran jurusan" })).toBeVisible();
-
-    const mat = page.locator("#bobot-AKL-matematika");
-    const awal = await mat.inputValue();
-    const skor = page.locator("[data-skor=AKL]");
-
-    await page.locator("#contoh-matematika").fill("100");
-    for (const k of ["ips", "b_indonesia", "informatika", "b_inggris"]) await page.locator(`#contoh-${k}`).fill("50");
-    const sebelum = Number((await skor.innerText()).replace(",", "."));
-    await mat.fill("0,8");
-    const sesudah = Number((await skor.innerText()).replace(",", "."));
-    expect(sesudah).toBeGreaterThan(sebelum); // bobot matematika (nilai 100) naik => skor naik
-
-    await page.getByRole("button", { name: "Normalisasi ke 1" }).first().click();
-    await expect(page.getByText("Total 1").first()).toBeVisible();
-
-    try {
-      await page.getByRole("button", { name: "Simpan bobot AKL" }).click();
-      await expect(page.getByText(/Bobot tersimpan/)).toBeVisible();
-    } finally {
-      // pulihkan bobot AKL bawaan (seed): matematika 0,4 ips 0,25 b_indonesia 0,15 informatika 0,1 b_inggris 0,1
-      const asli: Record<string, string> = { matematika: awal, ips: "0,25", b_indonesia: "0,15", informatika: "0,1", b_inggris: "0,1" };
-      for (const [k, v] of Object.entries(asli)) await page.locator(`#bobot-AKL-${k}`).fill(v);
-      await page.getByRole("button", { name: "Simpan bobot AKL" }).click();
-      await expect(page.getByText(/Bobot tersimpan/).first()).toBeVisible();
-    }
+    await expect(page.getByRole("heading", { level: 1, name: "Jurusan" })).toBeVisible();
+    await expect(page.getByText(/bobot/i)).toHaveCount(0);
+    const menu = page.getByRole("navigation", { name: "Menu admin" }).first();
+    await expect(menu.getByRole("link", { name: /Mata Pelajaran/ })).toHaveCount(0);
   });
 
   test("form builder: isian inti terkunci; tambah isian kustom lalu hapus", async ({ page }) => {

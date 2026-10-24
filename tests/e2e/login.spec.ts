@@ -72,7 +72,7 @@ test.describe("login admin", () => {
     const menu = page.getByRole("navigation", { name: "Menu admin" }).first();
     await expect(menu.getByRole("link", { name: "Berita" })).toBeVisible();
     await expect(menu.getByRole("link", { name: "Pengaturan" })).toHaveCount(0);
-    await expect(menu.getByRole("link", { name: "Jurusan & Bobot" })).toHaveCount(0);
+    await expect(menu.getByRole("link", { name: "Jurusan", exact: true })).toHaveCount(0);
   });
 
   test("header admin punya tombol Lihat situs yang membuka landing di tab baru", async ({ page, context }) => {

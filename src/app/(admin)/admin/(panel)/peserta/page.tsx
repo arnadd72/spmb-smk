@@ -20,8 +20,6 @@ const KOLOM: { urut: NonNullable<FilterPeserta["urut"]>; label: string }[] = [
   { urut: "dikirim", label: "Dikirim" },
 ];
 
-const LABEL_NILAI = { belumDicek: "Belum dicek", sesuai: "Sesuai", dikoreksi: "Dikoreksi" } as const;
-
 export default async function HalamanPeserta({ searchParams }: PageProps<"/admin/peserta">) {
   await wajibPeranHalaman(...PERAN.pendaftar);
   const filter = bacaFilter(await searchParams);
@@ -76,7 +74,6 @@ export default async function HalamanPeserta({ searchParams }: PageProps<"/admin
                 {KOLOM.slice(2).map((k) => (
                   <KepalaUrut key={k.urut} k={k} filter={filter} aktif={urutAktif === k.urut} arah={arahAktif} />
                 ))}
-                <th scope="col" className="px-3 py-2.5 font-semibold">Nilai</th>
               </tr>
             </thead>
             <tbody>
@@ -95,7 +92,6 @@ export default async function HalamanPeserta({ searchParams }: PageProps<"/admin
                   <td className="angka whitespace-nowrap px-3 py-2.5 text-tinta-redup">{b.nik || "-"}</td>
                   <td className="angka whitespace-nowrap px-3 py-2.5 text-tinta-redup">{b.hp || "-"}</td>
                   <td className="angka whitespace-nowrap px-3 py-2.5 text-tinta-redup">{formatTanggal(b.dikirim)}</td>
-                  <td className="px-3 py-2.5 text-tinta-redup">{LABEL_NILAI[b.statusNilai as keyof typeof LABEL_NILAI]}</td>
                 </tr>
               ))}
             </tbody>

@@ -6,18 +6,16 @@ import { useRouter } from "next/navigation";
 import { ArrowLeftIcon, CameraIcon, FileIcon, TrashIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { cn } from "@/lib/cn";
 import { kompresGambar } from "@/lib/gambar";
 import type { Tahap } from "@/lib/ocr/mesin";
-import type { HasilParser, MapelRef } from "@/lib/ocr/tipe";
+import type { HasilParser } from "@/lib/ocr/tipe";
 import { PesanGalat } from "./bidang";
 import { pecahGalat, simpanLangkahKlien } from "./api";
 import { KartuIsianOcr, StatusOcr, type StatusBaca } from "./kartu-ocr";
 import { bacaAkta, bacaKk, pesanGagalOcr } from "./ocr";
 import { KUNCI_AKTA, KUNCI_KK, gabungSaran, nilaiAkhirOcr } from "./ocr-isian";
-import { rataMapel, skemaNilaiRapor, type NilaiRapor } from "./schema-client";
 
 export type BerkasKlien = { ref: string; nama: string; mime: string; ukuran: number };
 export type SlotBerkas = {
@@ -214,7 +212,7 @@ function Unggah({
   );
 }
 
-function Navigasi({ langkah, menyimpan }: { langkah: number; menyimpan: boolean }) {
+export function Navigasi({ langkah, menyimpan }: { langkah: number; menyimpan: boolean }) {
   return (
     <div className="flex flex-col-reverse gap-3 border-t border-garis pt-5 sm:flex-row sm:items-center sm:justify-between">
       <Link
@@ -261,7 +259,7 @@ export function LangkahAkta({
   const [status, setStatus] = useState<Record<string, StatusBaca | undefined>>({});
   const [bagian, setBagian] = useState<{ akta?: BagianBaca; kk?: BagianBaca }>({});
   const [suntingan, setSuntingan] = useState<Record<string, string>>({});
-  const konteks = { namaMurid, tanggalLahir, mapel: [] as MapelRef[] };
+  const konteks = { namaMurid, tanggalLahir };
 
   const saran = gabungSaran(bagian.akta?.fields, bagian.kk?.fields);
 
@@ -375,209 +373,6 @@ export function LangkahAkta({
       })}
       {galat && <PesanGalat pesan={galat} />}
       <Navigasi langkah={2} menyimpan={menyimpan} />
-    </form>
-  );
-}
-
-// ------------------------------------------------------------------ Langkah 3
-
-type Grid = Record<string, Record<string, string>>;
-
-const angka = (v: string) => Number(v.trim().replace(",", "."));
-
-export function LangkahRapor({
-  mapel,
-  semester,
-  awal,
-}: {
-  mapel: { kode: string; nama: string; alias: string[] }[];
-  semester: number[];
-  awal?: NilaiRapor;
-}) {
-  const router = useRouter();
-  const [grid, setGrid] = useState<Grid>(() =>
-    Object.fromEntries(
-      mapel.map((m) => [
-        m.kode,
-        Object.fromEntries(
-          semester.map((s) => [String(s), awal?.mapel[m.kode]?.[String(s)]?.toString() ?? ""]),
-        ),
-      ]),
-    ),
-  );
-  const [galat, setGalat] = useState<Record<string, string>>({});
-  const [galatUmum, setGalatUmum] = useState<string>();
-  const [menyimpan, setMenyimpan] = useState(false);
-  // Kolom nilai hanya tampil bila pendaftar minta saran jurusan; draf yang sudah berisi nilai langsung membukanya.
-  const [pakaiNilai, setPakaiNilai] = useState(() =>
-    Object.values(grid).some((s) => Object.values(s).some((v) => v.trim() !== "")),
-  );
-
-  function ubah(kode: string, sem: number, v: string) {
-    setGrid((g) => ({ ...g, [kode]: { ...g[kode], [sem]: v } }));
-    setGalat((x) => ({ ...x, [kode]: "" }));
-  }
-
-  const rata = (kode: string) => {
-    const sel: Record<string, number> = {};
-    for (const [s, v] of Object.entries(grid[kode] ?? {})) {
-      const n = angka(v);
-      if (v.trim() !== "" && Number.isFinite(n)) sel[s] = n;
-    }
-    return rataMapel(sel);
-  };
-
-  async function kirim(e: SyntheticEvent) {
-    e.preventDefault();
-    setGalatUmum(undefined);
-    // Tanpa saran jurusan, nilai yang mungkin sempat diketik tidak ikut terkirim.
-    const dikirim = pakaiNilai
-      ? grid
-      : Object.fromEntries(
-          Object.entries(grid).map(([k, s]) => [
-            k,
-            Object.fromEntries(Object.keys(s).map((a) => [a, ""])),
-          ]),
-        );
-    const isi = {
-      semester,
-      mapel: Object.fromEntries(
-        Object.entries(dikirim).map(([k, s]) => [
-          k,
-          Object.fromEntries(Object.entries(s).map(([a, b]) => [a, b.replace(",", ".")])),
-        ]),
-      ),
-    };
-    const cek = skemaNilaiRapor(semester, []).safeParse(isi);
-    if (!cek.success) {
-      const peta: Record<string, string> = {};
-      for (const i of cek.error.issues) peta[String(i.path[1] ?? "_")] ??= i.message;
-      setGalat(peta);
-      setGalatUmum("Periksa kembali nilai yang ditandai.");
-      return;
-    }
-    setMenyimpan(true);
-    try {
-      await simpanLangkahKlien(3, { nilai_rapor: isi, sumber_nilai: "manual" });
-      router.push("/daftar/langkah/4");
-    } catch (err) {
-      const { umum, field } = pecahGalat(err);
-      const peta: Record<string, string> = {};
-      for (const [k, v] of Object.entries(field)) peta[k.split(".")[1] ?? k] = v;
-      setGalat(peta);
-      setGalatUmum(umum ?? "Periksa kembali nilai yang ditandai.");
-      setMenyimpan(false);
-    }
-  }
-
-  return (
-    <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
-      <div>
-        <h2 className="text-lg font-bold text-ink">Nilai rapor</h2>
-        <p className="mt-1 text-tinta-redup">
-          Nilai rapor tidak wajib. Anda tetap bisa memilih jurusan sendiri tanpa mengisinya.
-        </p>
-      </div>
-
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-semibold text-tinta">
-          Apakah Anda ingin mendapat saran jurusan dari nilai rapor?
-        </legend>
-        {[
-          {
-            nilai: true,
-            judul: "Ya, saya isi nilai rapor",
-            isi: "Cocok bila Anda belum tahu jurusan mana yang sesuai dengan nilai Anda.",
-          },
-          {
-            nilai: false,
-            judul: "Tidak, saya akan memilih jurusan sendiri",
-            isi: "Lewati langkah ini; tidak perlu mengisi nilai.",
-          },
-        ].map((o) => (
-          <label
-            key={o.judul}
-            className={cn(
-              "flex min-h-11 cursor-pointer items-start gap-3 rounded-kartu border p-3 sm:p-4",
-              pakaiNilai === o.nilai
-                ? "border-primer bg-permukaan-alt"
-                : "border-garis bg-permukaan",
-            )}
-          >
-            <input
-              type="radio"
-              name="pakai_nilai"
-              checked={pakaiNilai === o.nilai}
-              onChange={() => setPakaiNilai(o.nilai)}
-              className="mt-1 size-5 shrink-0 accent-primer"
-            />
-            <span>
-              <span className="block text-sm font-semibold text-tinta">{o.judul}</span>
-              <span className="block text-sm text-tinta-redup">{o.isi}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
-
-      {pakaiNilai && (
-        <>
-          <p className="text-sm text-tinta-redup">
-            Isi nilai yang tersedia saja, boleh sebagian. Rata-rata dihitung otomatis.
-          </p>
-          <ul className="flex flex-col gap-4">
-            {mapel.map((m) => {
-              const r = rata(m.kode);
-              return (
-                <li
-                  key={m.kode}
-                  className="rounded-kartu border border-garis bg-permukaan p-3 sm:p-4"
-                >
-                  <div className="flex items-baseline justify-between gap-3">
-                    <p className="text-sm font-semibold text-tinta">{m.nama}</p>
-                    <p className="angka shrink-0 text-sm text-tinta-redup">
-                      Rata-rata{" "}
-                      <span className="font-bold text-tinta">
-                        {r === null ? "-" : r.toFixed(1)}
-                      </span>
-                    </p>
-                  </div>
-                  <div
-                    className="mt-2 grid gap-2"
-                    style={{ gridTemplateColumns: `repeat(${semester.length}, minmax(0, 1fr))` }}
-                  >
-                    {semester.map((s) => (
-                      <label
-                        key={s}
-                        className="flex flex-col gap-1 text-center text-xs font-semibold text-tinta-redup"
-                      >
-                        <span>
-                          Sem <span className="angka">{s}</span>
-                        </span>
-                        <Input
-                          inputMode="decimal"
-                          aria-label={`${m.nama} semester ${s}`}
-                          aria-invalid={galat[m.kode] ? true : undefined}
-                          value={grid[m.kode]?.[s] ?? ""}
-                          onChange={(e) => ubah(m.kode, s, e.target.value)}
-                          className="angka px-1 text-center"
-                        />
-                      </label>
-                    ))}
-                  </div>
-                  {galat[m.kode] && <PesanGalat pesan={galat[m.kode]} />}
-                </li>
-              );
-            })}
-          </ul>
-
-          <p className="text-sm text-tinta-redup">
-            Jika mengisi nilai, panitia dapat mencocokkannya dengan rapor asli saat daftar ulang.
-          </p>
-        </>
-      )}
-
-      {galatUmum && <PesanGalat pesan={galatUmum} />}
-      <Navigasi langkah={3} menyimpan={menyimpan} />
     </form>
   );
 }

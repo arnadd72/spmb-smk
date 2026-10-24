@@ -384,7 +384,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Jurusan beserta bobot mata pelajaran (panitia, superadmin). */
+        /** Daftar jurusan (panitia, superadmin). */
         get: {
             parameters: {
                 query?: never;
@@ -401,47 +401,7 @@ export interface paths {
                     };
                     content: {
                         "application/json": {
-                            data: components["schemas"]["JurusanDenganBobot"][];
-                        };
-                    };
-                };
-                401: components["responses"]["TidakTerautentikasi"];
-                403: components["responses"]["Dilarang"];
-            };
-        };
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/admin/mapel": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Mata pelajaran aktif beserta alias OCR (panitia, superadmin). */
-        get: {
-            parameters: {
-                query?: never;
-                header?: never;
-                path?: never;
-                cookie?: never;
-            };
-            requestBody?: never;
-            responses: {
-                /** @description OK. */
-                200: {
-                    headers: {
-                        [name: string]: unknown;
-                    };
-                    content: {
-                        "application/json": {
-                            data: components["schemas"]["MataPelajaran"][];
+                            data: components["schemas"]["JurusanRingkas"][];
                         };
                     };
                 };
@@ -486,26 +446,12 @@ export interface components {
             email: string | null;
             adaKredensial: boolean;
         };
-        BobotMapel: {
-            mapel: string;
-            kode: string;
-            bobot: number;
-        };
-        JurusanDenganBobot: {
+        JurusanRingkas: {
             /** @example AKL */
             kode: string;
             nama: string;
             kuota: number;
-            /** @example 1 */
-            totalBobot: number;
-            bobot: components["schemas"]["BobotMapel"][];
-        };
-        MataPelajaran: {
-            kode: string;
-            nama: string;
-            /** @enum {string} */
-            kelompok: "umum" | "madrasah" | "mulok";
-            alias: string[];
+            isActive: boolean;
         };
     };
     responses: {

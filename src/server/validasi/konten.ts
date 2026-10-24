@@ -96,7 +96,7 @@ const daftarTeks = z
   .transform((v) => (Array.isArray(v) ? v : v.split("\n")).map((k) => k.trim()).filter(Boolean))
   .pipe(z.array(z.string().max(160)).max(20));
 
-/** Kode jurusan tidak bisa diubah (dipakai di URL dan bobot). */
+/** Kode jurusan tidak bisa diubah (dipakai di URL dan tes minat bakat). */
 export const skemaJurusan = z.object({
   nama: teks("Nama jurusan", 3, 150),
   deskripsi: teksOpsional(3000),
@@ -119,10 +119,6 @@ export const SKEMA_PENGATURAN = {
   gelombang_buka: tanggalOpsional,
   gelombang_tutup: tanggalOpsional,
   tanggal_verifikasi_fisik: tanggalOpsional,
-  semester_rapor: z
-    .string()
-    .trim()
-    .regex(/^[1-6](,[1-6])*$/, "Isi nomor semester dipisah koma, mis. 1,2,3,4,5."),
   kontak_panitia: z.string().trim().max(300),
   teks_persyaratan: z.string().trim().max(10000),
   teks_persetujuan: z.string().trim().max(10000),

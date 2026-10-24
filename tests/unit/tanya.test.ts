@@ -327,7 +327,7 @@ describe("validasi dan batas laju", () => {
     process.env.GEMINI_API_KEY = "kunci-uji";
     const r = await getFaq(new Request("http://localhost/api/v1/faq?q=cara upload rapor"));
     const j = (await r.json()) as { data: { pertanyaan: string; skor: number }[] };
-    expect(j.data[0].pertanyaan).toMatch(/mengunggah rapor/);
+    expect(j.data[0].pertanyaan).toMatch(/nilai rapor/);
     expect(JSON.stringify(j)).not.toContain("keywords");
     expect(fetchMock).not.toHaveBeenCalled();
     const semua = (await (await getFaq(new Request("http://localhost/api/v1/faq"))).json()) as { data: unknown[] };

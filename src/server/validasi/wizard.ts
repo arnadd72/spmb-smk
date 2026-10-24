@@ -34,7 +34,7 @@ export const TOTAL_LANGKAH = 8;
 export const NAMA_LANGKAH = [
   "Persetujuan dan identitas",
   "Akta dan kartu keluarga",
-  "Rapor",
+  "Tes minat bakat",
   "Rekomendasi dan pilihan jurusan",
   "Data murid",
   "Data orang tua",
@@ -43,11 +43,9 @@ export const NAMA_LANGKAH = [
 ] as const;
 
 /** Field langkah 1 sampai 8 yang ditangani khusus (bukan input teks biasa). */
-/** Berkas yang disimpan. Foto rapor sengaja tidak: hanya nilainya yang dibaca di browser dan dipakai (PRD butir 40). */
+/** Berkas yang disimpan. Foto rapor tidak diunggah (PRD butir 40), dan nilai rapor tidak lagi diminta (butir 65). */
 export const KUNCI_FILE_KHUSUS = ["akta", "kk"] as const;
 export const KUNCI_NILAI_UJIAN = ["b_indonesia", "b_inggris", "matematika", "ipa"] as const;
-
-const kosongJadiUndefined = (v: unknown) => (typeof v === "string" && v.trim() === "" ? undefined : v);
 
 /** Tanggal hari ini (WIB) sebagai YYYY-MM-DD, untuk validasi "sebelum hari ini". */
 function hariIniWib(): string {
@@ -152,46 +150,9 @@ export function skemaLangkah(fields: DefinisiField[], langkah: number) {
   });
 }
 
-// ------------------------------------------------------------- nilai rapor
-
-export type NilaiRapor = {
-  semester: number[];
-  /** kode mapel -> { "1": 82, "2": 84, ... } */
-  mapel: Record<string, Record<string, number>>;
-};
-
-export function adaNilaiRapor(nilai: NilaiRapor | undefined): nilai is NilaiRapor {
-  return Object.values(nilai?.mapel ?? {}).some((semester) => Object.values(semester).some((n) => Number.isFinite(n)));
-}
+// ------------------------------------------------------------- nilai ujian
 
 const nilai0sampai100 = z.coerce.number({ error: "Isi dengan angka." }).min(0, "Minimal 0.").max(100, "Maksimal 100.");
-
-export function skemaNilaiRapor(semesterDipakai: number[], mapelWajib: string[]) {
-  return z
-    .object({
-      semester: z.array(z.number().int().min(1).max(6)).default(semesterDipakai),
-      mapel: z.record(z.string(), z.record(z.string(), z.preprocess(kosongJadiUndefined, nilai0sampai100.optional()))),
-    })
-    .transform((v) => {
-      // buang sel kosong
-      const mapel: NilaiRapor["mapel"] = {};
-      for (const [kode, sel] of Object.entries(v.mapel)) {
-        const bersih: Record<string, number> = {};
-        for (const [sem, n] of Object.entries(sel)) {
-          if (typeof n === "number" && semesterDipakai.includes(Number(sem))) bersih[sem] = n;
-        }
-        if (Object.keys(bersih).length > 0) mapel[kode] = bersih;
-      }
-      return { semester: semesterDipakai, mapel } satisfies NilaiRapor;
-    })
-    .superRefine((v, ctx) => {
-      for (const kode of mapelWajib) {
-        if (!v.mapel[kode]) {
-          ctx.addIssue({ code: "custom", path: ["mapel", kode], message: "Isi minimal satu semester." });
-        }
-      }
-    });
-}
 
 export function skemaNilaiUjian() {
   return z.object({
@@ -200,13 +161,6 @@ export function skemaNilaiUjian() {
     matematika: nilai0sampai100,
     ipa: nilai0sampai100,
   });
-}
-
-/** Rata-rata nilai satu mapel dari semester yang terisi. */
-export function rataMapel(sel: Record<string, number> | undefined): number | null {
-  if (!sel) return null;
-  const nilai = Object.values(sel);
-  return nilai.length === 0 ? null : nilai.reduce((a, b) => a + b, 0) / nilai.length;
 }
 
 // ------------------------------------------------------------- cek status

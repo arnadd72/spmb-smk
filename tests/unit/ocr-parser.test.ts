@@ -3,16 +3,11 @@ import { describe, expect, it } from "vitest";
 import { bersihkanTeks, cariDeret16, kemiripanNama, parseTanggal, susunBaris } from "@/lib/ocr/normalisasi";
 import { parseAkta } from "@/lib/ocr/parser/akta";
 import { parseKk } from "@/lib/ocr/parser/kk";
-import { deteksiSemester, parseRapor } from "@/lib/ocr/parser/rapor";
-import type { BarisOcr, MapelRef } from "@/lib/ocr/tipe";
+import type { BarisOcr } from "@/lib/ocr/tipe";
 
 /** Satu potongan teks per baris, tersusun ke bawah (cukup untuk parser berbasis label). */
 const dariBaris = (baris: string[]): BarisOcr[] =>
   baris.map((teks, i) => ({ teks, kotak: [0, i * 40, 600, i * 40 + 30], skor: 0.95 }));
-
-/** Sel tabel: [teks, x]. Satu baris tabel = beberapa sel pada y yang sama. */
-const barisTabel = (y: number, sel: [string, number][]): BarisOcr[] =>
-  sel.map(([teks, x]) => ({ teks, kotak: [x, y, x + Math.max(40, teks.length * 12), y + 30], skor: 0.95 }));
 
 describe("normalisasi", () => {
   it("membuang huruf non-Latin dari stempel", () => {
@@ -150,74 +145,5 @@ describe("parseAkta", () => {
     const h = parseAkta(dariBaris(["gelap"]));
     expect(h.fields.tempat_lahir.keyakinan).toBe("NOT_FOUND");
     expect(h.peringatan.join(" ")).toMatch(/tidak ditemukan/);
-  });
-});
-
-const MAPEL: MapelRef[] = [
-  { kode: "pai", nama: "Pendidikan Agama Islam", alias: ["agama islam", "pai"] },
-  { kode: "mtk", nama: "Matematika", alias: ["matematika"] },
-  { kode: "ipa", nama: "Ilmu Pengetahuan Alam", alias: ["ipa", "ilmu pengetahuan alam"] },
-  { kode: "bing", nama: "Bahasa Inggris", alias: ["bahasa inggris", "b. inggris"] },
-];
-
-describe("parseRapor", () => {
-  it("menyusun tabel dari koordinat dan mengabaikan nomor urut serta teks capaian", () => {
-    const baris = [
-      ...barisTabel(0, [["Semester : 2 (Genap)", 20]]),
-      ...barisTabel(40, [["No", 20], ["Mata Pelajaran", 80], ["Nilai Akhir", 400], ["Capaian Kompetensi", 520]]),
-      ...barisTabel(80, [["1", 20], ["Pendidikan Agama Islam dan Budi Pekerti", 80], ["88", 400], ["Menunjukkan penguasaan yang baik", 520]]),
-      ...barisTabel(120, [["2", 20], ["Matematika", 80], ["76", 400], ["Perlu bimbingan", 520]]),
-      ...barisTabel(160, [["3", 20], ["Ilmu Pengetahuan Alam", 80], ["82,5", 400], ["Baik", 520]]),
-      ...barisTabel(200, [["4", 20], ["Seni Budaya", 80], ["90", 400]]),
-    ];
-    const h = parseRapor(baris, MAPEL);
-    expect(h.semester).toBe(2);
-    expect(h.nilai.pai).toEqual({ nilai: 88, keyakinan: "HIGH" });
-    expect(h.nilai.mtk.nilai).toBe(76);
-    expect(h.nilai.ipa.nilai).toBe(82.5);
-    expect(h.nilai.bing).toBeUndefined();
-    expect(h.tidakDikenali).toEqual([{ nama: "Seni Budaya", nilai: 90 }]);
-  });
-
-  it("memilih kolom Pengetahuan pada rapor K13, bukan Keterampilan", () => {
-    const baris = [
-      ...barisTabel(0, [["Mata Pelajaran", 80], ["Pengetahuan", 300], ["Keterampilan", 460]]),
-      ...barisTabel(40, [["1", 20], ["Matematika", 80], ["78", 320], ["91", 480]]),
-    ];
-    expect(parseRapor(baris, MAPEL).nilai.mtk.nilai).toBe(78);
-  });
-
-  it("memperbaiki angka tertukar huruf dan membuang nilai di luar 0 sampai 100", () => {
-    const baris = [
-      ...barisTabel(0, [["Matematika", 80], ["8O", 400]]),
-      ...barisTabel(40, [["Bahasa Inggris", 80], ["250", 400]]),
-    ];
-    const h = parseRapor(baris, MAPEL);
-    expect(h.nilai.mtk.nilai).toBe(80);
-    expect(h.nilai.bing).toBeUndefined();
-  });
-
-  it("memberi keyakinan MEDIUM untuk nama mapel yang agak berbeda", () => {
-    const baris = barisTabel(0, [["Bhs Inggris", 80], ["84", 400]]);
-    expect(parseRapor(baris, MAPEL).nilai.bing.keyakinan).toBe("MEDIUM");
-  });
-
-  it("halaman tanpa tabel menghasilkan hasil kosong", () => {
-    const h = parseRapor(dariBaris(["foto gelap"]), MAPEL);
-    expect(h.nilai).toEqual({});
-    expect(h.semester).toBeNull();
-  });
-});
-
-describe("deteksiSemester", () => {
-  it.each([
-    ["Semester : 3", 3],
-    ["Kelas VII Semester 2", 2],
-    ["Kelas VIII semester 1", 3],
-    ["Kelas IX Genap", 6],
-    ["Kelas VII Ganjil", 1],
-    ["tanpa keterangan", null],
-  ])("%s -> %s", (teks, hasil) => {
-    expect(deteksiSemester(teks)).toBe(hasil);
   });
 });

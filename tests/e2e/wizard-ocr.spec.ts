@@ -46,6 +46,13 @@ async function axe(page: Page) {
 
 const lanjut = (page: Page) => page.getByRole("button", { name: "Simpan dan lanjut" }).click();
 
+/** Akta wajib sejak commit 9ca8344; diunggah sesudah KK agar pemeriksaan hasil baca KK tidak terganggu. */
+async function unggahAkta(page: Page) {
+  await page.locator("[data-berkas=akta]").setInputFiles({ name: "akta.png", mimeType: "image/png", buffer: PNG });
+  await expect(page.locator("[data-berkas=akta]")).toHaveCount(1);
+  await page.waitForTimeout(1500);
+}
+
 async function mulaiSampaiLangkah2(page: Page) {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/daftar");
@@ -97,6 +104,7 @@ test.describe("OCR di wizard", () => {
     // Pendaftar mengoreksi alamat
     await kartu.getByLabel("Alamat").fill("dusun sidaurip kulon");
     await expect(kartu.getByLabel("Alamat")).toHaveValue("DUSUN SIDAURIP KULON");
+    await unggahAkta(page);
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
@@ -131,6 +139,7 @@ test.describe("OCR di wizard", () => {
     await expect(kartu.getByLabel("NIK calon siswa")).toHaveValue("");
     await kartu.getByLabel("Alamat").fill("dusun manual");
     await expect(kartu.getByLabel("Alamat")).toHaveValue("DUSUN MANUAL");
+    await unggahAkta(page);
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/3$/);
 
@@ -139,20 +148,19 @@ test.describe("OCR di wizard", () => {
     await expect(page.getByRole("region", { name: "Hasil baca Kartu Keluarga" }).getByLabel("Alamat")).toHaveValue("DUSUN MANUAL");
     await page.goto("/daftar/langkah/3");
 
-    // Nilai rapor diisi manual; tidak ada pemilih foto rapor.
+    // Langkah 3 tes minat bakat (PRD 1.3 butir 65): tidak ada pemilih foto rapor; soal tersembunyi sampai pendaftar ikut tes.
     await expect(page.locator("[data-baca-rapor]")).toHaveCount(0);
-    // Kolom nilai tersembunyi sampai pendaftar memilih saran jurusan dari nilai rapor.
-    await expect(page.getByLabel("Matematika semester 1")).toHaveCount(0);
-    await page.getByRole("radio", { name: /Ya, saya isi nilai rapor/ }).check();
-    await page.getByLabel("Matematika semester 1").fill("85");
-    await expect(page.getByLabel("Matematika semester 1")).toHaveValue("85");
-    // Memilih "Tidak" menyembunyikan kolom lagi.
+    await expect(page.getByText(/Pertanyaan 1 dari 15/)).toHaveCount(0);
+    await page.getByRole("radio", { name: /Ya, saya ikut tes minat bakat/ }).check();
+    await expect(page.getByText(/Pertanyaan 1 dari 15/)).toBeVisible();
+    await page.getByRole("radio", { name: /Mengenal mesin, kendaraan/ }).check();
+    // Memilih "Tidak" menyembunyikan tes lagi.
     await page.getByRole("radio", { name: /Tidak, saya akan memilih jurusan sendiri/ }).check();
-    await expect(page.getByLabel("Matematika semester 1")).toHaveCount(0);
-    // Nilai yang sempat diketik tidak ikut terkirim: langkah jurusan tanpa saran skor.
+    await expect(page.getByText(/Pertanyaan 1 dari 15/)).toHaveCount(0);
+    // Jawaban yang sempat dipilih tidak ikut terkirim: langkah jurusan tanpa saran.
     await lanjut(page);
     await expect(page).toHaveURL(/\/langkah\/4$/);
-    await expect(page.getByText(/Nilai rapor tidak diisi, jadi tidak ada skor rekomendasi/)).toBeVisible();
+    await expect(page.getByText(/Anda tidak mengerjakan tes minat bakat/)).toBeVisible();
   });
 
   test("mesin PaddleOCR sungguhan membaca foto KK sintetis di browser", async ({ page }) => {

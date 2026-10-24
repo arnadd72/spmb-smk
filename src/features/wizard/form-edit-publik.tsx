@@ -84,7 +84,7 @@ export function FormEditPublik({ fields, nilaiAwal }: Props) {
         </section>
       ))}
       <p className="rounded-kontrol bg-permukaan-alt p-3 text-sm text-tinta-redup">
-        Halaman ini mengubah data isian. Berkas unggahan dan nilai rapor tidak diubah di sini.
+        Halaman ini mengubah data isian. Berkas unggahan dan jawaban tes minat bakat tidak diubah di sini.
       </p>
       <div className="sticky bottom-0 -mx-4 flex flex-col gap-3 border-t border-garis bg-latar/95 px-4 py-3 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between lg:-mx-6 lg:px-6">
         <div className="min-h-6 text-sm" aria-live="polite">

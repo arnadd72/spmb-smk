@@ -14,7 +14,7 @@ type Balasan = { jawaban: string; sumber: Sumber; tautan?: { label: string; href
 const TOMBOL_CEPAT = [
   { label: "Persyaratan", tanya: "Apa saja persyaratan pendaftaran?" },
   { label: "Jadwal", tanya: "Kapan jadwal pendaftaran dibuka dan ditutup?" },
-  { label: "Cara upload", tanya: "Bagaimana cara mengunggah rapor?" },
+  { label: "Tes minat", tanya: "Apa itu tes minat bakat?" },
   { label: "Jurusan", tanya: "Jurusan apa saja yang ada?" },
   { label: "Rekomendasi", tanya: "Bagaimana rekomendasi jurusan dihitung?" },
   { label: "Edit formulir", tanya: "Bagaimana cara mengedit formulir pendaftaran?" },

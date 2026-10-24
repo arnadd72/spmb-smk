@@ -116,7 +116,7 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     return {
       sumber: "aturan",
       jawaban:
-        "Tes minat dan bakat adalah tes singkat 15 pertanyaan pilihan (A sampai D) untuk memberi gambaran awal jurusan SMK yang sesuai dengan minatmu. Tidak ada jawaban benar atau salah. Hasilnya dihitung di HP kamu, tidak disimpan, dan tidak menentukan penerimaan atau pilihan jurusanmu.",
+        "Tes minat dan bakat adalah tes singkat 15 pertanyaan pilihan (A sampai D) untuk memberi gambaran awal jurusan SMK yang sesuai dengan minatmu. Tidak ada jawaban benar atau salah. Kamu bisa mencobanya di halaman Tes Minat Bakat (hasilnya tidak disimpan), atau mengerjakannya di langkah 3 pendaftaran (opsional) agar mendapat saran jurusan di langkah berikutnya. Tes ini tidak menentukan penerimaan, dan kamu tetap bebas memilih jurusan.",
       tautan: [{ label: "Ikuti tes minat bakat", href: "/tes-minat-bakat" }],
     };
   }
@@ -204,8 +204,8 @@ function instruksiSistem(k: Konteks): string {
     k.tanggalVerifikasi ? `Verifikasi berkas fisik: ${tanggal(k.tanggalVerifikasi)}.` : "",
     konfig.kontak ? `Kontak panitia: ${konfig.kontak}.` : "",
     konfig.persyaratan ? `Persyaratan: ${konfig.persyaratan.slice(0, 1200)}` : "",
-    "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas; akta dan KK opsional, dibaca otomatis di HP untuk membantu mengisi dan hasilnya bisa diperbaiki; nilai rapor opsional, pendaftar memilih apakah ingin saran jurusan dari nilai rapor dan bila ya mengetik nilainya; saran jurusan bila nilai diisi atau pilih jurusan sendiri bila tidak; data murid dengan pas foto 3x4; data orang tua; data pendidikan, kesehatan, dan seragam; tinjau dan kirim). Ijazah fisik opsional. Setelah kirim pendaftar mendapat nomor pendaftaran, formulir PDF yang bisa diunduh atau dicetak, dan tombol bergabung ke grup WhatsApp pendaftar.",
-    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. (2) Edit Formulir: masukkan nomor pendaftaran dan tanggal lahir untuk membuka serta memperbarui data formulir. (3) Jurusan, Berita, dan FAQ di menu situs.",
+    "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas; akta dan KK opsional, dibaca otomatis di HP untuk membantu mengisi dan hasilnya bisa diperbaiki; tes minat bakat opsional, 15 soal yang sama dengan halaman Tes Minat Bakat; saran jurusan dari hasil tes bila dikerjakan, atau pilih jurusan sendiri bila tidak; nilai rapor tidak diminta; data murid dengan pas foto 3x4; data orang tua; data pendidikan, kesehatan, dan seragam; tinjau dan kirim). Ijazah fisik opsional. Setelah kirim pendaftar mendapat nomor pendaftaran, formulir PDF yang bisa diunduh atau dicetak, dan tombol bergabung ke grup WhatsApp pendaftar.",
+    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. Tes yang sama ada di langkah 3 pendaftaran untuk saran jurusan. (2) Edit Formulir: masukkan nomor pendaftaran dan tanggal lahir untuk membuka serta memperbarui data formulir. (3) Jurusan, Berita, dan FAQ di menu situs.",
     konfig.waGroup.startsWith("https://")
       ? "Grup WhatsApp: pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal datang ke sekolah dan berkas yang dibawa disampaikan lewat grup ini. Tautan grup muncul di halaman pendaftaran berhasil setelah formulir dikirim."
       : "",

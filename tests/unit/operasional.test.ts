@@ -117,16 +117,18 @@ describe("input manual pendaftar luring", () => {
     expect((await kirimPendaftaran(token, true)).nomor).toBe("SPMB-2027-0001");
 
     const isi = await isianValid();
-    const h = await buatPendaftarManual({ ...isi, jurusan_1: "TKR", jurusan_2: "", nilai_rapor: { mapel: { ipa: { "1": "92", "2": "90" }, matematika: { "1": 88 } } } }, ctx);
+    const h = await buatPendaftarManual({ ...isi, jurusan_1: "TKR", jurusan_2: "" }, ctx);
     expect(h.nomor).toBe("SPMB-2027-0002");
 
     const p = await prisma.pendaftar.findUniqueOrThrow({ where: { id: BigInt(h.id) }, include: { jurusan1: true, rekomendasi: true } });
-    expect([p.sumber, p.statusVerifikasi, p.statusNilai, p.nilaiRaporSumber]).toEqual(["luring", "approved", "sesuai", "manual"]);
+    expect([p.sumber, p.statusVerifikasi]).toEqual(["luring", "approved"]);
     expect(p.jurusan1?.kode).toBe("TKR");
     expect(p.jurusan2Id).toBeNull();
     expect(p.diverifikasiOlehId).toBe(BigInt(1));
-    expect(p.rekomendasi).not.toBeNull();
-    expect((p.rekomendasiSkor as unknown[]).length).toBe(4);
+    // Tanpa nilai rapor dan tanpa tes minat bakat (hanya di wizard daring): tidak ada saran jurusan (PRD 1.3 butir 65).
+    expect(p.rekomendasi).toBeNull();
+    expect(p.rekomendasiSkor).toEqual([]);
+    expect(p.nilaiRapor).toEqual({});
     expect(p.berkasSinkron).toBe("selesai"); // belum ada berkas: tidak ada yang perlu disinkronkan
     expect(p.nik).not.toBe("3302010101010001");
 
@@ -137,7 +139,7 @@ describe("input manual pendaftar luring", () => {
     expect((await daftarPeserta({ q: "3302010101010001", sumber: "luring" }, "2027/2028")).baris.map((b) => b.nomor)).toEqual(["SPMB-2027-0002"]);
   });
 
-  it("tanpa nilai rapor: saran jurusan kosong, status nilai belum dicek; tetap langsung diterima walau diminta menunggu", async () => {
+  it("saran jurusan kosong; tetap langsung diterima walau diminta menunggu", async () => {
     // status_awal tidak dikenal lagi (PRD 1.3 butir 62): semua pendaftar langsung diterima.
     const h = await buatPendaftarManual({ ...(await isianValid()), jurusan_1: "AKL", status_awal: "pending" }, ctx);
     const p = await prisma.pendaftar.findUniqueOrThrow({ where: { id: BigInt(h.id) } });
@@ -147,10 +149,9 @@ describe("input manual pendaftar luring", () => {
 
   it("data tidak valid ditolak dengan galat per field dan tidak membuat apa pun", async () => {
     const isi = await isianValid();
-    const e = await galat(buatPendaftarManual({ ...isi, jurusan_1: "AKL", nisn: "123", nilai_rapor: { mapel: { ipa: { "1": "150" } } } }, ctx));
+    const e = await galat(buatPendaftarManual({ ...isi, jurusan_1: "AKL", nisn: "123" }, ctx));
     expect(e.status).toBe(422);
     expect(e.errors?.nisn).toBeDefined();
-    expect(Object.keys(e.errors ?? {}).some((k) => k.startsWith("nilai_rapor"))).toBe(true);
     expect(await prisma.pendaftar.count()).toBe(0);
 
     expect((await galat(buatPendaftarManual({ ...isi, jurusan_1: "XYZ" }, ctx))).status).toBe(422);

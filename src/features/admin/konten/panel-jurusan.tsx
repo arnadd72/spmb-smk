@@ -11,7 +11,7 @@ import { ApiError, apiFetch } from "@/lib/api-client";
 import type { DefField } from "./konfig";
 import { dariBaris, IsiForm, keBody } from "./panel-konten";
 
-type Ringkas = { kode: string; nama: string; kuota: number; isActive: boolean; totalBobot: number; bobot: { mapel: string; bobot: number }[] };
+type Ringkas = { kode: string; nama: string; kuota: number; isActive: boolean };
 
 const FIELD: DefField[] = [
   { kunci: "nama", label: "Nama jurusan", tipe: "teks", wajib: true },
@@ -88,9 +88,9 @@ export function PanelJurusan() {
 
   return (
     <div className="mx-auto max-w-5xl">
-      <h1 className="text-3xl font-bold text-ink">Jurusan dan bobot</h1>
+      <h1 className="text-3xl font-bold text-ink">Jurusan</h1>
       <p className="mt-2 max-w-prose text-tinta-redup">
-        Ubah profil dan kuota jurusan, lalu atur bobot mata pelajaran untuk saran jurusan di bagian bawah halaman.
+        Ubah profil, foto, dan kuota tiap jurusan.
       </p>
 
       <div className="mt-6">
@@ -114,7 +114,7 @@ export function PanelJurusan() {
                   {j.isActive ? <Badge nada="sukses">Tampil</Badge> : <Badge nada="netral">Disembunyikan</Badge>}
                 </div>
                 <p className="angka mt-3 text-sm text-tinta-redup">
-                  Kuota {j.kuota} · total bobot {String(j.totalBobot).replace(".", ",")}
+                  Kuota {j.kuota}
                 </p>
                 <Button varian="sekunder" className="mt-4" onClick={() => buka(j.kode)} aria-label={`Ubah jurusan ${j.kode}`}>
                   <PencilSimpleIcon aria-hidden className="size-5" />

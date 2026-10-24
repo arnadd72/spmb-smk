@@ -72,11 +72,12 @@ export async function daftarAudit(f: FilterAudit) {
 
 /** Ringkasan penggunaan OCR dari tabel OcrHasil (PRD v4 13.11). OCR berjalan di perangkat pendaftar, jadi tidak ada kuota. */
 export async function statistikOcr() {
-  const baris = await prisma.ocrHasil.findMany({ select: { jenis: true, provider: true, sukses: true, durasiMs: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 20000 });
+  const baris = await prisma.ocrHasil.findMany({ where: { jenis: { in: ["akta", "kk"] } }, select: { jenis: true, provider: true, sukses: true, durasiMs: true, createdAt: true }, orderBy: { createdAt: "desc" }, take: 20000 });
   const persentil = (urut: number[], p: number) => (urut.length === 0 ? 0 : urut[Math.min(urut.length - 1, Math.ceil((p / 100) * urut.length) - 1)]);
   const awalBulan = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-  const perJenis = ["akta", "kk", "rapor"].map((jenis) => {
+  // OCR rapor dihapus bersama nilai rapor (PRD 1.3 butir 65); catatan lama jenis "rapor" tidak ditampilkan.
+  const perJenis = ["akta", "kk"].map((jenis) => {
     const b = baris.filter((x) => x.jenis === jenis);
     const durasi = b.map((x) => x.durasiMs).sort((a, c) => a - c);
     return {

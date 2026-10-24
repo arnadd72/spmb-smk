@@ -40,36 +40,6 @@ export const JURUSAN = [
   },
 ] as const;
 
-type Mapel = { kode: string; nama: string; alias: string[]; kelompok: "umum" | "madrasah" | "mulok" };
-
-export const MAPEL: Mapel[] = [
-  { kode: "pai", nama: "Pendidikan Agama Islam dan Budi Pekerti", alias: ["pendidikan agama islam", "pai", "pendidikan agama", "agama"], kelompok: "umum" },
-  { kode: "ppkn", nama: "Pendidikan Pancasila", alias: ["pendidikan pancasila", "pendidikan pancasila dan kewarganegaraan", "ppkn", "pkn"], kelompok: "umum" },
-  { kode: "b_indonesia", nama: "Bahasa Indonesia", alias: ["bahasa indonesia", "b. indonesia", "b indonesia"], kelompok: "umum" },
-  { kode: "matematika", nama: "Matematika", alias: ["matematika", "mtk"], kelompok: "umum" },
-  { kode: "ipa", nama: "Ilmu Pengetahuan Alam", alias: ["ilmu pengetahuan alam", "ipa"], kelompok: "umum" },
-  { kode: "ips", nama: "Ilmu Pengetahuan Sosial", alias: ["ilmu pengetahuan sosial", "ips"], kelompok: "umum" },
-  { kode: "b_inggris", nama: "Bahasa Inggris", alias: ["bahasa inggris", "b. inggris"], kelompok: "umum" },
-  { kode: "pjok", nama: "PJOK", alias: ["pendidikan jasmani olahraga dan kesehatan", "pjok", "penjasorkes"], kelompok: "umum" },
-  { kode: "informatika", nama: "Informatika", alias: ["informatika", "tik"], kelompok: "umum" },
-  { kode: "seni", nama: "Seni Budaya", alias: ["seni budaya", "seni musik", "seni rupa", "seni tari", "seni teater"], kelompok: "umum" },
-  { kode: "prakarya", nama: "Prakarya", alias: ["prakarya", "seni dan prakarya", "prakarya dan kewirausahaan"], kelompok: "umum" },
-  { kode: "b_jawa", nama: "Bahasa Jawa", alias: ["bahasa jawa", "basa jawa", "b. jawa"], kelompok: "mulok" },
-  { kode: "quran_hadis", nama: "Al-Qur'an Hadis", alias: ["al-qur'an hadis", "quran hadits"], kelompok: "madrasah" },
-  { kode: "akidah_akhlak", nama: "Akidah Akhlak", alias: ["akidah akhlak", "aqidah akhlak"], kelompok: "madrasah" },
-  { kode: "fikih", nama: "Fikih", alias: ["fikih", "fiqih", "fiqh"], kelompok: "madrasah" },
-  { kode: "ski", nama: "Sejarah Kebudayaan Islam", alias: ["sejarah kebudayaan islam", "ski"], kelompok: "madrasah" },
-  { kode: "b_arab", nama: "Bahasa Arab", alias: ["bahasa arab"], kelompok: "madrasah" },
-];
-
-/** Bobot default per jurusan (PRD v3.1 12.3). Total per jurusan 1,00. */
-export const BOBOT: Record<string, Record<string, number>> = {
-  AKL: { matematika: 0.4, ips: 0.25, b_indonesia: 0.15, informatika: 0.1, b_inggris: 0.1 },
-  MPLB: { b_indonesia: 0.3, ips: 0.25, b_inggris: 0.2, informatika: 0.15, matematika: 0.1 },
-  LPK3: { ipa: 0.45, matematika: 0.2, b_indonesia: 0.15, b_inggris: 0.1, pai: 0.1 },
-  TKR: { ipa: 0.35, matematika: 0.3, prakarya: 0.2, informatika: 0.15 },
-};
-
 export const FAQ = [
   {
     pertanyaan: "Apakah saya perlu membuat akun untuk mendaftar?",
@@ -79,20 +49,20 @@ export const FAQ = [
   },
   {
     pertanyaan: "Dokumen apa yang harus disiapkan?",
-    jawaban: "Ijazah fisik tidak wajib dan tidak perlu diunggah. Akta Kelahiran dan Kartu Keluarga dapat diunggah bila tersedia. Nilai rapor SMP/MTs juga opsional; jika diisi, nilainya dapat dimasukkan manual atau dibaca dari foto di HP (foto rapor tidak disimpan). Saat verifikasi, bawa berkas yang tersedia sesuai arahan panitia.",
-    keywords: ["dokumen", "berkas", "persyaratan", "syarat", "akta", "kk", "rapor", "upload"],
+    jawaban: "Ijazah fisik dan rapor tidak wajib dan tidak perlu diunggah. Akta Kelahiran dan Kartu Keluarga dapat diunggah bila tersedia. Saat datang ke sekolah, bawa berkas yang tersedia sesuai arahan panitia.",
+    keywords: ["dokumen", "berkas", "persyaratan", "syarat", "akta", "kk", "upload"],
     kategori: "Persyaratan",
   },
   {
-    pertanyaan: "Bagaimana cara mengunggah rapor?",
-    jawaban: "Pada Langkah 3, pengisian nilai rapor bersifat opsional. Jika ingin mendapat saran jurusan, Anda bisa memotret halaman rapor agar dibaca di HP atau mengisi tabel sendiri. Foto rapor tidak diunggah atau disimpan. Jika nilai tidak diisi, Anda tetap dapat memilih jurusan sendiri.",
-    keywords: ["rapor", "nilai", "upload", "unggah", "foto", "pdf"],
+    pertanyaan: "Apakah perlu mengisi nilai rapor?",
+    jawaban: "Tidak. Nilai rapor tidak diminta saat mendaftar. Untuk saran jurusan, Anda bisa mengerjakan tes minat bakat di Langkah 3 (opsional).",
+    keywords: ["rapor", "nilai", "upload", "unggah", "foto"],
     kategori: "Cara Upload",
   },
   {
     pertanyaan: "Bagaimana rekomendasi jurusan dihitung?",
-    jawaban: "Rekomendasi dihitung dari nilai rapor yang Anda konfirmasi, memakai bobot mata pelajaran untuk tiap jurusan. Hasilnya hanya saran. Anda bebas memilih jurusan sendiri.",
-    keywords: ["rekomendasi", "jurusan", "nilai", "bobot", "saran", "pilihan"],
+    jawaban: "Rekomendasi dihitung dari jawaban tes minat bakat di Langkah 3 (opsional): 15 pertanyaan, tiap pilihan jawaban mengarah ke satu jurusan, dan jurusan dengan jawaban terbanyak menjadi saran utama. Hasilnya hanya saran. Anda bebas memilih jurusan sendiri.",
+    keywords: ["rekomendasi", "jurusan", "minat", "bakat", "tes", "saran", "pilihan"],
     kategori: "Rekomendasi",
   },
   {

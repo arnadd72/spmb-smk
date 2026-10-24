@@ -19,7 +19,6 @@ export type IkonMenu =
   | "testimoni"
   | "faq"
   | "jurusan"
-  | "mapel"
   | "formulir"
   | "pengaturan"
   | "ocr"
@@ -77,8 +76,7 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
   {
     nama: "Sistem",
     item: [
-      { label: "Jurusan & Bobot", href: "/admin/jurusan-dan-bobot", ket: "Profil jurusan dan bobot nilai", ikon: "jurusan", peran: SISTEM, siap: true },
-      { label: "Mata Pelajaran", href: "/admin/mata-pelajaran", ket: "Mapel untuk saran jurusan", ikon: "mapel", peran: SISTEM, siap: true },
+      { label: "Jurusan", href: "/admin/jurusan-dan-bobot", ket: "Profil dan kuota jurusan", ikon: "jurusan", peran: SISTEM, siap: true },
       { label: "Isian Formulir", href: "/admin/isian-formulir", ket: "Atur kolom formulir pendaftaran", ikon: "formulir", peran: SISTEM, siap: true },
       { label: "Pengaturan", href: "/admin/pengaturan", ket: "Tahun ajaran dan pengaturan umum", ikon: "pengaturan", peran: SISTEM, siap: true },
       { label: "Statistik OCR", href: "/admin/statistik-ocr", ket: "Keberhasilan pembacaan dokumen", ikon: "ocr", peran: SISTEM, siap: true },

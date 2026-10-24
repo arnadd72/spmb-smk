@@ -16,7 +16,6 @@ import { GET as getFormSchema } from "@/app/api/v1/form-schema/route";
 import { GET as getJurusan } from "@/app/api/v1/jurusan/route";
 import { GET as getJurusanKode } from "@/app/api/v1/jurusan/[kode]/route";
 import { GET as getLanding } from "@/app/api/v1/landing/route";
-import { GET as getMapel } from "@/app/api/v1/mapel/route";
 
 const ctx = { userId: "1", ip: "127.0.0.1" };
 const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(40, 9)]);
@@ -134,7 +133,7 @@ describe("API publik JSON", () => {
     expect((await getBeritaSlug(req(), { params: Promise.resolve({ slug: b.slug }) })).status).toBe(404);
   });
 
-  it("FAQ tidak membocorkan kata kunci internal; mapel tidak membocorkan alias dan yang nonaktif", async () => {
+  it("FAQ tidak membocorkan kata kunci internal", async () => {
     await prisma.faq.create({ data: { pertanyaan: "Kapan buka?", jawaban: "Segera.", keywords: ["rahasia-internal"], urutan: 1, isActive: true } });
     await prisma.faq.create({ data: { pertanyaan: "Nonaktif?", jawaban: "x", keywords: [], urutan: 2, isActive: false } });
     const faq = await H(getFaq)(req());
@@ -142,12 +141,6 @@ describe("API publik JSON", () => {
     expect(teks).toContain("Kapan buka?");
     expect(teks).not.toContain("rahasia-internal");
     expect(teks).not.toContain("Nonaktif?");
-
-    await prisma.mataPelajaran.update({ where: { kode: "ips" }, data: { isActive: false } });
-    const m = await json(await H(getMapel)(req()));
-    expect(m.data.some((x: { kode: string }) => x.kode === "ips")).toBe(false);
-    expect(JSON.stringify(m)).not.toContain("alias");
-    expect(m.data[0]).toEqual({ kode: expect.any(String), nama: expect.any(String), kelompok: expect.any(String) });
   });
 
   it("form-schema memuat isian yang tampil per langkah dan mengikuti pengaturan jadwal", async () => {

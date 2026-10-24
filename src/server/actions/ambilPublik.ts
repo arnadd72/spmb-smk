@@ -14,18 +14,12 @@ export type JurusanDetail = {
   /** Peminat pilihan 1 yang belum ditolak. */
   terdaftar: number;
   sisa: number;
-  /** Mata pelajaran berbobot terbesar untuk rekomendasi. */
-  mapelUtama: { nama: string; bobot: number }[];
   /** Foto pilihan admin; null memakai foto bawaan situs. */
   gambar: string | null;
 };
 
 export async function ambilDaftarJurusan(): Promise<JurusanDetail[]> {
-  const data = await prisma.jurusan.findMany({
-    where: { isActive: true },
-    orderBy: { urutan: "asc" },
-    include: { bobot: { include: { mataPelajaran: true }, orderBy: { bobot: "desc" }, take: 4 } },
-  });
+  const data = await prisma.jurusan.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } });
 
   const hitung = await prisma.pendaftar.groupBy({
     by: ["jurusan1Id"],
@@ -45,7 +39,6 @@ export async function ambilDaftarJurusan(): Promise<JurusanDetail[]> {
       kuota: j.kuota,
       terdaftar,
       sisa: Math.max(0, j.kuota - terdaftar),
-      mapelUtama: j.bobot.map((b) => ({ nama: b.mataPelajaran.nama, bobot: Number(b.bobot) })),
       gambar: j.gambar,
     };
   });

@@ -55,8 +55,6 @@ type JurusanSeed = {
   kode: string;
   nama: string;
   kuota: number;
-  totalBobot: number;
-  bobot: { mapel: string; kode: string; bobot: number }[];
 };
 
 export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
@@ -193,7 +191,7 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
 
       <Bagian judul="Stepper" catatan="Menempel di atas pada mobile. Ubah langkah untuk melihat progres.">
         <div className="overflow-hidden rounded-kartu border border-garis">
-          <Stepper langkah={langkah} total={8} nama="Rapor dan nilai" />
+          <Stepper langkah={langkah} total={8} nama="Tes minat bakat" />
         </div>
         <div className="flex gap-2">
           <Button varian="sekunder" onClick={() => setLangkah((l) => Math.max(1, l - 1))}>
@@ -248,7 +246,7 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
         </div>
       </Bagian>
 
-      <Bagian judul="Data referensi (seed)" catatan="Jurusan dan bobot mata pelajaran dari database. Total bobot tiap jurusan harus 1,00.">
+      <Bagian judul="Data referensi (seed)" catatan="Jurusan dari database.">
         {jurusan.length === 0 ? (
           <EmptyState judul="Belum ada data" deskripsi="Jalankan npm run db:seed." />
         ) : (
@@ -260,20 +258,6 @@ export function Katalog({ jurusan }: { jurusan: JurusanSeed[] }) {
                   <p className="angka text-sm text-tinta-redup">Kuota {j.kuota}</p>
                 </div>
                 <p className="mt-1 text-sm text-tinta-redup">{j.nama}</p>
-                <table className="mt-3 w-full text-left text-sm">
-                  <tbody>
-                    {j.bobot.map((b) => (
-                      <tr key={b.kode} className="border-b border-garis">
-                        <td className="py-1.5">{b.mapel}</td>
-                        <td className="py-1.5 text-right">{b.bobot.toFixed(2).replace(".", ",")}</td>
-                      </tr>
-                    ))}
-                    <tr>
-                      <td className="py-1.5 font-semibold">Total</td>
-                      <td className="py-1.5 text-right font-semibold">{j.totalBobot.toFixed(2).replace(".", ",")}</td>
-                    </tr>
-                  </tbody>
-                </table>
               </Card>
             ))}
           </div>

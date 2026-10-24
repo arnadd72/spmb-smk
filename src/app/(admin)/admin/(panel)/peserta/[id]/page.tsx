@@ -4,9 +4,7 @@ import { ChatCircleDotsIcon, FilePdfIcon, PencilSimpleIcon } from "@phosphor-ico
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { labelAksi } from "@/features/admin/audit/label";
-import { BatangProgres } from "@/features/admin/dashboard/grafik";
 import { KelolaBerkas } from "@/features/admin/peserta/kelola-berkas";
-import { PanelNilai } from "@/features/admin/verifikasi/panel-nilai";
 import { PenampilBerkas } from "@/features/admin/verifikasi/penampil-berkas";
 import { TombolSinkron } from "@/features/admin/verifikasi/tombol-sinkron";
 import { formatTanggal } from "@/lib/format";
@@ -14,28 +12,29 @@ import { ambilBerkasPendaftar } from "@/server/actions/berkas";
 import { ambilPeserta } from "@/server/actions/peserta";
 import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
-import { prisma } from "@/server/db/client";
 import { muatDefinisiField } from "@/server/services/draf";
-import { mapelBerbobot, muatBobotJurusan } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
-import { NAMA_LANGKAH, type DefinisiField, type NilaiRapor } from "@/server/validasi/wizard";
+import { NAMA_LANGKAH, type DefinisiField } from "@/server/validasi/wizard";
 
 export const metadata = { title: "Detail pendaftar" };
-
-type Skor = { kode: string; nama: string; skor: number; label: string; penjelasan?: string; rincian: { kode: string; nama: string; bobot: number; nilai: number; kontribusi: number }[] };
-
-const LABEL_NILAI = { belumDicek: "Belum dicek", sesuai: "Sesuai dengan rapor", dikoreksi: "Dikoreksi panitia" } as const;
 
 function tampil(f: DefinisiField, v: unknown): string {
   if (v === undefined || v === null || v === "") return "";
   if (f.tipe === "checkbox") return v ? "Ya" : "Tidak";
   if (f.tipe === "date" && typeof v === "string") return formatTanggal(v);
-  if ((f.tipe === "select" || f.tipe === "radio") && f.opsi) return f.opsi.find((o) => o.nilai === v)?.label ?? String(v);
-  if (typeof v === "object") return Object.entries(v as Record<string, unknown>).map(([k, x]) => `${k.replace("_", " ")} ${x}`).join(", ");
+  if ((f.tipe === "select" || f.tipe === "radio") && f.opsi)
+    return f.opsi.find((o) => o.nilai === v)?.label ?? String(v);
+  if (typeof v === "object")
+    return Object.entries(v as Record<string, unknown>)
+      .map(([k, x]) => `${k.replace("_", " ")} ${x}`)
+      .join(", ");
   return String(v);
 }
 
-export default async function DetailPendaftar({ params, searchParams }: PageProps<"/admin/peserta/[id]">) {
+export default async function DetailPendaftar({
+  params,
+  searchParams,
+}: PageProps<"/admin/peserta/[id]">) {
   await wajibPeranHalaman(...PERAN.pendaftar);
   const { id } = await params;
   const baru = (await searchParams).baru === "1";
@@ -46,37 +45,45 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
     if (e instanceof GalatApi && e.status === 404) notFound();
     throw e;
   }
-  const [fields, semuaMapel, berkas, bobot] = await Promise.all([
-    muatDefinisiField(),
-    prisma.mataPelajaran.findMany({ select: { kode: true, nama: true } }),
-    ambilBerkasPendaftar(id),
-    muatBobotJurusan(),
-  ]);
-  const namaMapel = new Map(semuaMapel.map((m) => [m.kode, m.nama]));
-  const rapor = p.nilaiRapor as NilaiRapor;
-  // Baris panel nilai: mapel berbobot ditambah mapel yang diisi pendaftar (pindahan dari halaman Verifikasi, PRD 1.3 butir 62).
-  const mapelNilai = [...new Set([...mapelBerbobot(bobot).map((m) => m.kode), ...Object.keys(rapor.mapel)])].map((k) => ({ kode: k, nama: namaMapel.get(k) ?? k }));
-  const raporAsli = (p.nilaiRaporKoreksi as { asli?: NilaiRapor } | null)?.asli;
-  const skor = (p.rekomendasiSkor as Skor[]) ?? [];
+  const [fields, berkas] = await Promise.all([muatDefinisiField(), ambilBerkasPendaftar(id)]);
 
   const bagian = [1, 5, 6, 7].map((l) => ({
     judul: NAMA_LANGKAH[l - 1],
     baris: fields
-      .filter((f) => f.langkah === l && f.tipe !== "file" && f.tipe !== "tabel" && f.kunci !== "setuju" && f.kunci !== "konfirmasi_final")
+      .filter(
+        (f) =>
+          f.langkah === l &&
+          f.tipe !== "file" &&
+          f.tipe !== "tabel" &&
+          f.kunci !== "setuju" &&
+          f.kunci !== "konfirmasi_final",
+      )
       .map((f) => ({ label: f.label, nilai: tampil(f, p.nilai[f.kunci]) })),
   }));
-  bagian[3].baris.push(...Object.entries((p.nilai.nilai_ujian ?? {}) as Record<string, number>).map(([k, v]) => ({ label: `Nilai ujian ${k.replace("_", " ")}`, nilai: String(v) })));
+  bagian[3].baris.push(
+    ...Object.entries((p.nilai.nilai_ujian ?? {}) as Record<string, number>).map(([k, v]) => ({
+      label: `Nilai ujian ${k.replace("_", " ")}`,
+      nilai: String(v),
+    })),
+  );
 
   return (
     <div className="mx-auto max-w-6xl">
       <p className="text-sm">
-        <Link href="/admin/peserta" className="font-semibold text-primer-tua underline underline-offset-4">
+        <Link
+          href="/admin/peserta"
+          className="font-semibold text-primer-tua underline underline-offset-4"
+        >
           Data peserta
         </Link>
       </p>
       {baru && (
-        <p role="status" className="mt-3 rounded-kontrol bg-sukses-latar px-4 py-3 text-sm font-semibold text-sukses">
-          Pendaftar luring tersimpan dengan nomor {p.nomor}. Unggah berkas akta, KK, dan rapor di bagian Berkas bila ada.
+        <p
+          role="status"
+          className="mt-3 rounded-kontrol bg-sukses-latar px-4 py-3 text-sm font-semibold text-sukses"
+        >
+          Pendaftar luring tersimpan dengan nomor {p.nomor}. Unggah berkas akta, KK, dan pas foto di
+          bagian Kelola berkas bila ada.
         </p>
       )}
       <div className="mt-2 flex flex-wrap items-start justify-between gap-3">
@@ -108,13 +115,22 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">
-          {/* Tanpa status pendaftaran: semua pendaftar langsung diterima (PRD 1.3 butir 62, 63). */}
-          <h2 className="text-lg font-bold text-ink">Nilai rapor</h2>
-          <div className="mt-3 flex flex-wrap items-center gap-3">
-            <Badge nada={p.statusNilai === "sesuai" ? "sukses" : p.statusNilai === "dikoreksi" ? "peringatan" : "netral"}>
-              Nilai: {LABEL_NILAI[p.statusNilai as keyof typeof LABEL_NILAI]}
-            </Badge>
-          </div>
+          {/* Tanpa status pendaftaran (PRD 1.3 butir 62, 63) dan tanpa nilai rapor maupun hasil tes minat (butir 65). */}
+          <h2 className="text-lg font-bold text-ink">Pilihan jurusan</h2>
+          <dl className="mt-3 grid gap-x-4 gap-y-2.5 sm:grid-cols-2">
+            <div>
+              <dt className="text-xs text-tinta-redup">Pilihan 1</dt>
+              <dd className="text-sm font-semibold text-tinta">
+                {p.jurusan1 ? `${p.jurusan1.kode} · ${p.jurusan1.nama}` : "-"}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-xs text-tinta-redup">Pilihan 2</dt>
+              <dd className="text-sm font-semibold text-tinta">
+                {p.jurusan2 ? `${p.jurusan2.kode} · ${p.jurusan2.nama}` : "-"}
+              </dd>
+            </div>
+          </dl>
           {p.sumber === "luring" && p.diverifikasiOleh && p.diverifikasiAt && (
             <p className="mt-3 text-sm text-tinta-redup">
               Dimasukkan oleh {p.diverifikasiOleh} pada {formatTanggal(p.diverifikasiAt)}.
@@ -164,42 +180,7 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
         ))}
       </div>
 
-      <Card className="mt-4">
-        <h2 className="text-lg font-bold text-ink">Pilihan jurusan dan saran nilai rapor</h2>
-        <p className="mt-1 text-sm text-tinta-redup">
-          Pilihan 1: <span className="font-semibold text-tinta">{p.jurusan1 ? `${p.jurusan1.kode} · ${p.jurusan1.nama}` : "-"}</span>. Pilihan 2:{" "}
-          <span className="font-semibold text-tinta">{p.jurusan2 ? `${p.jurusan2.kode} · ${p.jurusan2.nama}` : "-"}</span>. Saran sistem:{" "}
-          <span className="font-semibold text-tinta">{p.rekomendasi ? p.rekomendasi.kode : "-"}</span> (versi bobot <span className="angka">{p.rekomendasiVersi}</span>).
-        </p>
-        <ul className="mt-4 grid gap-4 md:grid-cols-2">
-          {skor.map((s) => (
-            <li key={s.kode} className="rounded-kontrol border border-garis p-3">
-              <p className="flex items-baseline justify-between gap-2 font-bold text-tinta">
-                <span>
-                  {s.kode} <span className="font-normal text-tinta-redup">{s.label}</span>
-                </span>
-                <span className="angka text-xl">{s.skor.toFixed(1)}</span>
-              </p>
-              <ul className="mt-2 flex flex-col gap-1.5">
-                {s.rincian.map((r) => (
-                  <li key={r.kode} className="text-xs text-tinta-redup">
-                    <span className="flex justify-between">
-                      <span>{r.nama}</span>
-                      <span className="angka">
-                        {r.nilai.toFixed(1)} · {Math.round(r.bobot * 100)}%
-                      </span>
-                    </span>
-                    <BatangProgres persen={r.nilai} />
-                  </li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-
-      </Card>
-
-      <section aria-label="Berkas dan nilai rapor" className="mt-4 grid gap-4 lg:grid-cols-2">
+      <section aria-label="Berkas" className="mt-4 grid gap-4 lg:grid-cols-2">
         <div className="min-w-0 lg:sticky lg:top-20 lg:self-start">
           <h2 className="mb-2 text-lg font-bold text-ink">Lihat berkas</h2>
           <PenampilBerkas id={p.id} berkas={berkas} />
@@ -209,52 +190,50 @@ export default async function DetailPendaftar({ params, searchParams }: PageProp
             </div>
           )}
         </div>
-        <Card className="min-w-0">
-          <PanelNilai
-            id={p.id}
-            semester={rapor.semester}
-            mapel={mapelNilai}
-            nilai={rapor.mapel}
-            asli={raporAsli?.mapel}
-            statusNilai={p.statusNilai as "belumDicek" | "sesuai" | "dikoreksi"}
-            sumber={p.nilaiRaporSumber}
-          />
-        </Card>
-      </section>
+        <div className="flex min-w-0 flex-col gap-4">
+          <Card>
+            <h2 className="text-lg font-bold text-ink">Kelola berkas</h2>
+            <p className="mt-1 text-sm text-tinta-redup">
+              Sinkron ke Drive:{" "}
+              <Badge
+                nada={
+                  p.berkasSinkron === "selesai"
+                    ? "sukses"
+                    : p.berkasSinkron === "gagal"
+                      ? "bahaya"
+                      : "peringatan"
+                }
+              >
+                {p.berkasSinkron}
+              </Badge>
+            </p>
+            <KelolaBerkas id={p.id} berkas={berkas} />
+          </Card>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
-        <Card>
-          <h2 className="text-lg font-bold text-ink">Kelola berkas</h2>
-          <p className="mt-1 text-sm text-tinta-redup">
-            Sinkron ke Drive:{" "}
-            <Badge nada={p.berkasSinkron === "selesai" ? "sukses" : p.berkasSinkron === "gagal" ? "bahaya" : "peringatan"}>{p.berkasSinkron}</Badge>
-          </p>
-          <KelolaBerkas id={p.id} berkas={berkas} />
-        </Card>
-
-        <Card>
-          <h2 className="text-lg font-bold text-ink">Riwayat</h2>
-          {p.riwayat.length === 0 ? (
-            <p className="mt-3 text-sm text-tinta-redup">Belum ada perubahan.</p>
-          ) : (
-            <ol className="mt-3 flex flex-col gap-3">
-              {p.riwayat.map((r) => (
-                <li key={r.id} className="border-l-2 border-garis pl-3 text-sm">
-                  <p className="font-semibold text-tinta">{labelAksi(r.aksi)}</p>
-                  <p className="text-xs text-tinta-redup">
-                    {r.oleh} · {formatTanggal(r.waktu)}
-                  </p>
-                  {r.dataBaru && (
-                    <p className="mt-1 break-words text-xs text-tinta-redup">
-                      {Object.keys(r.dataBaru).join(", ")}
+          <Card>
+            <h2 className="text-lg font-bold text-ink">Riwayat</h2>
+            {p.riwayat.length === 0 ? (
+              <p className="mt-3 text-sm text-tinta-redup">Belum ada perubahan.</p>
+            ) : (
+              <ol className="mt-3 flex flex-col gap-3">
+                {p.riwayat.map((r) => (
+                  <li key={r.id} className="border-l-2 border-garis pl-3 text-sm">
+                    <p className="font-semibold text-tinta">{labelAksi(r.aksi)}</p>
+                    <p className="text-xs text-tinta-redup">
+                      {r.oleh} · {formatTanggal(r.waktu)}
                     </p>
-                  )}
-                </li>
-              ))}
-            </ol>
-          )}
-        </Card>
-      </div>
+                    {r.dataBaru && (
+                      <p className="mt-1 break-words text-xs text-tinta-redup">
+                        {Object.keys(r.dataBaru).join(", ")}
+                      </p>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            )}
+          </Card>
+        </div>
+      </section>
     </div>
   );
 }

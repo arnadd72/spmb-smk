@@ -9,7 +9,7 @@ const BAGIAN: { judul: string; isi: string[] }[] = [
     isi: [
       "Data diri murid: nama, tempat dan tanggal lahir, NISN, NIK, nomor Kartu Keluarga, alamat, nomor HP atau WhatsApp, email, dan data sekolah asal.",
       "Data orang tua: nama, NIK, tempat dan tanggal lahir, pendidikan, pekerjaan, penghasilan, dan alamat.",
-      "Dokumen yang Anda unggah secara sukarela: akta kelahiran, kartu keluarga, dan pas foto. Foto rapor tidak diunggah; hanya nilai yang Anda ketik yang kami simpan.",
+      "Dokumen yang Anda unggah secara sukarela: akta kelahiran, kartu keluarga, dan pas foto. Bila Anda mengerjakan tes minat bakat saat mendaftar, jawabannya dipakai untuk saran jurusan.",
     ],
   },
   {

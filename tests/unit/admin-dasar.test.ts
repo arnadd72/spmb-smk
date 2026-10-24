@@ -102,7 +102,6 @@ describe("dashboard", () => {
     const d = await ambilDashboard();
     expect(d.periode).toBe("2027/2028");
     expect([d.total, d.pending, d.approved, d.revisiAtauDitolak]).toEqual([3, 1, 1, 1]);
-    expect(d.nilaiBelumDicek).toBe(2);
     const jAkl = d.perJurusan.find((j) => j.kode === "AKL")!;
     expect([jAkl.terdaftar, jAkl.kuota, jAkl.persen]).toEqual([2, 2, 100]);
     expect(d.perHari).toHaveLength(30);

@@ -70,8 +70,8 @@ async function RingkasanPendaftar() {
   const d = await ambilDashboard();
   const kartu = [
     { label: "Total pendaftar", nilai: d.total, href: "/admin/peserta" },
-    // Semua pendaftar langsung diterima (PRD 1.3 butir 62, 63): tidak ada kartu status, jumlahnya sama dengan total.
-    { label: "Nilai belum dicek", nilai: d.nilaiBelumDicek, href: "/admin/peserta?nilai=belumDicek" },
+    // Semua pendaftar langsung diterima (PRD 1.3 butir 62, 63): tidak ada kartu status. Tanpa nilai rapor, tidak ada
+    // kartu "Nilai belum dicek" (butir 65).
   ];
   const maksSebaran = Math.max(1, ...d.perJurusan.flatMap((j) => [j.terdaftar, j.rekomendasi]));
 
@@ -148,7 +148,7 @@ async function RingkasanPendaftar() {
         <Card className="lg:col-span-2">
           <h2 className="text-lg font-bold text-ink">Saran jurusan dibanding pilihan siswa</h2>
           <p className="mt-1 text-sm text-tinta-redup">
-            Berapa pendaftar yang disarankan tiap jurusan oleh nilai rapor, dibanding yang memilihnya sebagai pilihan 1.
+            Berapa pendaftar yang disarankan tiap jurusan oleh tes minat bakat, dibanding yang memilihnya sebagai pilihan 1.
           </p>
           <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {d.perJurusan.map((j) => (
@@ -157,7 +157,7 @@ async function RingkasanPendaftar() {
                 <dl className="mt-2 flex flex-col gap-2 text-xs text-tinta-redup">
                   <div>
                     <dt className="flex justify-between">
-                      <span>Saran rapor</span>
+                      <span>Saran tes minat</span>
                       <span className="angka font-semibold text-tinta">{j.rekomendasi}</span>
                     </dt>
                     <dd className="mt-1">

@@ -44,8 +44,6 @@ import {
   sinkronBerkasPendaftar,
   sinkronSemuaTertunda,
 } from "@/server/actions/berkas";
-import { ambilPeserta } from "@/server/actions/peserta";
-import { periksaNilai } from "@/server/actions/verifikasi";
 import { prisma } from "@/server/db/client";
 import { buatDraf } from "@/server/services/draf";
 import { kirimPendaftaran } from "@/server/services/pendaftaran";
@@ -122,94 +120,15 @@ describe("tanpa verifikasi panitia (PRD 1.3 butir 62)", () => {
   });
 });
 
-describe("pemeriksaan dan koreksi nilai", () => {
-  it("'Nilai sesuai' hanya mengubah status nilai dan dicatat", async () => {
-    const p = await pendaftarWizard();
-    await periksaNilai(p.id.toString(), { aksi: "sesuai" }, ctx);
-    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).statusNilai).toBe(
-      "sesuai",
-    );
-    expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.nilai_sesuai" } })).toBe(1);
-  });
-
-  it("koreksi menghitung ulang saran jurusan, menyimpan nilai asli sekali, dan mencatat sel yang berubah", async () => {
-    const p = await pendaftarWizard();
-    const awal = (await ambilPeserta(p.id.toString())).nilaiRapor as {
-      semester: number[];
-      mapel: Record<string, Record<string, number>>;
-    };
-    expect(awal.mapel.ipa["1"]).toBe(80);
-
-    // IPA dan Matematika tinggi: saran bergeser ke LPK3 atau TKR
-    const tinggi = structuredClone(awal.mapel);
-    for (const k of ["ipa", "matematika"])
-      for (const s of awal.semester)
-        if (tinggi[k][String(s)] !== undefined) tinggi[k][String(s)] = 98;
-    const h1 = await periksaNilai(p.id.toString(), { aksi: "koreksi", mapel: tinggi }, ctx);
-    expect(["LPK3", "TKR"]).toContain(
-      h1.statusNilai === "dikoreksi" ? (h1 as { saran: string | null }).saran : "",
-    );
-
-    let b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect(b.statusNilai).toBe("dikoreksi");
-    expect(b.nilaiRaporSumber).toBe("manual");
-    expect((b.nilaiRapor as { mapel: Record<string, Record<string, number>> }).mapel.ipa["1"]).toBe(
-      98,
-    );
-    const asli1 = (
-      b.nilaiRaporKoreksi as { asli: { mapel: Record<string, Record<string, number>> } }
-    ).asli;
-    expect(asli1.mapel.ipa["1"]).toBe(80);
-
-    // koreksi kedua: nilai asli tidak tertimpa
-    tinggi.ipa["1"] = 50;
-    await periksaNilai(p.id.toString(), { aksi: "koreksi", mapel: tinggi }, ctx);
-    b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect(
-      (b.nilaiRaporKoreksi as { asli: { mapel: Record<string, Record<string, number>> } }).asli
-        .mapel.ipa["1"],
-    ).toBe(80);
-
-    const audit = await prisma.auditLog.findMany({
-      where: { aksi: "pendaftar.nilai_koreksi" },
-      orderBy: { id: "asc" },
-    });
-    const sel = (audit[0].dataBaru as { sel: Record<string, { lama: number; baru: number }> }).sel;
-    expect(sel["ipa.s1"]).toEqual({ lama: 80, baru: 98 });
-  });
-
-  it("nilai di luar 0-100 atau mapel berbobot dikosongkan ditolak tanpa mengubah data", async () => {
-    const p = await pendaftarWizard();
-    const awal = (await ambilPeserta(p.id.toString())).nilaiRapor as {
-      mapel: Record<string, Record<string, number>>;
-    };
-
-    const lebih = structuredClone(awal.mapel);
-    lebih.ipa["1"] = 150;
-    expect(
-      (await galat(periksaNilai(p.id.toString(), { aksi: "koreksi", mapel: lebih }, ctx))).status,
-    ).toBe(422);
-
-    const kosong = structuredClone(awal.mapel);
-    kosong.matematika = {};
-    expect(
-      (await galat(periksaNilai(p.id.toString(), { aksi: "koreksi", mapel: kosong }, ctx))).status,
-    ).toBe(422);
-
-    const b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect(b.statusNilai).toBe("belumDicek");
-    expect((b.nilaiRapor as { mapel: Record<string, Record<string, number>> }).mapel.ipa["1"]).toBe(
-      80,
-    );
-  });
-});
-
 describe("penampil berkas dan sinkron Drive", () => {
   it("berkas yang belum di Drive dibaca dari penyimpanan sementara dan pembukaannya diaudit", async () => {
     const p = await pendaftarWizard();
     const daftar = await ambilBerkasPendaftar(p.id.toString());
-    // Foto rapor tidak pernah diunggah (PRD butir 40): hanya akta yang tersimpan.
-    expect(daftar.map((d) => [d.kunci, d.sumber])).toEqual([["akta", "sementara"]]);
+    // Foto rapor tidak pernah diunggah (PRD butir 40): hanya akta dan KK (wajib) yang tersimpan.
+    expect(daftar.map((d) => [d.kunci, d.sumber]).sort()).toEqual([
+      ["akta", "sementara"],
+      ["kk", "sementara"],
+    ]);
 
     const { aliran, mime, nama } = await bukaBerkas(p.id.toString(), "akta", 0, ctx);
     expect(mime).toBe("image/png");
@@ -217,7 +136,7 @@ describe("penampil berkas dan sinkron Drive", () => {
     expect((await baca(aliran)).equals(PNG)).toBe(true);
     expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.berkas_lihat" } })).toBe(1);
 
-    expect((await galat(bukaBerkas(p.id.toString(), "kk", 0, ctx))).status).toBe(404);
+    expect((await galat(bukaBerkas(p.id.toString(), "pas_foto", 0, ctx))).status).toBe(404);
     expect((await galat(bukaBerkas(p.id.toString(), "../../x", 0, ctx))).status).toBe(404);
     expect((await galat(bukaBerkas("123456", "akta", 0, ctx))).status).toBe(404);
   });
@@ -291,12 +210,12 @@ describe("kelola berkas oleh panitia", () => {
     expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.berkas_unggah" } })).toBe(1);
   });
 
-  it("rapor tidak bisa diunggah (hanya nilainya yang disimpan), menghapus berkas yang tidak ada ditolak", async () => {
+  it("rapor tidak bisa diunggah, menghapus berkas yang tidak ada ditolak", async () => {
     const p = await pendaftarWizard();
     const id = p.id.toString();
     expect((await galat(unggahBerkasPendaftar(id, "rapor", JPG, "r.jpg", ctx))).status).toBe(422);
     expect((await ambilBerkasPendaftar(id)).filter((d) => d.kunci === "rapor")).toHaveLength(0);
-    expect((await galat(hapusBerkasPendaftar(id, "kk", 0, ctx))).status).toBe(404);
+    expect((await galat(hapusBerkasPendaftar(id, "pas_foto", 0, ctx))).status).toBe(404);
     expect((await galat(hapusBerkasPendaftar(id, "rapor", 0, ctx))).status).toBe(404);
   });
 

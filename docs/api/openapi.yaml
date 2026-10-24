@@ -56,34 +56,14 @@ components:
         terhubung: { type: boolean }
         email: { type: string, nullable: true }
         adaKredensial: { type: boolean }
-    BobotMapel:
+    JurusanRingkas:
       type: object
-      required: [mapel, kode, bobot]
-      properties:
-        mapel: { type: string }
-        kode: { type: string }
-        bobot: { type: number }
-    JurusanDenganBobot:
-      type: object
-      required: [kode, nama, kuota, bobot, totalBobot]
+      required: [kode, nama, kuota, isActive]
       properties:
         kode: { type: string, example: AKL }
         nama: { type: string }
         kuota: { type: integer }
-        totalBobot: { type: number, example: 1 }
-        bobot:
-          type: array
-          items: { $ref: '#/components/schemas/BobotMapel' }
-    MataPelajaran:
-      type: object
-      required: [kode, nama, kelompok, alias]
-      properties:
-        kode: { type: string }
-        nama: { type: string }
-        kelompok: { type: string, enum: [umum, madrasah, mulok] }
-        alias:
-          type: array
-          items: { type: string }
+        isActive: { type: boolean }
   responses:
     TidakTerautentikasi:
       description: Tanpa sesi atau sesi tidak sah.
@@ -246,7 +226,7 @@ paths:
   /admin/jurusan:
     get:
       tags: [Referensi]
-      summary: Jurusan beserta bobot mata pelajaran (panitia, superadmin).
+      summary: Daftar jurusan (panitia, superadmin).
       security: [{ sesiAdmin: [] }]
       responses:
         '200':
@@ -259,25 +239,6 @@ paths:
                 properties:
                   data:
                     type: array
-                    items: { $ref: '#/components/schemas/JurusanDenganBobot' }
-        '401': { $ref: '#/components/responses/TidakTerautentikasi' }
-        '403': { $ref: '#/components/responses/Dilarang' }
-  /admin/mapel:
-    get:
-      tags: [Referensi]
-      summary: Mata pelajaran aktif beserta alias OCR (panitia, superadmin).
-      security: [{ sesiAdmin: [] }]
-      responses:
-        '200':
-          description: OK.
-          content:
-            application/json:
-              schema:
-                type: object
-                required: [data]
-                properties:
-                  data:
-                    type: array
-                    items: { $ref: '#/components/schemas/MataPelajaran' }
+                    items: { $ref: '#/components/schemas/JurusanRingkas' }
         '401': { $ref: '#/components/responses/TidakTerautentikasi' }
         '403': { $ref: '#/components/responses/Dilarang' }

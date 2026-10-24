@@ -1,11 +1,7 @@
 import { tetapkanGelombang } from "@/server/services/gelombang";
 import { prisma } from "@/server/db/client";
-import {
-  TOTAL_LANGKAH,
-  adaNilaiRapor,
-  type NilaiRapor,
-  type InputCekStatus,
-} from "@/server/validasi/wizard";
+import type { JawabanMinat } from "@/server/validasi/minat";
+import { TOTAL_LANGKAH, type InputCekStatus } from "@/server/validasi/wizard";
 import {
   bacaBerkas,
   bacaData,
@@ -23,7 +19,7 @@ import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { adalahRefCloudinary } from "@/server/services/penyimpanan/driverCloudinary";
-import { hitungRekomendasi, muatBobotJurusan, versiBobot } from "@/server/services/rekomendasi";
+import { hitungRekomendasi, muatJurusanAktif } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 
 // Submit pendaftaran (PRD v3.1 10.5-10.7), halaman sukses, dan cek status (10.9).
@@ -69,11 +65,10 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
     }
   }
 
-  // 2. Hitung ulang rekomendasi di server.
-  const bobot = await muatBobotJurusan();
-  const rapor = semua.nilai_rapor as NilaiRapor;
-  const rekom = adaNilaiRapor(rapor) ? hitungRekomendasi(rapor, bobot) : { versi: versiBobot(bobot), peringkat: [] };
-  const idJurusan = (kode: unknown) => bobot.find((j) => j.kode === kode)?.id;
+  // 2. Hitung ulang rekomendasi dari jawaban tes minat bakat di server.
+  const jurusanAktif = await muatJurusanAktif();
+  const rekom = hitungRekomendasi(semua.minat as JawabanMinat | undefined, jurusanAktif);
+  const idJurusan = (kode: unknown) => jurusanAktif.find((j) => j.kode === kode)?.id;
   const jurusan1 = idJurusan(semua.jurusan_1);
   if (!jurusan1) throw GalatApi.validasi({ jurusan_1: ["Pilihan jurusan tidak valid."] });
   const jurusan2 = semua.jurusan_2 ? idJurusan(semua.jurusan_2) : undefined;
@@ -108,8 +103,9 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
         periode: konfig.tahunAjaran,
         namaLengkap: String(semua.nama_lengkap),
         ...kolom,
-        nilaiRapor: JSON.parse(JSON.stringify(rapor)),
-        nilaiRaporSumber: typeof semua.sumber_nilai === "string" ? semua.sumber_nilai : "manual",
+        // Nilai rapor tidak lagi diisi (PRD 1.3 butir 65); kolom wajib lama diisi kosong.
+        nilaiRapor: {},
+        nilaiRaporSumber: "",
         rekomendasiJurusanId: terbaik ? BigInt(terbaik.jurusanId) : null,
         rekomendasiSkor: JSON.parse(JSON.stringify(rekom.peringkat)),
         rekomendasiVersi: rekom.versi,

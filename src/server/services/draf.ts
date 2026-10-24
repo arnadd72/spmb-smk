@@ -4,20 +4,12 @@ import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/
 import { pastikanKuotaTersedia, terdaftarPerJurusan } from "@/server/services/kuota";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
-import { hitungRekomendasi, muatBobotJurusan, versiBobot, type HasilRekomendasi } from "@/server/services/rekomendasi";
+import { hitungRekomendasi, muatJurusanAktif, type HasilRekomendasi } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 import { KUNCI_INTI, KUNCI_WAJIB } from "@/server/validasi/formField";
-import { SUMBER_NILAI_RAPOR, bersihkanIsianOcr } from "@/server/validasi/ocr";
-import {
-  KUNCI_FILE_KHUSUS,
-  TOTAL_LANGKAH,
-  adaNilaiRapor,
-  skemaLangkah,
-  skemaNilaiRapor,
-  skemaNilaiUjian,
-  type DefinisiField,
-  type NilaiRapor,
-} from "@/server/validasi/wizard";
+import { skemaJawabanMinat, type JawabanMinat } from "@/server/validasi/minat";
+import { bersihkanIsianOcr } from "@/server/validasi/ocr";
+import { KUNCI_FILE_KHUSUS, TOTAL_LANGKAH, skemaLangkah, skemaNilaiUjian, type DefinisiField } from "@/server/validasi/wizard";
 
 // Draf pendaftaran tanpa login (PRD v3.1 10.4, v4 7.4): token acak di cookie httpOnly, hash SHA-256 di database.
 // Isian disimpan terenkripsi (AES-GCM) dalam satu blob; berkas sementara lewat PenyimpananDokumen.
@@ -45,7 +37,6 @@ export type DataDraf = Record<string, Record<string, unknown>>;
 
 export type KonfigWizard = {
   tahunAjaran: string;
-  semester: number[];
   buka: string | null;
   tutup: string | null;
   status: "buka" | "belum" | "tutup";
@@ -67,11 +58,10 @@ function tahunAjaranBawaan(): string {
 }
 
 export async function ambilKonfigWizard(): Promise<KonfigWizard> {
-  const [tahun, buka, tutup, semester, kontak, persyaratan, persetujuan, waGroup] = await Promise.all([
+  const [tahun, buka, tutup, kontak, persyaratan, persetujuan, waGroup] = await Promise.all([
     ambilPengaturan("tahun_ajaran"),
     ambilPengaturan("gelombang_buka"),
     ambilPengaturan("gelombang_tutup"),
-    ambilPengaturan("semester_rapor"),
     ambilPengaturan("kontak_panitia"),
     ambilPengaturan("teks_persyaratan"),
     ambilPengaturan("teks_persetujuan"),
@@ -81,14 +71,9 @@ export async function ambilKonfigWizard(): Promise<KonfigWizard> {
   const tahunAjaran = tahun ?? tahunAjaranBawaan();
   const keadaan = keadaanDariGelombang(await daftarGelombang(tahunAjaran));
   const status = keadaan.adaGelombang ? keadaan.status : buka && hari < buka ? "belum" : tutup && hari > tutup ? "tutup" : "buka";
-  const sem = (semester ?? "1,2,3,4,5")
-    .split(",")
-    .map((x) => Number(x.trim()))
-    .filter((x) => Number.isInteger(x) && x >= 1 && x <= 6);
 
   return {
     tahunAjaran,
-    semester: sem.length > 0 ? sem : [1, 2, 3, 4, 5],
     buka: keadaan.adaGelombang ? (keadaan.saatIni?.buka ?? null) : buka || null,
     tutup: keadaan.adaGelombang ? (keadaan.saatIni?.tutup ?? null) : tutup || null,
     status,
@@ -280,11 +265,7 @@ export async function hapusBerkas(token: string | undefined, kunci: string, ref:
 
 // ------------------------------------------------------------------ langkah
 
-export type KonteksValidasi = {
-  fields: DefinisiField[];
-  semester: number[];
-  mapelWajib: string[];
-};
+export type KonteksValidasi = { fields: DefinisiField[] };
 
 /**
  * Validasi isian satu langkah terhadap field (form builder) dan aturan khusus. Mengembalikan data bersih.
@@ -306,15 +287,11 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
     if (f.wajib && !ada) (galat[f.kunci] ??= []).push(`${f.label} wajib diunggah.`);
   }
 
-  // Tabel nilai rapor (langkah 3)
-  const defRapor = k.fields.find((f) => f.kunci === "nilai_rapor" && f.langkah === langkah);
-  if (defRapor) {
-    const r = skemaNilaiRapor(k.semester, k.mapelWajib).safeParse(mentah.nilai_rapor ?? { mapel: {} });
-    if (r.success) hasil.nilai_rapor = r.data;
-    else for (const i of r.error.issues) (galat[`nilai_rapor.${i.path.slice(1).join(".")}`] ??= []).push(i.message);
-    // Asal nilai (PRD 11.5): dibaca OCR, dibaca OCR lalu dikoreksi, atau diisi manual. Tidak dikenal berarti manual.
-    const sumber = SUMBER_NILAI_RAPOR.find((s) => s === mentah.sumber_nilai);
-    hasil.sumber_nilai = sumber ?? "manual";
+  // Tes minat bakat (langkah 3, opsional; PRD 1.3 butir 65): satu indeks pilihan atau null per soal.
+  if (langkah === 3) {
+    const m = skemaJawabanMinat.safeParse(mentah.minat ?? []);
+    if (m.success) hasil.minat = m.data;
+    else (galat.minat ??= []).push(m.error.issues[0]?.message ?? "Jawaban tes tidak valid.");
   }
 
   // Saran isian dari OCR Akta dan KK (langkah 2): hanya prapengisian langkah 5 dan 6, disaring ulang di sini.
@@ -337,7 +314,7 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
 
 export async function konteksValidasi(): Promise<KonteksValidasi & { konfig: KonfigWizard }> {
   const [fields, konfig] = await Promise.all([muatDefinisiField(), ambilKonfigWizard()]);
-  return { fields, konfig, semester: konfig.semester, mapelWajib: [] };
+  return { fields, konfig };
 }
 
 export async function simpanLangkah(token: string | undefined, langkah: number, input: unknown): Promise<{ langkahTerakhir: number }> {
@@ -373,9 +350,7 @@ export async function simpanLangkah(token: string | undefined, langkah: number, 
 
 export async function rekomendasiDraf(token: string | undefined): Promise<HasilRekomendasi & { kuotaPenuh: string[] }> {
   const baris = await wajibDraf(token);
-  const rapor = bacaData(baris)["3"]?.nilai_rapor as NilaiRapor | undefined;
-  const bobot = await muatBobotJurusan();
-  const hasil = adaNilaiRapor(rapor) ? hitungRekomendasi(rapor, bobot) : { versi: versiBobot(bobot), peringkat: [] };
+  const hasil = hitungRekomendasi(bacaData(baris)["3"]?.minat as JawabanMinat | undefined, await muatJurusanAktif());
 
   // Info kuota (tidak memblokir, PRD 10.4 langkah 4): jurusan dengan pendaftar >= kuota.
   const jurusan = await prisma.jurusan.findMany({ where: { isActive: true }, select: { id: true, kode: true, kuota: true } });

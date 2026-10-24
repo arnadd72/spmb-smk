@@ -32,13 +32,3 @@ export async function catatHasilOcr(token: string | undefined, input: unknown): 
     },
   });
 }
-
-/** Mata pelajaran beserta alias penulisannya di rapor, untuk pencocokan di parser rapor (PRD v4 11.4). */
-export async function muatMapelUntukOcr(kode: string[]): Promise<{ kode: string; nama: string; alias: string[] }[]> {
-  const baris = await prisma.mataPelajaran.findMany({ where: { kode: { in: kode } }, orderBy: { urutan: "asc" } });
-  return baris.map((m) => ({
-    kode: m.kode,
-    nama: m.nama,
-    alias: Array.isArray(m.alias) ? (m.alias as unknown[]).filter((a): a is string => typeof a === "string") : [],
-  }));
-}

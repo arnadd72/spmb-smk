@@ -7,7 +7,6 @@ import { normalisasiHp } from "@/server/services/pendaftarKolom";
 export type FilterPeserta = {
   q?: string;
   status?: "pending" | "approved" | "rejected" | "revision";
-  nilai?: "belumDicek" | "sesuai" | "dikoreksi";
   jurusan?: string;
   sumber?: "daring" | "luring";
   sinkron?: "menunggu" | "selesai" | "gagal";
@@ -22,7 +21,6 @@ export type FilterPeserta = {
 
 const ENUM = {
   status: ["pending", "approved", "rejected", "revision"],
-  nilai: ["belumDicek", "sesuai", "dikoreksi"],
   sumber: ["daring", "luring"],
   sinkron: ["menunggu", "selesai", "gagal"],
   urut: ["dikirim", "nama", "nomor", "status"],
@@ -40,7 +38,6 @@ export function bacaFilter(sp: Record<string, string | string[] | undefined>): F
   return {
     q: q || undefined,
     status: pilih(satu(sp.status), ENUM.status),
-    nilai: pilih(satu(sp.nilai), ENUM.nilai),
     jurusan: satu(sp.jurusan)?.toUpperCase().slice(0, 20) || undefined,
     sumber: pilih(satu(sp.sumber), ENUM.sumber),
     sinkron: pilih(satu(sp.sinkron), ENUM.sinkron),
@@ -59,7 +56,6 @@ export function kondisiPeserta(f: FilterPeserta, periodeAktif: string): Prisma.P
   const periode = f.periode ?? periodeAktif;
   if (periode !== "semua") and.push({ periode });
   if (f.status) and.push({ statusVerifikasi: f.status });
-  if (f.nilai) and.push({ statusNilai: f.nilai });
   if (f.sumber) and.push({ sumber: f.sumber });
   if (f.sinkron) and.push({ berkasSinkron: f.sinkron });
   if (f.jurusan) and.push({ jurusan1: { kode: f.jurusan } });

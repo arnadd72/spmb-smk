@@ -2,8 +2,8 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { masukSebagai, sisipPendaftar } from "./masuk";
 
-// Pemeriksaan berkas dan nilai rapor di halaman detail peserta. Menu Verifikasi dan keputusan status dihapus:
-// sejak PRD 1.3 butir 62 setiap pendaftar langsung diterima.
+// Pemeriksaan berkas di halaman detail peserta. Menu Verifikasi dan keputusan status dihapus (PRD 1.3 butir 62:
+// setiap pendaftar langsung diterima), begitu pula panel nilai rapor (butir 65).
 
 async function axe(page: Page) {
   await page.waitForLoadState("networkidle");
@@ -12,8 +12,8 @@ async function axe(page: Page) {
   expect(hasil.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
 }
 
-test.describe("admin: periksa berkas dan nilai di detail peserta", () => {
-  test("penampil berkas, nilai sesuai, dan koreksi nilai di detail peserta; menu Verifikasi tidak ada", async ({ page }) => {
+test.describe("admin: periksa berkas di detail peserta", () => {
+  test("penampil berkas di detail peserta; menu Verifikasi dan panel nilai rapor tidak ada", async ({ page }) => {
     test.setTimeout(120_000);
     const a = await sisipPendaftar(`Uji E2E Peserta Periksa ${Date.now()}`, { berkas: true });
     await masukSebagai(page, "panitia");
@@ -35,14 +35,10 @@ test.describe("admin: periksa berkas dan nilai di detail peserta", () => {
     expect(res.headers()["content-disposition"]).toContain("attachment");
     await axe(page);
 
-    // Nilai sesuai
-    await page.getByRole("button", { name: "Nilai sesuai" }).click();
-    await expect(page.getByText("Nilai dinyatakan sesuai.")).toBeVisible();
-
-    // Koreksi: nilai di luar rentang ditolak
-    await page.getByLabel(/Matematika semester 2/).fill("150");
-    await page.getByRole("button", { name: "Simpan koreksi nilai" }).click();
-    await expect(page.getByText("Maksimal 100.")).toBeVisible();
+    // Tanpa panel nilai rapor (PRD 1.3 butir 65); pilihan jurusan tetap tampil.
+    await expect(page.getByRole("button", { name: "Nilai sesuai" })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: /Nilai rapor/ })).toHaveCount(0);
+    await expect(page.getByRole("heading", { name: "Pilihan jurusan" })).toBeVisible();
 
     // Pembukaan berkas tercatat di riwayat
     await page.reload();

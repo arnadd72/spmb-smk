@@ -65,7 +65,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         <Baris judul="Dikirim pada" nilai={formatTanggal(r.dikirimPada)} />
         {r.gelombang && <Baris judul="Gelombang" nilai={r.gelombang} />}
         <Baris judul="Pilihan jurusan" nilai={r.jurusan1 ? `${r.jurusan1.kode} · ${r.jurusan1.nama}` : "-"} />
-        <Baris judul="Saran jurusan dari nilai rapor" nilai={r.rekomendasi ? `${r.rekomendasi.kode} · ${r.rekomendasi.nama}` : "Tidak dihitung (nilai rapor kosong)"} />
+        <Baris judul="Saran jurusan dari tes minat bakat" nilai={r.rekomendasi ? `${r.rekomendasi.kode} · ${r.rekomendasi.nama}` : "Tidak ada (tidak ikut tes)"} />
       </dl>
 
       <section aria-labelledby="langkah-lanjut" className="mt-10 border-t border-garis pt-6">
@@ -74,7 +74,7 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         </h2>
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-tinta">
           <li>Pendaftaran Anda langsung diterima, tanpa menunggu pemeriksaan panitia.</li>
-          <li>Bawa akta dan kartu keluarga saat datang ke sekolah sesuai jadwal di grup WhatsApp. Rapor dapat dibawa bila tersedia, terutama jika Anda mengisi nilai rapor.</li>
+          <li>Bawa akta dan kartu keluarga saat datang ke sekolah sesuai jadwal di grup WhatsApp.</li>
           <li>Status pendaftaran bisa dilihat kapan saja lewat halaman Cek Status.</li>
           <li>Perbarui data lewat halaman Edit Formulir.</li>
         </ol>

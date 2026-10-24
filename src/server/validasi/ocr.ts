@@ -4,11 +4,8 @@ import { z } from "zod";
 // pernah memercayai hasilnya: nilai hanya saran yang disaring ulang di sini, dan field langkah 5 dan 6 tetap
 // divalidasi lagi oleh skema form saat disimpan. Modul murni, tanpa akses database.
 
-export const JENIS_OCR = ["akta", "kk", "rapor"] as const;
+export const JENIS_OCR = ["akta", "kk"] as const;
 export type JenisOcr = (typeof JENIS_OCR)[number];
-
-export const SUMBER_NILAI_RAPOR = ["ocr", "ocr_dikoreksi", "manual"] as const;
-export type SumberNilaiRapor = (typeof SUMBER_NILAI_RAPOR)[number];
 
 const teksWajar = (maks = 255) => z.string().trim().min(1).max(maks);
 

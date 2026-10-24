@@ -14,16 +14,17 @@ import { cn } from "@/lib/cn";
 import { PesanGalat } from "./bidang";
 import { pecahGalat, simpanLangkahKlien } from "./api";
 
+/** Saran dari tes minat bakat langkah 3 (PRD 1.3 butir 65). `skor` = persen jawaban yang mengarah ke jurusan ini. */
 export type KartuRekomendasi = {
   kode: string;
   nama: string;
   skor: number;
-  label: "Paling Sesuai" | "Juga Sesuai" | "Alternatif" | "Data Kurang";
+  poin: number;
+  label: "Paling Sesuai" | "Juga Sesuai" | "Alternatif";
   penjelasan: string;
-  rincian: { kode: string; nama: string; bobot: number; nilai: number }[];
 };
 
-const NADA = { "Paling Sesuai": "sukses", "Juga Sesuai": "info", Alternatif: "netral", "Data Kurang": "peringatan" } as const;
+const NADA = { "Paling Sesuai": "sukses", "Juga Sesuai": "info", Alternatif: "netral" } as const;
 
 function Bar({ nilai, tunda }: { nilai: number; tunda: number }) {
   const kurangi = useKurangiGerak();
@@ -83,10 +84,10 @@ export function LangkahJurusan({
   return (
     <form onSubmit={kirim} noValidate className="flex flex-col gap-6">
       {kartu.length > 0 ? (
-        <p className="text-tinta-redup">Saran ini dihitung dari nilai rapor Anda dengan rumus rata-rata tertimbang. Ini hanya saran, Anda bebas memilih jurusan lain.</p>
+        <p className="text-tinta-redup">Saran ini dihitung dari jawaban tes minat bakat Anda. Ini hanya saran, Anda bebas memilih jurusan lain.</p>
       ) : (
         <p className="rounded-kontrol bg-info-latar px-3 py-2.5 text-sm font-medium text-info">
-          Nilai rapor tidak diisi, jadi tidak ada skor rekomendasi. Silakan pilih jurusan secara mandiri.
+          Anda tidak mengerjakan tes minat bakat, jadi tidak ada saran jurusan. Silakan pilih jurusan secara mandiri.
         </p>
       )}
 
@@ -109,24 +110,16 @@ export function LangkahJurusan({
                 </p>
                 <p className="mt-0.5 text-sm text-tinta-redup">{k.penjelasan}</p>
               </div>
-              <div className="sm:text-right">
-                <p className="angka font-display text-3xl font-bold text-ink">{k.skor.toFixed(1)}</p>
+              <div className="ml-auto text-right">
+                <p className="angka font-display text-3xl font-bold text-ink">
+                  {k.poin} <span className="text-base font-medium text-tinta-redup">poin</span>
+                </p>
                 <Badge nada={NADA[k.label]}>{k.label}</Badge>
               </div>
             </div>
-            <ul className="mt-4 flex flex-col gap-2.5">
-              {k.rincian.map((r) => (
-                <li key={r.kode}>
-                  <div className="flex items-baseline justify-between gap-2 text-sm">
-                    <span className="font-medium text-tinta">{r.nama}</span>
-                    <span className="angka text-tinta-redup">
-                      {r.nilai.toFixed(1)} · bobot {Math.round(r.bobot * 100)}%
-                    </span>
-                  </div>
-                  <Bar nilai={r.nilai} tunda={0.1 + i * 0.06} />
-                </li>
-              ))}
-            </ul>
+            <div className="mt-4">
+              <Bar nilai={k.skor} tunda={0.1 + i * 0.06} />
+            </div>
           </motion.li>
         ))}
       </ol>

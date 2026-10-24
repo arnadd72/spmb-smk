@@ -3,11 +3,11 @@ import { kondisiPeserta, type FilterPeserta } from "@/server/services/pencarianP
 import { prisma } from "@/server/db/client";
 import { muatDefinisiField } from "@/server/services/draf";
 import { bukaAman } from "@/server/services/pendaftarKolom";
-import { rataMapel, type DefinisiField, type NilaiRapor } from "@/server/validasi/wizard";
+import type { DefinisiField } from "@/server/validasi/wizard";
 import { GalatApi } from "@/server/types/galat";
 
-// Ekspor XLSX pendaftar (PRD v3.1 15.2): semua kolom Bagian A-D, alamat terurai, rata-rata nilai rapor per mapel,
-// saran jurusan, dan isian kustom (tanpa kolom status: semua pendaftar langsung diterima, PRD 1.3 butir 63). Header hijau NU, NIK/NISN/HP sebagai teks supaya angka nol depan aman.
+// Ekspor XLSX pendaftar (PRD v3.1 15.2): semua kolom Bagian A-D, alamat terurai, dan isian kustom. Tanpa kolom status
+// (semua pendaftar langsung diterima, PRD 1.3 butir 63) dan tanpa nilai rapor maupun saran jurusan (butir 65). Header hijau NU, NIK/NISN/HP sebagai teks supaya angka nol depan aman.
 
 export const MAKS_BARIS_EKSPOR = 10_000;
 const HIJAU = "FF057A3C";
@@ -22,24 +22,18 @@ const ambilBatch = (where: ReturnType<typeof kondisiPeserta>, ambil: number, set
     where: { AND: [where, ...(setelah ? [{ id: { gt: setelah } }] : [])] },
     orderBy: { id: "asc" },
     take: ambil,
-    include: { jurusan1: true, jurusan2: true, rekomendasi: true, gelombang: true },
+    include: { jurusan1: true, jurusan2: true, gelombang: true },
   });
 
 const str = (v: unknown): string => (v === null || v === undefined ? "" : String(v));
 const tgl = (d: Date | null) => d;
-
-type Skor = { kode: string; skor: number };
 
 export async function buatXlsx(filter: FilterPeserta, periodeAktif: string): Promise<{ buffer: Buffer; jumlah: number }> {
   const where = kondisiPeserta(filter, periodeAktif);
   const total = await prisma.pendaftar.count({ where });
   if (total > MAKS_BARIS_EKSPOR) throw GalatApi.validasi({ _: [`Terlalu banyak data (${total}). Persempit filter hingga maksimal ${MAKS_BARIS_EKSPOR} baris.`] });
 
-  const [fields, jurusan, mapel] = await Promise.all([
-    muatDefinisiField(),
-    prisma.jurusan.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } }),
-    prisma.mataPelajaran.findMany({ where: { isActive: true }, orderBy: { urutan: "asc" } }),
-  ]);
+  const fields = await muatDefinisiField();
   const label = (kunci: string, v: unknown): string => {
     const f = fields.find((x) => x.kunci === kunci);
     return f?.opsi?.find((o) => o.nilai === v)?.label ?? str(v);
@@ -48,12 +42,6 @@ export async function buatXlsx(filter: FilterPeserta, periodeAktif: string): Pro
 
   const jk = (p: Baris) => (p.jenisKelamin ? label("jenis_kelamin", p.jenisKelamin) : "");
   const ujian = (p: Baris, k: string) => ((p.nilaiUjian ?? {}) as Record<string, number>)[k] ?? null;
-  const rapor = (p: Baris) => p.nilaiRapor as unknown as NilaiRapor;
-  const skor = (p: Baris) => (Array.isArray(p.rekomendasiSkor) ? (p.rekomendasiSkor as unknown as Skor[]) : []);
-  const rataSemua = (p: Baris) => {
-    const r = Object.values(rapor(p).mapel ?? {}).map((s) => rataMapel(s)).filter((x): x is number => x !== null);
-    return r.length === 0 ? null : Math.round((r.reduce((a, b) => a + b, 0) / r.length) * 100) / 100;
-  };
 
   const kolom: Kolom[] = [
     { header: "No. Pendaftaran", lebar: 18, nilai: (p) => p.nomorPendaftaran },
@@ -130,13 +118,6 @@ export async function buatXlsx(filter: FilterPeserta, periodeAktif: string): Pro
     { header: "Prestasi", lebar: 24, nilai: (p) => str(p.hobiPrestasi) },
     { header: "Hobi Lain", lebar: 18, nilai: (p) => str(p.hobiLain) },
     { header: "Ukuran Seragam", lebar: 10, nilai: (p) => str(p.ukuranSeragam) },
-    { header: "Sumber Nilai Rapor", lebar: 16, nilai: (p) => p.nilaiRaporSumber },
-    { header: "Status Nilai", lebar: 14, nilai: (p) => ({ belumDicek: "Belum dicek", sesuai: "Sesuai", dikoreksi: "Dikoreksi" })[p.statusNilai] },
-    ...mapel.map<Kolom>((m) => ({ header: `Rata-rata ${m.nama}`, lebar: 14, format: "0.00", nilai: (p) => rataMapel(rapor(p).mapel?.[m.kode]) })),
-    { header: "Rata-rata Semua Mapel", lebar: 14, format: "0.00", nilai: rataSemua },
-    { header: "Saran Jurusan", lebar: 12, nilai: (p) => p.rekomendasi?.kode ?? "" },
-    ...jurusan.map<Kolom>((j) => ({ header: `Skor ${j.kode}`, lebar: 10, format: "0.00", nilai: (p) => skor(p).find((s) => s.kode === j.kode)?.skor ?? null })),
-    { header: "Versi Bobot", lebar: 16, nilai: (p) => p.rekomendasiVersi },
     { header: "Sinkron Berkas", lebar: 12, nilai: (p) => p.berkasSinkron },
     ...kustom.map<Kolom>((f) => ({
       header: f.label,

@@ -5,6 +5,7 @@ import { hapusMediaBila } from "@/server/services/media";
 import { sanitasiHtml } from "@/server/services/sanitasi";
 import { serialisasi } from "@/server/services/serialisasi";
 import { slugUnik } from "@/server/services/slug";
+import { BATAS_FOTO_HERO } from "@/server/types/aset";
 import { GalatApi } from "@/server/types/galat";
 import { skemaBerita, skemaEvent, skemaFaq, skemaFotoHero, skemaGaleri, skemaJurusan, skemaTestimoni } from "@/server/validasi/konten";
 
@@ -13,8 +14,7 @@ import { skemaBerita, skemaEvent, skemaFaq, skemaFotoHero, skemaGaleri, skemaJur
 export type Entitas = "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq";
 export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "hero", "testimoni", "faq"];
 
-/** Foto tambahan hero dibatasi agar beranda tetap ringan. */
-export const BATAS_FOTO_HERO = 6;
+export { BATAS_FOTO_HERO };
 
 type Baris = Record<string, unknown>;
 type Delegate = {

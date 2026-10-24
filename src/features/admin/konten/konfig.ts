@@ -1,8 +1,5 @@
 // Konfigurasi tampilan CRUD konten admin. Aturan validasi tetap di server (src/server/validasi/konten.ts).
 
-/** Peristiwa window untuk membuka formulir tambah panel konten dari luar panel (detail = nama `api`). */
-export const PERISTIWA_TAMBAH = "panel-konten:tambah";
-
 export type TipeField = "teks" | "area" | "html" | "tanggalwaktu" | "angka" | "gambar" | "centang" | "daftarTeks";
 
 export type DefField = {

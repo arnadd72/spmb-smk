@@ -99,27 +99,37 @@ test.describe("hero beranda berganti foto otomatis", () => {
     await expect(page.locator('[data-hero-aktif="true"]')).toHaveAttribute("data-hero-slide", "0");
   });
 
-  test("tombol Tambah foto ada di kartu Foto utama beranda dan menambah ke daftar", async ({ page }) => {
+  test("foto tambahan ditambah, diubah, dan dihapus di dalam kartu Foto utama beranda", async ({ page }) => {
     await masukSebagai(page, "konten");
     await bersihkan(page.request);
     await page.goto("/admin/foto-beranda");
-    const bagian = page.locator('[data-panel-konten="hero"]');
-    await expect(bagian.getByRole("heading", { level: 2, name: "Foto tambahan beranda" })).toBeVisible();
-    await expect(bagian.getByText("Belum ada foto tambahan")).toBeVisible();
     await expect(page.getByRole("heading", { level: 1, name: "Foto Beranda" })).toBeVisible();
 
-    // Tombol tambah ada di kartu "Foto utama beranda", di sebelah tombol ganti foto (bukan di judul bagian).
-    await expect(bagian.getByRole("button", { name: /^Tambah/ })).toHaveCount(0);
+    // Tidak ada lagi daftar terpisah: foto tambahan tinggal di kartu Foto utama beranda, kartu paling depan.
+    await expect(page.locator('[data-panel-konten="hero"]')).toHaveCount(0);
+    await expect(page.locator("[data-aset]").first()).toHaveAttribute("data-aset", "hero");
     const kartu = page.locator('[data-aset="hero"]');
     await expect(kartu.getByRole("button", { name: /Ganti foto/ })).toBeVisible();
+    await expect(kartu.getByRole("heading", { name: /Foto berikutnya/ })).toContainText("(0/6)");
+
     await kartu.getByRole("button", { name: "Tambah foto tambahan beranda" }).click();
     const dialog = page.getByRole("dialog", { name: "Tambah foto tambahan" });
-    await expect(dialog).toBeVisible();
-
-    // Simpan lewat formulir, lalu muncul di daftar Foto tambahan beranda.
     await dialog.locator("input:not([type=file])").first().fill("/images/sekolah/kultum.webp");
     await dialog.getByLabel("Keterangan").fill(`${AWALAN} lewat form`);
     await dialog.getByRole("button", { name: "Simpan" }).click();
-    await expect(bagian.getByText(`${AWALAN} lewat form`)).toBeVisible();
+    await expect(dialog).toBeHidden();
+    await expect(kartu.getByRole("img", { name: `${AWALAN} lewat form` })).toBeVisible();
+    await expect(kartu.getByRole("heading", { name: /Foto berikutnya/ })).toContainText("(1/6)");
+
+    await kartu.getByRole("button", { name: `Ubah ${AWALAN} lewat form` }).click();
+    const ubah = page.getByRole("dialog", { name: "Ubah foto tambahan" });
+    await ubah.getByLabel("Keterangan").fill(`${AWALAN} diubah`);
+    await ubah.getByRole("button", { name: "Simpan" }).click();
+    await expect(kartu.getByRole("img", { name: `${AWALAN} diubah` })).toBeVisible();
+
+    await kartu.getByRole("button", { name: `Hapus ${AWALAN} diubah` }).click();
+    await page.getByRole("dialog", { name: "Hapus foto tambahan?" }).getByRole("button", { name: "Hapus" }).click();
+    await expect(kartu.getByRole("img", { name: `${AWALAN} diubah` })).toHaveCount(0);
+    await expect(kartu.getByRole("heading", { name: /Foto berikutnya/ })).toContainText("(0/6)");
   });
 });

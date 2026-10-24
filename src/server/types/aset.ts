@@ -12,5 +12,8 @@ export type BarisAset = {
   diganti: boolean;
 };
 
-/** `bawaanDimuat`: foto bawaan landing sudah disalin ke galeri (maka galeri di database jadi acuan tunggal). */
+/** Foto tambahan hero dibatasi agar beranda tetap ringan. */
+export const BATAS_FOTO_HERO = 6;
+
+/** `bawaanDimuat`:foto bawaan landing sudah disalin ke galeri (maka galeri di database jadi acuan tunggal). */
 export type DaftarAset = { data: BarisAset[]; bawaanDimuat: boolean };

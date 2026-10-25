@@ -55,8 +55,8 @@ describe("fotoJurusan (aturan foto bawaan atau pilihan admin)", () => {
   });
 
   it("foto pilihan admin tidak membawa alt dan posisi foto bawaan", () => {
-    const f = fotoJurusan("AKL", "Akuntansi dan Keuangan Lembaga", "https://res.cloudinary.com/demo/x");
-    expect(f).toEqual({ src: "https://res.cloudinary.com/demo/x", alt: "Kegiatan praktik jurusan Akuntansi dan Keuangan Lembaga" });
+    const f = fotoJurusan("AKL", "Akuntansi dan Keuangan Lembaga", "https://contoh.com/x");
+    expect(f).toEqual({ src: "https://contoh.com/x", alt: "Kegiatan praktik jurusan Akuntansi dan Keuangan Lembaga" });
   });
 
   it("jurusan baru tanpa foto bawaan dan tanpa pilihan admin tidak punya foto", () => {
@@ -79,11 +79,11 @@ describe("daftar dan penggantian foto situs", () => {
   it("mengganti logo dan hero memengaruhi data publik; alt hero diganti jadi teks umum", async () => {
     expect(await ambilAsetPublik()).toMatchObject({ logo: "/images/sekolah/logo-sekolah.png", hero: "/images/sekolah/gedung-siswa.webp", heroAlt: ALT_HERO_BAWAAN });
 
-    await gantiAset("logo", { url: "https://res.cloudinary.com/demo/logo-baru" }, ctx);
-    await gantiAset("hero", { url: "https://res.cloudinary.com/demo/hero-baru" }, ctx);
+    await gantiAset("logo", { url: "https://contoh.com/logo-baru" }, ctx);
+    await gantiAset("hero", { url: "https://contoh.com/hero-baru" }, ctx);
 
     const publik = await ambilAsetPublik();
-    expect(publik).toEqual({ logo: "https://res.cloudinary.com/demo/logo-baru", hero: "https://res.cloudinary.com/demo/hero-baru", heroAlt: ALT_HERO_UMUM });
+    expect(publik).toEqual({ logo: "https://contoh.com/logo-baru", hero: "https://contoh.com/hero-baru", heroAlt: ALT_HERO_UMUM });
     expect((await ambilDataLanding()).aset).toEqual(publik);
     expect((await daftarAset()).filter((x) => x.diganti).map((x) => x.kunci)).toEqual(["logo", "hero"]);
 
@@ -92,10 +92,10 @@ describe("daftar dan penggantian foto situs", () => {
   });
 
   it("mengganti foto jurusan menulis Jurusan.gambar dan terbaca di data landing", async () => {
-    await gantiAset("jurusan-akl", { url: "https://res.cloudinary.com/demo/akl" }, ctx);
-    expect((await prisma.jurusan.findUnique({ where: { kode: "AKL" } }))?.gambar).toBe("https://res.cloudinary.com/demo/akl");
+    await gantiAset("jurusan-akl", { url: "https://contoh.com/akl" }, ctx);
+    expect((await prisma.jurusan.findUnique({ where: { kode: "AKL" } }))?.gambar).toBe("https://contoh.com/akl");
     const akl = (await ambilDataLanding()).jurusan.find((j) => j.kode === "AKL");
-    expect(akl?.gambar).toBe("https://res.cloudinary.com/demo/akl");
+    expect(akl?.gambar).toBe("https://contoh.com/akl");
     expect((await ambilDataLanding()).jurusan.find((j) => j.kode === "TKR")?.gambar).toBeNull();
   });
 

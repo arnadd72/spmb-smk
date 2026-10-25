@@ -161,28 +161,3 @@ describe("DriverSupabaseTemp", () => {
     await expect(new DriverSupabaseTemp(client, "draf-temp").simpan("a/b.jpg", Buffer.from("x"))).rejects.toThrow(/bucket tidak ada/);
   });
 });
-
-describe("penyimpananTemp tanpa Cloudinary untuk unggahan baru (poin B)", () => {
-  it("pas foto baru tetap ke penyimpanan sementara walau env Cloudinary terisi", async () => {
-    const { mkdtempSync } = await import("node:fs");
-    const os = await import("node:os");
-    const path = await import("node:path");
-    const { penyimpananTemp } = await import("@/server/services/penyimpanan");
-    const env = { ...process.env };
-    Object.assign(process.env, {
-      DRAF_TEMP_DIR: mkdtempSync(path.join(os.tmpdir(), "spmb-temp-")),
-      CLOUDINARY_CLOUD_NAME: "uji",
-      CLOUDINARY_API_KEY: "kunci",
-      CLOUDINARY_API_SECRET: "rahasia",
-    });
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
-    try {
-      const ref = await penyimpananTemp().simpan("draf-1/pas_foto-abc.jpg", Buffer.from([0xff, 0xd8, 0xff, 1, 2]), "image/jpeg");
-      expect(ref.startsWith("cld:")).toBe(false);
-      expect(fetchSpy).not.toHaveBeenCalled();
-    } finally {
-      fetchSpy.mockRestore();
-      process.env = env;
-    }
-  });
-});

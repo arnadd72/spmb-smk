@@ -7,10 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
-export type BerkasKelola = { kunci: string; indeks: number; label: string; nama: string; ukuran: number; sumber: "drive" | "sementara" | "cloudinary" | "hilang" };
+export type BerkasKelola = { kunci: string; indeks: number; label: string; nama: string; ukuran: number; sumber: "drive" | "sementara" | "hilang" };
 
 const ukuran = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(b / 1024)} KB`);
-const SUMBER = { drive: ["Di Drive", "sukses"], sementara: ["Menunggu Drive", "peringatan"], cloudinary: ["Di Cloudinary", "sukses"], hilang: ["Tidak tersedia", "bahaya"] } as const;
+const SUMBER = { drive: ["Di Drive", "sukses"], sementara: ["Menunggu Drive", "peringatan"], hilang: ["Tidak tersedia", "bahaya"] } as const;
 const SLOT = [
   { kunci: "akta", label: "Akta kelahiran", aksi: "Ganti akta" },
   { kunci: "kk", label: "Kartu keluarga", aksi: "Ganti KK" },

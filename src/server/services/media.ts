@@ -2,7 +2,6 @@ import { mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import type { Readable } from "node:stream";
 import { createClient } from "@supabase/supabase-js";
-import { hapusGambarCloudinary, konfigCloudinary, publicIdDariUrl } from "@/server/services/cloudinary";
 import { kompresGambar } from "@/server/services/kompresi";
 import { buatTokenAcak } from "@/server/services/kripto";
 import { MAKS_UKURAN_BYTE, deteksiMime } from "@/server/services/draf";
@@ -14,7 +13,7 @@ import { AWALAN_MEDIA, KATEGORI_MEDIA, type KategoriMedia } from "@/server/types
 // Gambar konten publik (berita, galeri, testimoni, foto jurusan, aset situs). Penyimpanan utama Google Drive (poin B):
 // dikompres, disimpan di SPMB/situs/{kategori}/ dengan tanda publik, dan dikirim lewat /api/v1/media/{fileId}. Tanpa Drive
 // dan bukan produksi, gambar disimpan di public/uploads/konten supaya bisa dikembangkan lokal; folder itu tidak di-commit.
-// Gambar lama di Cloudinary dan bucket Supabase `konten-publik` tetap bisa dihapus.
+// Gambar lama di bucket Supabase `konten-publik` tetap bisa dihapus.
 
 const AWALAN_LOKAL = "/uploads/konten/";
 const GAMBAR_SAH = new Set(["image/jpeg", "image/png", "image/webp"]);
@@ -96,12 +95,6 @@ export async function hapusMediaBila(url: string | null | undefined): Promise<vo
       const relatif = url.slice(AWALAN_LOKAL.length);
       if (relatif.includes("..")) return;
       await rm(path.join(process.cwd(), "public", AWALAN_LOKAL, relatif), { force: true });
-      return;
-    }
-    const c = konfigCloudinary();
-    const publicId = c ? publicIdDariUrl(url, c.cloud) : null;
-    if (c && publicId) {
-      await hapusGambarCloudinary(c, publicId);
       return;
     }
     const s = supabase();

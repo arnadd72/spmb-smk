@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { masukSebagai } from "./masuk";
 
 // Admin mengganti foto yang tadinya tertulis tetap di kode (logo, hero, foto jurusan, galeri bawaan) dari halaman Galeri.
-// Tanpa kunci Cloudinary, unggahan e2e masuk ke disk lokal (public/uploads/konten), jadi tidak ada layanan luar yang disentuh.
+// Tanpa Drive terhubung, unggahan e2e masuk ke disk lokal (public/uploads/konten), jadi tidak ada layanan luar yang disentuh.
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 const SAMA_ORIGIN = { "sec-fetch-site": "same-origin" };
 const URL_UNGGAHAN = /uploads(%2F|\/)konten/;

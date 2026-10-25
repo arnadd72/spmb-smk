@@ -12,13 +12,12 @@ export type BerkasTampil = {
   nama: string;
   mime: string;
   ukuran: number;
-  sumber: "drive" | "sementara" | "cloudinary" | "hilang";
+  sumber: "drive" | "sementara" | "hilang";
 };
 
 const SUMBER = {
   drive: { teks: "Tersimpan di Google Drive", nada: "sukses" },
   sementara: { teks: "Menunggu unggah ke Drive", nada: "peringatan" },
-  cloudinary: { teks: "Tersimpan di Cloudinary (privat)", nada: "sukses" },
   hilang: { teks: "Berkas tidak tersedia", nada: "bahaya" },
 } as const;
 

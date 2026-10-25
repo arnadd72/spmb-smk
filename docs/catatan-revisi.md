@@ -194,3 +194,8 @@ lanjut dengan peringatan; panitia melihat banner, tombol "Bukan pendaftar ganda"
 Migrasi `20261026130000_pendaftar_bukan_duplikat` belum di-deploy ke Supabase (butuh persetujuan pemilik), bersama dua migrasi sebelumnya.
 Tes: unit 344/344 lulus. E2E yang masih gagal sudah gagal sebelum B/D/E (rapor dihapus rekan setim: input manual dan ubah data peserta; wizard RT/RW
 kini angka saja; Cek Status lama; axe contrast landing; galeri timing).
+
+## Status B tuntas (26 Okt 2026)
+
+Migrasi Cloudinary ke Drive dijalankan (9 foto web, 2 pas foto, 3 folder; gagal 0) dan diverifikasi: 9/9 foto web terbaca dari Drive.
+Cloudinary dicabut total dari kode, tes, dan `.env.example`. Hapus `CLOUDINARY_*` dari `.env` lokal dan dari Vercel. Migrasi Prisma sudah di-deploy ke Supabase.

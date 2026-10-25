@@ -207,3 +207,10 @@ orientasi otomatis), parser Akta (format kalimat, tanggal huruf), parser KK (ber
 Hasil: 74% benar dan 5% terisi salah (awal 9% dan 13%). PRD butir 70 dan Bagian 11. Ukur ulang:
 `OCR_REKAM=1 OCR_REKAM_KE=_akhir npx playwright test tests/e2e/ocr-rekam.spec.ts --workers=1` lalu `npx tsx tests/ocr-akurasi/nilai.ts _akhir --rinci`.
 Foto contoh baru cukup ditaruh di `docs/ocr/akta` atau `docs/ocr/kk` dan ditambahkan ke `kunci.json`.
+
+## Status G: Tanya Sunan (26 Okt 2026)
+
+Diaudit dengan 40 pertanyaan terhadap data asli, lalu diperbaiki: AI menjawab lebih dulu dengan seluruh informasi resmi dan riwayat percakapan,
+jawabannya diperiksa (angka, tanggal, kontak, tautan, klaim biaya), aturan dan FAQ hanya cadangan dan tidak lagi salah cocok. PRD butir 71.
+Pengetahuan chatbot sebaik data: biaya, seragam, ekstrakurikuler, kepala sekolah, tes masuk, jadwal pengumuman belum ada di data; tambahkan ke FAQ admin.
+Paket gratis Gemini membatasi permintaan per menit (429); cadangan tetap jujur.

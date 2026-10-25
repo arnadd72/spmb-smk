@@ -33,7 +33,7 @@ const KETERANGAN: Record<Sumber, string | null> = {
   "tidak-ada": null,
 };
 
-/** Widget Tanya Sunan (chatbot): aturan dan FAQ dulu, asisten AI bila tidak ada yang cocok. Mengambang di pojok kanan bawah. */
+/** Widget Tanya Sunan (chatbot): asisten AI yang paham percakapan dan hanya menjawab dari informasi sekolah; aturan dan FAQ sebagai cadangan. Mengambang di pojok kanan bawah. */
 export function TanyaPanitia() {
   const [buka, setBuka] = useState(false);
   const [pesan, setPesan] = useState<Pesan[]>([SAPAAN]);
@@ -51,11 +51,13 @@ export function TanyaPanitia() {
   async function kirim(teks: string) {
     const t = teks.trim();
     if (t.length < 2 || memuat) return;
+    // Riwayat percakapan (tanpa sapaan awal dan pesan galat) supaya pertanyaan lanjutan dipahami; server menyaring dan membatasinya.
+    const riwayat = pesan.filter((m) => m.id !== SAPAAN.id && m.sumber !== "tidak-ada").slice(-6).map((m) => ({ peran: m.peran, teks: m.teks }));
     setPesan((p) => [...p, { id: nomor.current++, peran: "pengguna", teks: t }]);
     setIsi("");
     setMemuat(true);
     try {
-      const b = await apiFetch<Balasan>("/tanya", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pertanyaan: t }) });
+      const b = await apiFetch<Balasan>("/tanya", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ pertanyaan: t, riwayat }) });
       setPesan((p) => [...p, { id: nomor.current++, peran: "asisten", teks: b.jawaban, sumber: b.sumber, tautan: b.tautan, terkait: b.terkait }]);
     } catch (e) {
       const teksGalat =

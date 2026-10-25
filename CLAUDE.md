@@ -37,7 +37,7 @@ Satu aplikasi Next.js full-stack (Vercel, Prisma, Postgres). Tidak ada lagi Lara
   perbarui `.env.example` setiap menambah variabel.
 - Desain mengikuti Bagian 16 PRD dan `docs/design/DESIGN.md`, termasuk larangan anti AI slop (16.4).
   Bila skill desain bertentangan dengan PRD, PRD yang menang.
-- Siswa tidak login. Fitur cerdas hanya dua: OCR (PaddleOCR di browser pendaftar, PRD Bagian 11) dan cadangan jawaban Tanya Panitia lewat Gemini (hanya bila FAQ tidak cocok, atas permintaan pemilik proyek; PRD 1.3 butir 36).
+- Siswa tidak login. Fitur cerdas hanya dua: OCR (PaddleOCR di browser pendaftar, PRD Bagian 11) dan Tanya Panitia lewat Gemini (menjawab dari informasi resmi sekolah dengan pemeriksa jawaban; aturan dan FAQ sebagai cadangan; atas permintaan pemilik proyek; PRD 1.3 butir 36 dan 71).
 - Dokumen pendaftar disimpan di Google Drive lewat `PenyimpananDokumen`, tidak pernah punya URL publik.
 - Data sensitif (NIK, no KK, no HP) dienkripsi eksplisit di `src/server/services/kripto.ts`.
 - Jangan mengulang bug v1 dan temuan audit (`docs/arsip/PRD-v3.1.md` Bagian 18, PRD v4 Bagian 18).

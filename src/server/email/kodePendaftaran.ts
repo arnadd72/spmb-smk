@@ -17,7 +17,7 @@ export type DataEmailKode = {
   kontak?: string | null;
 };
 
-const BERKAS_FISIK = [
+export const BERKAS_FISIK = [
   "Akta asli (1 lembar)",
   "Ijazah SD/MI (1 lembar, opsional)",
   "Fotokopi akte kelahiran (1 lembar)",

@@ -44,6 +44,25 @@ export class DriverDrive implements PenyimpananDokumen {
     await this.drive.files.delete({ fileId: referensi });
   }
 
+  async perbarui(referensi: string, isi: Buffer, mime = "application/octet-stream", namaBaru?: string): Promise<void> {
+    await this.drive.files.update({
+      fileId: referensi,
+      requestBody: namaBaru ? { name: namaBaru } : {},
+      media: { mimeType: mime, body: Readable.from(isi) },
+      fields: "id",
+    });
+  }
+
+  async gantiNamaFolder(referensi: string, namaBaru: string): Promise<void> {
+    const berkas = await this.drive.files.get({ fileId: referensi, fields: "parents" });
+    const induk = berkas.data.parents?.[0];
+    if (!induk || induk === this.idFolderRoot) return; // folder akar bukan milik pendaftar
+    const folder = await this.drive.files.get({ fileId: induk, fields: "name" });
+    if (folder.data.name === namaBaru) return;
+    await this.drive.files.update({ fileId: induk, requestBody: { name: namaBaru }, fields: "id" });
+    this.cacheFolder.clear();
+  }
+
   async ada(referensi: string): Promise<boolean> {
     try {
       const res = await this.drive.files.get({ fileId: referensi, fields: "id,trashed" });

@@ -204,9 +204,26 @@ export async function unggahBerkasPendaftar(
   const meta = { ...((p.berkasMeta ?? {}) as BerkasDraf) };
   const temp = penyimpananTemp();
   const hemat = await kompresGambar(isi, jenis.mime, profilBerkas(kunci));
+  const nama = bersihNama(namaAsli);
+  const kustomId = { ...((p.kustomFileIds ?? {}) as Record<string, string>) };
+  const idLama = kunci === "akta" ? p.aktaFileId : kunci === "kk" ? p.kkFileId : kustomId[kunci];
+
+  // Berkas yang sudah di Drive diperbarui di tempat: ID tetap, tidak ada jeda tanpa berkas. Bila Drive tidak terjangkau,
+  // berkas baru disimpan sementara dan berkas lama dilepas; sinkron berikutnya memindahkannya ke Drive.
+  let diperbaruiDiDrive = false;
+  if (idLama) {
+    try {
+      await (await penyimpananDokumen()).perbarui(idLama, hemat.isi, hemat.mime, `${kunci}.${hemat.ext}`);
+      diperbaruiDiDrive = true;
+    } catch {
+      diperbaruiDiDrive = false;
+    }
+  }
+
+  const refBaru = `admin/${p.nomorPendaftaran}/${kunci}-${buatTokenAcak(8)}.${hemat.ext}`;
   const baru: Berkas = {
-    ref: await temp.simpan(`admin/${p.nomorPendaftaran}/${kunci}-${buatTokenAcak(8)}.${hemat.ext}`, hemat.isi, hemat.mime),
-    nama: bersihNama(namaAsli),
+    ref: diperbaruiDiDrive ? refBaru : await temp.simpan(refBaru, hemat.isi, hemat.mime),
+    nama,
     mime: hemat.mime,
     ukuran: hemat.isi.length,
   };
@@ -214,20 +231,20 @@ export async function unggahBerkasPendaftar(
   const data: Prisma.PendaftarUpdateInput = {};
   const lama = meta[kunci] as Berkas | undefined;
   if (lama) await temp.hapus(lama.ref).catch(() => undefined);
-  const kustomId = { ...((p.kustomFileIds ?? {}) as Record<string, string>) };
-  await hapusDariDrive(kunci === "akta" ? p.aktaFileId : kunci === "kk" ? p.kkFileId : kustomId[kunci]);
   meta[kunci] = baru;
-  if (kunci === "akta") data.aktaFileId = null;
-  else if (kunci === "kk") data.kkFileId = null;
-  else {
-    delete kustomId[kunci];
-    data.kustomFileIds = kustomId;
+  if (!diperbaruiDiDrive) {
+    await hapusDariDrive(idLama);
+    if (kunci === "akta") data.aktaFileId = null;
+    else if (kunci === "kk") data.kkFileId = null;
+    else {
+      delete kustomId[kunci];
+      data.kustomFileIds = kustomId;
+    }
   }
   data.berkasMeta = JSON.parse(JSON.stringify(meta));
-  // Berkas baru menunggu disinkronkan ke Drive.
   data.berkasSinkron = adaYangTertunda(meta, {
-    aktaFileId: kunci === "akta" ? null : p.aktaFileId,
-    kkFileId: kunci === "kk" ? null : p.kkFileId,
+    aktaFileId: kunci === "akta" && !diperbaruiDiDrive ? null : p.aktaFileId,
+    kkFileId: kunci === "kk" && !diperbaruiDiDrive ? null : p.kkFileId,
     raporFileIds: p.raporFileIds,
     kustomFileIds: kustomId,
   })
@@ -243,7 +260,7 @@ export async function unggahBerkasPendaftar(
     ip: ctx.ip,
   });
 
-  await sinkronBerkasPendaftar(id).catch(() => undefined); // coba langsung ke Drive; bila belum bisa, tetap menunggu
+  if (!diperbaruiDiDrive) await sinkronBerkasPendaftar(id).catch(() => undefined); // coba langsung ke Drive; bila belum bisa, tetap menunggu
   return ambilBerkasPendaftar(id);
 }
 

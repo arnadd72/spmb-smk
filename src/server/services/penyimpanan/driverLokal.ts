@@ -32,6 +32,12 @@ export class DriverLokal implements PenyimpananDokumen {
     return createReadStream(lokasi);
   }
 
+  async perbarui(referensi: string, isi: Buffer): Promise<void> {
+    await writeFile(this.lokasi(referensi), isi);
+  }
+
+  async gantiNamaFolder(): Promise<void> {}
+
   async hapus(referensi: string): Promise<void> {
     await rm(this.lokasi(referensi), { force: true });
   }

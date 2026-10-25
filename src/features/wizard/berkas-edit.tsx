@@ -1,16 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { CameraIcon, CheckCircleIcon, FileIcon, ImageIcon, UploadSimpleIcon } from "@phosphor-icons/react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { CameraIcon, FileIcon, ImageIcon, UploadSimpleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
-import { ApiError, apiFetch } from "@/lib/api-client";
 import { kompresGambar } from "@/lib/gambar";
 import { PesanGalat } from "./bidang";
 
 /** Ringkasan berkas dari server (tanpa rujukan penyimpanan). */
 export type BerkasTersimpan = { kunci: string; nama: string; mime: string; ukuran: number };
 
-const SLOT = [
+/** Berkas pengganti yang sudah dipilih tetapi belum diunggah, menurut kunci berkas. Diunggah saat Simpan perubahan. */
+export type AntreanBerkas = Record<string, File>;
+
+export const SLOT = [
   { kunci: "akta", label: "Akta kelahiran", gambarSaja: false, bantuan: "Foto atau pindaian yang jelas dan tidak terpotong." },
   { kunci: "kk", label: "Kartu keluarga", gambarSaja: false, bantuan: "Foto atau pindaian yang jelas dan tidak terpotong." },
   {
@@ -25,19 +27,27 @@ const MAKS_MB = 5;
 const ukuran = (b: number) => (b >= 1024 * 1024 ? `${(b / 1024 / 1024).toFixed(1)} MB` : `${Math.ceil(b / 1024)} KB`);
 const URL_BERKAS = "/api/v1/edit-formulir/berkas";
 
-function Slot({ slot, awal, onTersimpan }: { slot: (typeof SLOT)[number]; awal?: BerkasTersimpan; onTersimpan: (daftar: BerkasTersimpan[]) => void }) {
+type PropsSlot = {
+  slot: (typeof SLOT)[number];
+  awal?: BerkasTersimpan;
+  dipilih?: File;
+  galat?: string;
+  onPilih: (kunci: string, berkas: File | undefined) => void;
+};
+
+function Slot({ slot, awal, dipilih, galat: galatSimpan, onPilih }: PropsSlot) {
   const input = useRef<HTMLInputElement>(null);
   const kamera = useRef<HTMLInputElement>(null);
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState<string>();
-  const [baruSaja, setBaruSaja] = useState(false);
-  // Penanda versi agar pratinjau memuat ulang gambar setelah diganti.
-  const [versi, setVersi] = useState(0);
+
+  // Pratinjau berkas yang baru dipilih; dilepas bila diganti atau slot dibongkar.
+  const pratinjau = useMemo(() => (dipilih?.type.startsWith("image/") ? URL.createObjectURL(dipilih) : undefined), [dipilih]);
+  useEffect(() => () => (pratinjau ? URL.revokeObjectURL(pratinjau) : undefined), [pratinjau]);
 
   async function pilih(asli: File | undefined) {
     if (!asli) return;
     setGalat(undefined);
-    setBaruSaja(false);
     setSibuk(true);
     try {
       // Foto kamera HP sering lebih dari 5 MB: perkecil dulu (sisi panjang 1600 px), sama seperti di wizard.
@@ -46,15 +56,7 @@ function Slot({ slot, awal, onTersimpan }: { slot: (typeof SLOT)[number]; awal?:
         setGalat(`Ukuran berkas ${ukuran(f.size)} melebihi batas ${MAKS_MB} MB.`);
         return;
       }
-      const form = new FormData();
-      form.set("kunci", slot.kunci);
-      form.set("berkas", f);
-      const { data } = await apiFetch<{ data: BerkasTersimpan[] }>("/edit-formulir/berkas", { method: "POST", body: form });
-      onTersimpan(data);
-      setVersi((v) => v + 1);
-      setBaruSaja(true);
-    } catch (e) {
-      setGalat(e instanceof ApiError ? (e.errors?.berkas?.[0] ?? e.message) : "Tidak dapat terhubung ke server.");
+      onPilih(slot.kunci, f);
     } finally {
       setSibuk(false);
       if (input.current) input.current.value = "";
@@ -63,12 +65,23 @@ function Slot({ slot, awal, onTersimpan }: { slot: (typeof SLOT)[number]; awal?:
   }
 
   const terima = slot.gambarSaja ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf";
+  const adaGambarTersimpan = awal?.mime.startsWith("image/");
   return (
     <li className="flex flex-col gap-3 rounded-kartu border border-garis bg-latar/60 p-4" data-berkas-edit={slot.kunci}>
       <div className="grid h-40 place-items-center overflow-hidden rounded-kontrol bg-permukaan-alt">
-        {awal?.mime.startsWith("image/") ? (
+        {dipilih ? (
+          pratinjau ? (
+            // eslint-disable-next-line @next/next/no-img-element -- pratinjau lokal dari berkas yang baru dipilih
+            <img src={pratinjau} alt={`Pratinjau ${slot.label} pengganti`} className="max-h-full max-w-full object-contain" />
+          ) : (
+            <p className="flex flex-col items-center gap-1.5 text-sm text-tinta-redup">
+              <FileIcon aria-hidden className="size-8" />
+              Dokumen PDF
+            </p>
+          )
+        ) : adaGambarTersimpan ? (
           // eslint-disable-next-line @next/next/no-img-element -- berkas pribadi lewat sesi edit, bukan aset situs
-          <img src={`${URL_BERKAS}?kunci=${slot.kunci}&v=${versi}`} alt={`${slot.label} yang tersimpan`} className="max-h-full max-w-full object-contain" />
+          <img src={`${URL_BERKAS}?kunci=${slot.kunci}`} alt={`${slot.label} yang tersimpan`} className="max-h-full max-w-full object-contain" />
         ) : awal ? (
           <p className="flex flex-col items-center gap-1.5 text-sm text-tinta-redup">
             <FileIcon aria-hidden className="size-8" />
@@ -83,7 +96,11 @@ function Slot({ slot, awal, onTersimpan }: { slot: (typeof SLOT)[number]; awal?:
       </div>
       <div>
         <p className="font-semibold text-ink">{slot.label}</p>
-        {awal ? (
+        {dipilih ? (
+          <p className="mt-0.5 break-all text-xs text-tinta-redup">
+            {dipilih.name} · <span className="angka">{ukuran(dipilih.size)}</span>
+          </p>
+        ) : awal ? (
           <p className="mt-0.5 break-all text-xs text-tinta-redup">
             {awal.nama} · <span className="angka">{ukuran(awal.ukuran)}</span>
             {awal.mime === "application/pdf" && (
@@ -100,14 +117,19 @@ function Slot({ slot, awal, onTersimpan }: { slot: (typeof SLOT)[number]; awal?:
         )}
       </div>
       <div className="mt-auto grid gap-2">
-        <Button type="button" varian="sekunder" memuat={sibuk} onClick={() => input.current?.click()} aria-label={`${awal ? "Ganti" : "Unggah"} ${slot.label}`} className="w-full">
+        <Button type="button" varian="sekunder" memuat={sibuk} onClick={() => input.current?.click()} aria-label={`${awal || dipilih ? "Ganti" : "Unggah"} ${slot.label}`} className="w-full">
           <UploadSimpleIcon aria-hidden className="size-5" />
-          {awal ? "Ganti berkas" : "Unggah berkas"}
+          {awal || dipilih ? "Ganti berkas" : "Unggah berkas"}
         </Button>
         <Button type="button" varian="hantu" disabled={sibuk} onClick={() => kamera.current?.click()} aria-label={`Ambil ${slot.label} dari kamera`} className="w-full">
           <CameraIcon aria-hidden className="size-5" />
           Ambil dari kamera
         </Button>
+        {dipilih && (
+          <Button type="button" varian="hantu" onClick={() => onPilih(slot.kunci, undefined)} aria-label={`Batalkan penggantian ${slot.label}`} className="w-full">
+            Batalkan penggantian
+          </Button>
+        )}
         <input ref={input} type="file" accept={terima} data-unggah={slot.kunci} className="sr-only" tabIndex={-1} aria-hidden onChange={(e) => pilih(e.target.files?.[0])} />
         <input
           ref={kamera}
@@ -121,28 +143,32 @@ function Slot({ slot, awal, onTersimpan }: { slot: (typeof SLOT)[number]; awal?:
         />
       </div>
       <div aria-live="polite">
-        {baruSaja && (
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-sukses">
-            <CheckCircleIcon aria-hidden weight="fill" className="size-4" />
-            Tersimpan.
-          </p>
-        )}
-        {galat && <PesanGalat pesan={galat} />}
+        {dipilih && !galatSimpan && <p className="text-sm font-semibold text-tinta">Belum disimpan. Tekan Simpan perubahan untuk mengganti berkas.</p>}
+        {(galat ?? galatSimpan) && <PesanGalat pesan={(galat ?? galatSimpan) as string} />}
       </div>
     </li>
   );
 }
 
 /**
- * Ganti Akta, KK, dan pas foto dari halaman Edit Formulir (PRD 1.3 butir 66). Tiap unggahan langsung tersimpan,
- * terpisah dari tombol Simpan perubahan isian.
+ * Pilih pengganti Akta, KK, dan pas foto di halaman Edit Formulir. Berkas yang dipilih hanya ditampung di browser dan
+ * baru diunggah ke server saat pendaftar menekan Simpan perubahan (PRD 1.3 butir 73, menggantikan unggah langsung butir 66).
  */
-export function BerkasEdit({ awal }: { awal: BerkasTersimpan[] }) {
-  const [daftar, setDaftar] = useState(awal);
+export function BerkasEdit({
+  awal,
+  antrean,
+  galat,
+  onPilih,
+}: {
+  awal: BerkasTersimpan[];
+  antrean: AntreanBerkas;
+  galat: Record<string, string>;
+  onPilih: (kunci: string, berkas: File | undefined) => void;
+}) {
   return (
     <ul className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
       {SLOT.map((s) => (
-        <Slot key={s.kunci} slot={s} awal={daftar.find((b) => b.kunci === s.kunci)} onTersimpan={setDaftar} />
+        <Slot key={s.kunci} slot={s} awal={awal.find((b) => b.kunci === s.kunci)} dipilih={antrean[s.kunci]} galat={galat[s.kunci]} onPilih={onPilih} />
       ))}
     </ul>
   );

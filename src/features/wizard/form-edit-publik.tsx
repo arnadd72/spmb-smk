@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { BooksIcon, FolderOpenIcon, IdentificationCardIcon, InfoIcon, StudentIcon, UserIcon, UsersThreeIcon, type Icon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Bidang } from "@/features/wizard/bidang";
-import { BerkasEdit, type BerkasTersimpan } from "@/features/wizard/berkas-edit";
+import { BerkasEdit, type AntreanBerkas, type BerkasTersimpan } from "@/features/wizard/berkas-edit";
 import { NAMA_LANGKAH, fieldBiasa, skemaLangkah, type DefinisiField } from "@/features/wizard/schema-client";
 import { ApiError, apiFetch } from "@/lib/api-client";
 
@@ -14,7 +14,7 @@ type Props = { fields: DefinisiField[]; nilaiAwal: Record<string, unknown>; berk
 /** Ikon tiap bagian, menurut nomor langkah wizard asal isiannya. */
 const IKON: Record<number, Icon> = { 1: IdentificationCardIcon, 4: BooksIcon, 5: UserIcon, 6: UsersThreeIcon, 7: StudentIcon };
 
-export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
+export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props) {
   const router = useRouter();
   const langkahAda = [...new Set(fields.map((field) => field.langkah))].sort((a, b) => a - b);
   const [awal] = useState<Record<string, unknown>>(() => {
@@ -29,11 +29,49 @@ export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
-  const jumlahBerubah = Object.keys(nilai).filter((k) => nilai[k] !== awal[k]).length;
+  // Berkas pengganti ditampung di sini dan baru diunggah saat Simpan perubahan (PRD 1.3 butir 73).
+  const [berkas, setBerkas] = useState(berkasAwal);
+  const [antrean, setAntrean] = useState<AntreanBerkas>({});
+  const [galatBerkas, setGalatBerkas] = useState<Record<string, string>>({});
+  const jumlahIsian = Object.keys(nilai).filter((k) => nilai[k] !== awal[k]).length;
+  const jumlahBerkas = Object.keys(antrean).length;
+  const jumlahBerubah = jumlahIsian + jumlahBerkas;
 
   function ubah(kunci: string, v: unknown) {
     setNilai((lama) => ({ ...lama, [kunci]: v }));
     setGalat((lama) => (lama[kunci] ? { ...lama, [kunci]: "" } : lama));
+  }
+
+  function pilihBerkas(kunci: string, f: File | undefined) {
+    setAntrean((lama) => {
+      const baru = { ...lama };
+      if (f) baru[kunci] = f;
+      else delete baru[kunci];
+      return baru;
+    });
+    setGalatBerkas((lama) => ({ ...lama, [kunci]: "" }));
+  }
+
+  /** Unggah berkas pengganti satu per satu. Mengembalikan galat per berkas yang gagal; yang berhasil keluar dari antrean. */
+  async function unggahAntrean(): Promise<Record<string, string>> {
+    const gagal: Record<string, string> = {};
+    for (const [kunci, f] of Object.entries(antrean)) {
+      try {
+        const form = new FormData();
+        form.set("kunci", kunci);
+        form.set("berkas", f);
+        const { data } = await apiFetch<{ data: BerkasTersimpan[] }>("/edit-formulir/berkas", { method: "POST", body: form });
+        setBerkas(data);
+        setAntrean((lama) => {
+          const sisa = { ...lama };
+          delete sisa[kunci];
+          return sisa;
+        });
+      } catch (e) {
+        gagal[kunci] = e instanceof ApiError ? (e.errors?.berkas?.[0] ?? e.message) : "Tidak dapat terhubung ke server.";
+      }
+    }
+    return gagal;
   }
 
   async function simpan(e: SyntheticEvent) {
@@ -58,6 +96,14 @@ export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(isi),
       });
+      const gagal = await unggahAntrean();
+      if (Object.keys(gagal).length > 0) {
+        // Isian sudah tersimpan; hanya berkas yang gagal tetap di antrean untuk dicoba lagi.
+        setGalatBerkas(gagal);
+        setGalatUmum("Isian tersimpan, tetapi ada berkas yang belum terunggah. Tekan Simpan perubahan untuk mencoba lagi.");
+        document.getElementById("bagian-berkas")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        return;
+      }
       await apiFetch<void>("/edit-formulir/akses", { method: "DELETE" }).catch(() => undefined);
       router.replace("/cek-pendaftaran?berhasil=1");
     } catch (error) {
@@ -110,7 +156,7 @@ export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
           </ul>
           <p className="mt-6 flex items-start gap-2 border-t border-garis pt-4 text-sm text-tinta-redup">
             <InfoIcon aria-hidden className="mt-0.5 size-4 shrink-0 text-primer" />
-            Berkas langsung tersimpan begitu diunggah. Jawaban tes minat bakat tidak diubah di halaman ini.
+            Berkas pengganti baru tersimpan setelah Anda menekan Simpan perubahan. Jawaban tes minat bakat tidak diubah di halaman ini.
           </p>
         </div>
       </nav>
@@ -125,9 +171,9 @@ export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
             Berkas pendaftaran
           </h2>
           <p className="mb-5 mt-2 text-sm text-tinta-redup">
-            Ganti foto yang buram atau salah. JPG, PNG, atau WebP (akta dan KK boleh PDF), maksimal 5 MB. Berkas langsung tersimpan begitu diunggah.
+            Ganti foto yang buram atau salah. JPG, PNG, atau WebP (akta dan KK boleh PDF), maksimal 5 MB. Berkas baru tersimpan setelah Anda menekan Simpan perubahan.
           </p>
-          <BerkasEdit awal={berkas} />
+          <BerkasEdit awal={berkas} antrean={antrean} galat={galatBerkas} onPilih={pilihBerkas} />
         </section>
 
         {langkahAda.map((langkah) => {
@@ -168,7 +214,18 @@ export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
               </p>
             ) : jumlahBerubah > 0 ? (
               <p className="font-semibold text-tinta">
-                <span className="angka">{jumlahBerubah}</span> isian diubah, belum disimpan.
+                {jumlahIsian > 0 && (
+                  <>
+                    <span className="angka">{jumlahIsian}</span> isian
+                  </>
+                )}
+                {jumlahIsian > 0 && jumlahBerkas > 0 && " dan "}
+                {jumlahBerkas > 0 && (
+                  <>
+                    <span className="angka">{jumlahBerkas}</span> berkas
+                  </>
+                )}{" "}
+                diubah, belum disimpan.
               </p>
             ) : (
               <p className="text-tinta-redup">Belum ada perubahan.</p>

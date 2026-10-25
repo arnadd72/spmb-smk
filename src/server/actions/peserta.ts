@@ -13,6 +13,7 @@ import {
 } from "@/server/services/pendaftarKolom";
 import { kondisiPeserta, type FilterPeserta } from "@/server/services/pencarianPeserta";
 import { idKemungkinanGanda, pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
+import { selarasFolderDrive } from "@/server/services/pendaftaran";
 import { GalatApi } from "@/server/types/galat";
 import type { DefinisiField } from "@/server/validasi/wizard";
 
@@ -252,5 +253,7 @@ export async function ubahPeserta(id: string, masukan: unknown, ctx: { userId?: 
     dataBaru,
     ip: ctx.ip,
   });
+  // Folder berkas di Drive dinamai dengan nama pendaftar, jadi ikut diganti.
+  if ("nama_lengkap" in sesudah) await selarasFolderDrive(pid);
   return { berubah: Object.keys(sesudah) };
 }

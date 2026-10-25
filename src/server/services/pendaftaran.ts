@@ -18,7 +18,8 @@ import { pastikanKuotaTersedia } from "@/server/services/kuota";
 import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
-import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
+import { penyimpananDokumen, penyimpananTemp, type PenyimpananDokumen } from "@/server/services/penyimpanan";
+import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { hitungRekomendasi, muatJurusanAktif } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 
@@ -153,6 +154,36 @@ function hasilTersimpan(baris: { submittedAt: Date | null; data: unknown }): Has
 
 const namaAman = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").trim().toUpperCase().slice(0, 60);
 
+type BarisDrive = { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown; kustomFileIds: unknown };
+
+/** ID Drive pertama milik pendaftar (berkas apa pun), atau null bila belum ada satu pun di Drive. */
+function idDrivePertama(p: BarisDrive): string | null {
+  const kustom = Object.values((p.kustomFileIds ?? {}) as Record<string, string | string[]>).flat();
+  const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
+  return [p.aktaFileId, p.kkFileId, ...rapor, ...kustom].find((id): id is string => typeof id === "string" && id !== "") ?? null;
+}
+
+/** Samakan nama folder pendaftar di Drive dengan nama sekarang. Tidak berbuat apa-apa bila belum ada berkas di Drive. */
+async function selarasNamaFolder(p: BarisDrive & { nomorPendaftaran: string; namaLengkap: string }, drive: PenyimpananDokumen): Promise<void> {
+  const acuan = idDrivePertama(p);
+  if (acuan) await drive.gantiNamaFolder(acuan, `${p.nomorPendaftaran} - ${namaAman(p.namaLengkap)}`);
+}
+
+/**
+ * Dipanggil setelah nama pendaftar berubah. Gagal tidak melempar (perubahan data sudah tersimpan): status berkas jadi
+ * "menunggu" supaya sinkron berikutnya, termasuk cron harian, mengulang penggantian nama folder.
+ */
+export async function selarasFolderDrive(id: bigint): Promise<void> {
+  const p = await prisma.pendaftar.findUnique({ where: { id } });
+  if (!p || !idDrivePertama(p)) return;
+  try {
+    if (!(await statusDrive()).terhubung) throw new Error("Google Drive belum terhubung.");
+    await selarasNamaFolder(p, await penyimpananDokumen());
+  } catch {
+    if (p.berkasSinkron === "selesai") await prisma.pendaftar.update({ where: { id }, data: { berkasSinkron: "menunggu" } });
+  }
+}
+
 /**
  * Pindahkan berkas yang belum punya ID Drive dari penyimpanan sementara ke Drive:
  * SPMB/{periode}/pendaftar/{nomor} - {NAMA}/ (PRD v4 7.3). Yang sudah di Drive dilewati, jadi aman dipanggil berulang.
@@ -174,11 +205,14 @@ export async function pindahkanKeDrive(nomor: string): Promise<void> {
     }
   }
   if (tugas.length === 0) {
+    // Tidak ada yang dipindah, tetapi nama folder mungkin tertinggal dari perubahan nama pendaftar.
+    if (idDrivePertama(p)) await selarasNamaFolder(p, await penyimpananDokumen());
     await prisma.pendaftar.update({ where: { id: p.id }, data: { berkasSinkron: "selesai" } });
     return;
   }
 
   const drive = await penyimpananDokumen(); // melempar bila Drive belum dihubungkan
+  await selarasNamaFolder(p, drive); // sebelum menyimpan, agar berkas baru masuk ke folder yang sama
   const temp = penyimpananTemp();
   const folder = `${p.periode.replace("/", "-")}/pendaftar/${nomor} - ${namaAman(p.namaLengkap)}`;
 

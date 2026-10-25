@@ -12,6 +12,10 @@ export interface PenyimpananDokumen {
   ambilStream(referensi: string): Promise<Readable>;
   hapus(referensi: string): Promise<void>;
   ada(referensi: string): Promise<boolean>;
+  /** Ganti isi berkas yang sudah ada tanpa mengubah referensinya. `namaBaru` (opsional) mengganti nama berkas. */
+  perbarui(referensi: string, isi: Buffer, mime?: string, namaBaru?: string): Promise<void>;
+  /** Ganti nama folder yang memuat berkas `referensi`. Driver tanpa folder tidak berbuat apa-apa. */
+  gantiNamaFolder(referensi: string, namaBaru: string): Promise<void>;
 }
 
 /** Pecah path jadi segmen folder dan nama berkas. Menolak traversal dan path kosong. */

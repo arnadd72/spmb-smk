@@ -29,6 +29,13 @@ export class DriverSupabaseTemp implements PenyimpananDokumen {
     return Readable.from(Buffer.from(await data.arrayBuffer()));
   }
 
+  async perbarui(referensi: string, isi: Buffer, mime = "application/octet-stream"): Promise<void> {
+    const { error } = await this.supabase.storage.from(this.bucket).upload(referensi, isi, { contentType: mime, upsert: true });
+    if (error) throw new Error(`Gagal memperbarui berkas sementara: ${error.message}`);
+  }
+
+  async gantiNamaFolder(): Promise<void> {}
+
   async hapus(referensi: string): Promise<void> {
     const { error } = await this.supabase.storage.from(this.bucket).remove([referensi]);
     if (error) throw new Error(`Gagal menghapus berkas sementara: ${error.message}`);

@@ -14,6 +14,7 @@ const drive = vi.hoisted(() => ({
   gagal: false,
   isi: new Map<string, Buffer>(),
   path: [] as string[],
+  folder: [] as string[],
   n: 0,
 }));
 vi.mock("@/server/services/penyimpanan/driveOAuth", async (asli) => ({
@@ -35,6 +36,15 @@ vi.mock("@/server/services/penyimpanan", async (asli) => ({
       ambilStream: async (id: string) => Readable.from(drive.isi.get(id) ?? Buffer.alloc(0)),
       hapus: async (id: string) => void drive.isi.delete(id),
       ada: async (id: string) => drive.isi.has(id),
+      perbarui: async (id: string, isi: Buffer) => {
+        if (drive.gagal) throw new Error("Drive menolak pembaruan");
+        if (!drive.isi.has(id)) throw new Error("berkas tidak ada");
+        drive.isi.set(id, isi);
+      },
+      gantiNamaFolder: async (_id: string, nama: string) => {
+        if (drive.gagal) throw new Error("Drive menolak ganti nama");
+        drive.folder.push(nama);
+      },
     };
   },
 }));
@@ -49,7 +59,7 @@ import {
 } from "@/server/actions/berkas";
 import { prisma } from "@/server/db/client";
 import { buatDraf } from "@/server/services/draf";
-import { kirimPendaftaran } from "@/server/services/pendaftaran";
+import { kirimPendaftaran, selarasFolderDrive } from "@/server/services/pendaftaran";
 import { simpanPengaturan } from "@/server/services/pengaturan";
 import type { GalatApi } from "@/server/types/galat";
 import { seedFormField, seedReferensi } from "../../prisma/seed-lib";
@@ -75,6 +85,7 @@ beforeEach(async () => {
   drive.gagal = false;
   drive.isi.clear();
   drive.path.length = 0;
+  drive.folder.length = 0;
   await prisma.user.create({
     data: {
       id: BigInt(1),
@@ -241,25 +252,67 @@ describe("kelola berkas oleh panitia", () => {
     expect((await galat(hapusBerkasPendaftar(id, "rapor", 0, ctx))).status).toBe(404);
   });
 
-  it("mengganti berkas yang sudah di Drive menghapus berkas lama di Drive dan menyinkronkan yang baru", async () => {
+  it("mengganti berkas yang sudah di Drive memperbarui berkas itu di tempat: ID tetap, isi baru, status selesai", async () => {
     const p = await pendaftarWizard();
     const id = p.id.toString();
     drive.terhubung = true;
     await sinkronBerkasPendaftar(id, ctx);
     const idLama = (await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).aktaFileId as string;
     expect(drive.isi.has(idLama)).toBe(true);
+    const jumlahBerkas = drive.isi.size;
 
     await unggahBerkasPendaftar(id, "akta", JPG, "baru.jpg", ctx);
     const b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
-    expect(drive.isi.has(idLama)).toBe(false);
-    expect(b.aktaFileId).not.toBe(idLama);
-    expect(drive.isi.get(b.aktaFileId as string)?.equals(JPG)).toBe(true);
+    expect(b.aktaFileId).toBe(idLama);
+    expect(drive.isi.size).toBe(jumlahBerkas);
+    expect(drive.isi.get(idLama)?.equals(JPG)).toBe(true);
     expect(b.berkasSinkron).toBe("selesai");
 
     // hapus berkas yang ada di Drive juga menghapusnya dari Drive
     await hapusBerkasPendaftar(id, "akta", 0, ctx);
-    expect(drive.isi.has(b.aktaFileId as string)).toBe(false);
+    expect(drive.isi.has(idLama)).toBe(false);
     expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).aktaFileId).toBeNull();
+  });
+
+  it("Drive menolak pembaruan: berkas baru disimpan sementara, berkas lama dilepas, status bisa diulang", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    await sinkronBerkasPendaftar(id, ctx);
+
+    drive.gagal = true;
+    await unggahBerkasPendaftar(id, "akta", JPG, "baru.jpg", ctx);
+    const b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
+    expect(b.aktaFileId).toBeNull();
+    expect(["menunggu", "gagal"]).toContain(b.berkasSinkron); // sinkron langsung yang gagal menandai "gagal"; keduanya diulang cron
+    expect((await ambilBerkasPendaftar(id)).find((d) => d.kunci === "akta")?.sumber).toBe("sementara");
+
+    drive.gagal = false;
+    await sinkronBerkasPendaftar(id, ctx);
+    const sesudah = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
+    expect(sesudah.berkasSinkron).toBe("selesai");
+    expect(drive.isi.get(sesudah.aktaFileId as string)?.equals(JPG)).toBe(true);
+  });
+
+  it("nama pendaftar berubah: folder Drive diganti namanya; gagal membuat status menunggu lalu sinkron mengulang", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    await sinkronBerkasPendaftar(id, ctx);
+
+    await prisma.pendaftar.update({ where: { id: p.id }, data: { namaLengkap: "Nama / Baru: Sekali" } });
+    await selarasFolderDrive(p.id);
+    expect(drive.folder).toEqual([`${p.nomorPendaftaran} - NAMA  BARU SEKALI`]);
+    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).berkasSinkron).toBe("selesai");
+
+    drive.folder.length = 0;
+    drive.gagal = true;
+    await prisma.pendaftar.update({ where: { id: p.id }, data: { namaLengkap: "Nama Lain" } });
+    await selarasFolderDrive(p.id);
+    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).berkasSinkron).toBe("menunggu");
+
+    drive.gagal = false;
+    await sinkronBerkasPendaftar(id, ctx);
+    expect(drive.folder).toEqual([`${p.nomorPendaftaran} - NAMA LAIN`]);
+    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).berkasSinkron).toBe("selesai");
   });
 });
 

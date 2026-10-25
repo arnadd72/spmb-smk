@@ -30,7 +30,7 @@ test.describe("cek pendaftaran oleh pendaftar", () => {
     await tanpaSesi.close();
   });
 
-  test("mengganti KK dan pas foto: langsung tersimpan dan pratinjau tampil; lolos axe", async ({ page }) => {
+  test("mengganti KK dan pas foto: tidak terunggah sebelum Simpan perubahan; lolos axe", async ({ page }) => {
     test.setTimeout(120_000);
     const a = await sisipPendaftar(`Uji E2E Peserta Edit Berkas ${Date.now()}`, { berkas: true });
     await masukEdit(page, a.nomor);
@@ -41,23 +41,40 @@ test.describe("cek pendaftaran oleh pendaftar", () => {
     await expect(bagian.getByRole("img", { name: "Akta kelahiran yang tersimpan" })).toBeVisible();
     await expect(bagian.getByRole("button", { name: "Unggah Kartu keluarga" })).toBeVisible();
 
+    // Memilih berkas hanya menampilkan pratinjau; belum ada yang terunggah.
+    let diunggah = 0;
+    await page.route("**/api/v1/edit-formulir/berkas", (rute) => {
+      if (rute.request().method() === "POST") diunggah++;
+      return rute.continue();
+    });
     await page.locator("[data-unggah=kk]").setInputFiles({ name: "kk.png", mimeType: "image/png", buffer: PNG });
     const kk = page.locator("[data-berkas-edit=kk]");
-    await expect(kk.getByText("Tersimpan.")).toBeVisible();
-    const gambar = kk.getByRole("img", { name: "Kartu keluarga yang tersimpan" });
-    await expect.poll(() => gambar.evaluate((i: HTMLImageElement) => i.naturalWidth)).toBeGreaterThan(0);
-    await expect(kk.getByRole("button", { name: "Ganti Kartu keluarga" })).toBeVisible();
-
+    await expect(kk.getByRole("img", { name: "Pratinjau Kartu keluarga pengganti" })).toBeVisible();
+    await expect(kk.getByText("Belum disimpan.")).toBeVisible();
     await page.locator("[data-unggah=pas_foto]").setInputFiles({ name: "foto.png", mimeType: "image/png", buffer: PNG });
-    await expect(page.locator("[data-berkas-edit=pas_foto]").getByText("Tersimpan.")).toBeVisible();
+    await expect(page.locator("[data-berkas-edit=pas_foto]").getByRole("img", { name: "Pratinjau Pas foto 3 x 4 pengganti" })).toBeVisible();
+    await expect(page.getByText("2 berkas diubah, belum disimpan.")).toBeVisible();
+    expect(diunggah).toBe(0);
 
-    // Bertahan setelah dimuat ulang.
-    await page.reload();
-    await expect(page.getByRole("img", { name: "Kartu keluarga yang tersimpan" })).toBeVisible();
-    await expect(page.getByRole("img", { name: "Pas foto 3 x 4 yang tersimpan" })).toBeVisible();
+    // Dibatalkan: kembali seperti semula.
+    await kk.getByRole("button", { name: "Batalkan penggantian Kartu keluarga" }).click();
+    await expect(page.getByText("1 berkas diubah, belum disimpan.")).toBeVisible();
+    await kk.locator("input[data-unggah=kk]").setInputFiles({ name: "kk.png", mimeType: "image/png", buffer: PNG });
 
     const hasil = await new AxeBuilder({ page }).withTags(["wcag2a", "wcag2aa"]).analyze();
     expect(hasil.violations.map((v) => `${v.id}: ${v.nodes[0]?.target}`)).toEqual([]);
+
+    // Data uji sengaja tidak lengkap: validasi isian menahan simpan, dan berkas yang dipilih tidak ikut terunggah.
+    await page.getByRole("button", { name: "Simpan perubahan" }).click();
+    await expect(page.getByText("Ada isian yang perlu diperbaiki.")).toBeVisible();
+    expect(diunggah).toBe(0);
+    await expect(page).toHaveURL(/\/cek-pendaftaran\/form$/);
+
+    // Dimuat ulang tanpa menyimpan: pilihan hilang, berkas tersimpan tidak berubah.
+    await page.reload();
+    await expect(page.getByRole("img", { name: "Akta kelahiran yang tersimpan" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Unggah Kartu keluarga" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Unggah Pas foto 3 x 4" })).toBeVisible();
   });
 
   test("berkas tidak bisa dibuka atau diganti tanpa sesi edit", async ({ page, browser }) => {

@@ -1,7 +1,14 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ArrowsOutIcon, ArrowClockwiseIcon, DownloadSimpleIcon, MagnifyingGlassMinusIcon, MagnifyingGlassPlusIcon } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import {
+  ArrowsOutIcon,
+  ArrowClockwiseIcon,
+  DownloadSimpleIcon,
+  MagnifyingGlassMinusIcon,
+  MagnifyingGlassPlusIcon,
+  SpinnerGapIcon,
+} from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 
@@ -30,15 +37,32 @@ export function PenampilBerkas({ id, berkas }: { id: string; berkas: BerkasTampi
   const [zoom, setZoom] = useState(1);
   const [putar, setPutar] = useState(0);
   const kotak = useRef<HTMLDivElement>(null);
+  const gambarRef = useRef<HTMLImageElement>(null);
+  // Alamat gambar yang sudah selesai (atau gagal) dimuat; gambar yang alamatnya belum tercatat di sini dianggap masih dimuat.
+  const [dimuat, setDimuat] = useState<{ url: string; gagal: boolean } | null>(null);
+
+  // Gambar yang sudah selesai dimuat sebelum halaman aktif (hidrasi) tidak memicu onLoad, jadi dicek langsung saat pindah tab.
+  useEffect(() => {
+    const el = gambarRef.current;
+    const src = el?.getAttribute("src");
+    if (el && src && el.complete && el.naturalWidth > 0) setDimuat({ url: src, gagal: false });
+  }, [aktif]);
 
   if (berkas.length === 0) {
-    return <p className="rounded-kartu border border-dashed border-garis p-6 text-center text-tinta-redup">Pendaftar ini tidak mengunggah berkas.</p>;
+    return (
+      <p className="rounded-kartu border border-dashed border-garis p-6 text-center text-tinta-redup">
+        Pendaftar ini tidak mengunggah berkas.
+      </p>
+    );
   }
 
   const b = berkas[Math.min(aktif, berkas.length - 1)];
   const url = `/api/v1/admin/peserta/${id}/berkas?kunci=${encodeURIComponent(b.kunci)}&i=${b.indeks}`;
   const gambar = b.mime.startsWith("image/");
   const s = SUMBER[b.sumber];
+  const selesaiMuat = dimuat?.url === url;
+  const memuat = gambar && b.sumber !== "hilang" && !selesaiMuat;
+  const gagalMuat = gambar && selesaiMuat && dimuat.gagal;
 
   function pilih(i: number) {
     setAktif(i);
@@ -58,7 +82,9 @@ export function PenampilBerkas({ id, berkas }: { id: string; berkas: BerkasTampi
             onClick={() => pilih(i)}
             className={cn(
               "min-h-11 rounded-kontrol border px-3 text-sm font-semibold",
-              i === aktif ? "border-primer bg-sukses-latar text-primer-tua" : "border-garis bg-permukaan text-tinta hover:bg-permukaan-alt",
+              i === aktif
+                ? "border-primer bg-sukses-latar text-primer-tua"
+                : "border-garis bg-permukaan text-tinta hover:bg-permukaan-alt",
             )}
           >
             {x.label}
@@ -70,16 +96,36 @@ export function PenampilBerkas({ id, berkas }: { id: string; berkas: BerkasTampi
         <Badge nada={s.nada}>{s.teks}</Badge>
         {b.sumber !== "hilang" && gambar && (
           <div className="flex flex-wrap gap-2" role="group" aria-label="Kontrol gambar">
-            <button type="button" className={tombol} onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))} aria-label="Perkecil">
+            <button
+              type="button"
+              className={tombol}
+              onClick={() => setZoom((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+              aria-label="Perkecil"
+            >
               <MagnifyingGlassMinusIcon aria-hidden className="size-5" />
             </button>
-            <button type="button" className={tombol} onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))} aria-label="Perbesar">
+            <button
+              type="button"
+              className={tombol}
+              onClick={() => setZoom((z) => Math.min(4, +(z + 0.25).toFixed(2)))}
+              aria-label="Perbesar"
+            >
               <MagnifyingGlassPlusIcon aria-hidden className="size-5" />
             </button>
-            <button type="button" className={tombol} onClick={() => setPutar((r) => (r + 90) % 360)} aria-label="Putar 90 derajat">
+            <button
+              type="button"
+              className={tombol}
+              onClick={() => setPutar((r) => (r + 90) % 360)}
+              aria-label="Putar 90 derajat"
+            >
               <ArrowClockwiseIcon aria-hidden className="size-5" />
             </button>
-            <button type="button" className={tombol} onClick={() => kotak.current?.requestFullscreen?.()} aria-label="Layar penuh">
+            <button
+              type="button"
+              className={tombol}
+              onClick={() => kotak.current?.requestFullscreen?.()}
+              aria-label="Layar penuh"
+            >
               <ArrowsOutIcon aria-hidden className="size-5" />
             </button>
           </div>
@@ -92,21 +138,63 @@ export function PenampilBerkas({ id, berkas }: { id: string; berkas: BerkasTampi
         )}
       </div>
 
-      <div ref={kotak} role="tabpanel" tabIndex={0} aria-label={b.label} className="h-[min(70dvh,46rem)] overflow-auto rounded-kartu border border-garis bg-permukaan-alt">
-        {b.sumber === "hilang" ? (
-          <p className="p-6 text-center text-tinta-redup">Berkas tidak ditemukan di penyimpanan. Coba sinkron ulang ke Drive atau minta pendaftar mengunggah ulang.</p>
-        ) : gambar ? (
-          <div className="grid min-h-full min-w-full place-items-center p-3">
-            {/* eslint-disable-next-line @next/next/no-img-element -- berkas dinamis dari API backend, bukan aset statis */}
-            <img
-              src={url}
-              alt={`${b.label}: ${b.nama}`}
-              className="max-w-none origin-center transition-transform"
-              style={{ transform: `rotate(${putar}deg) scale(${zoom})`, width: "min(100%, 40rem)" }}
+      <div className="relative">
+        <div
+          ref={kotak}
+          role="tabpanel"
+          tabIndex={0}
+          aria-label={b.label}
+          aria-busy={memuat}
+          className="h-[min(70dvh,46rem)] overflow-auto rounded-kartu border border-garis bg-permukaan-alt"
+        >
+          {b.sumber === "hilang" ? (
+            <p className="p-6 text-center text-tinta-redup">
+              Berkas tidak ditemukan di penyimpanan. Coba sinkron ulang ke Drive atau minta
+              pendaftar mengunggah ulang.
+            </p>
+          ) : gambar ? (
+            <div className="grid min-h-full min-w-full place-items-center p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element -- berkas dinamis dari API backend, bukan aset statis */}
+              <img
+                key={url}
+                ref={gambarRef}
+                src={url}
+                alt={`${b.label}: ${b.nama}`}
+                onLoad={() => setDimuat({ url, gagal: false })}
+                onError={() => setDimuat({ url, gagal: true })}
+                className={cn(
+                  "max-w-none origin-center transition-[transform,opacity]",
+                  memuat || gagalMuat ? "opacity-0" : "opacity-100",
+                )}
+                style={{
+                  transform: `rotate(${putar}deg) scale(${zoom})`,
+                  width: "min(100%, 40rem)",
+                }}
+              />
+            </div>
+          ) : (
+            <iframe src={url} title={`${b.label}: ${b.nama}`} className="size-full" />
+          )}
+        </div>
+        {memuat && (
+          <div
+            role="status"
+            aria-label="Memuat berkas"
+            className="pointer-events-none absolute inset-0 grid place-items-center rounded-kartu bg-permukaan-alt/70"
+          >
+            <SpinnerGapIcon
+              aria-hidden
+              className="size-10 animate-spin text-primer motion-reduce:animate-none"
             />
           </div>
-        ) : (
-          <iframe src={url} title={`${b.label}: ${b.nama}`} className="size-full" />
+        )}
+        {gagalMuat && (
+          <p
+            role="alert"
+            className="absolute inset-0 grid place-items-center p-6 text-center text-tinta-redup"
+          >
+            Berkas gagal dimuat. Coba pilih ulang tab ini, atau sinkron ulang ke Drive.
+          </p>
         )}
       </div>
     </div>

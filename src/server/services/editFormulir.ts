@@ -1,5 +1,6 @@
 import { jwtVerify, SignJWT } from "jose";
 import { prisma } from "@/server/db/client";
+import { KUNCI_BERKAS_GANTI, daftarBerkasPendaftar } from "@/server/actions/berkas";
 import { fieldEdit, nilaiPendaftar, ubahPeserta } from "@/server/actions/peserta";
 import { muatDefinisiField } from "@/server/services/draf";
 import { GalatApi } from "@/server/types/galat";
@@ -74,7 +75,9 @@ export async function ambilFormEditPublik(id: string) {
     j2: pendaftar.jurusan2?.kode,
   });
   const catatan = pendaftar.statusVerifikasi === "rejected" ? pendaftar.catatanPenolakan : pendaftar.statusVerifikasi === "revision" ? pendaftar.catatanVerifikasi : null;
-  return { nomor: pendaftar.nomorPendaftaran, fields, nilai, status: pendaftar.statusVerifikasi, catatan };
+  // Berkas yang bisa diganti pendaftar sendiri (PRD 1.3 butir 66), tanpa rujukan penyimpanan.
+  const berkas = (await daftarBerkasPendaftar(pendaftar)).filter((b) => (KUNCI_BERKAS_GANTI as readonly string[]).includes(b.kunci));
+  return { nomor: pendaftar.nomorPendaftaran, fields, nilai, status: pendaftar.statusVerifikasi, catatan, berkas };
 }
 
 export async function simpanFormEditPublik(id: string, input: unknown, ip?: string) {

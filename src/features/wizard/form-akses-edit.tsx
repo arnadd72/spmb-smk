@@ -56,7 +56,7 @@ export function FormAksesEdit() {
         <Input type="date" value={tanggal} onChange={(e) => setTanggal(e.target.value)} autoComplete="bday" name="tanggalLahir" />
       </Field>
       {galatUmum && <PesanGalat pesan={galatUmum} />}
-      <Button type="submit" ukuran="lg" memuat={sibuk} penuhMobile className="sm:w-fit">
+      <Button type="submit" ukuran="lg" memuat={sibuk} className="w-full">
         {sibuk ? "Memeriksa data" : "Lanjut ke edit formulir"}
       </Button>
     </form>

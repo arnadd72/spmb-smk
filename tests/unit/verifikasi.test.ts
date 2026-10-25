@@ -210,6 +210,24 @@ describe("kelola berkas oleh panitia", () => {
     expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.berkas_unggah" } })).toBe(1);
   });
 
+  it("pendaftar mengganti pas foto lewat Edit Formulir: hanya gambar, diaudit tanpa akun panitia (PRD 1.3 butir 66)", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    drive.terhubung = false;
+    const PDF = Buffer.concat([Buffer.from("%PDF-1.4"), Buffer.alloc(40, 1)]);
+    expect((await galat(unggahBerkasPendaftar(id, "pas_foto", PDF, "foto.pdf", { ip: "1.2.3.4" }))).status).toBe(422);
+
+    const daftar = await unggahBerkasPendaftar(id, "pas_foto", JPG, "pas foto.jpg", { ip: "1.2.3.4" });
+    expect(daftar.find((d) => d.kunci === "pas_foto")).toMatchObject({ nama: "pas foto.jpg", mime: "image/jpeg" });
+    const { mime } = await bukaBerkas(id, "pas_foto", 0);
+    expect(mime).toBe("image/jpeg");
+    // Melihat berkas sendiri tanpa ctx tidak dicatat sebagai "berkas dilihat" panitia.
+    expect(await prisma.auditLog.count({ where: { aksi: "pendaftar.berkas_lihat" } })).toBe(0);
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { aksi: "pendaftar.berkas_unggah_publik" } });
+    expect([audit.userId, audit.ip]).toEqual([null, "1.2.3.4"]);
+    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).berkasSinkron).toBe("menunggu");
+  });
+
   it("rapor tidak bisa diunggah, menghapus berkas yang tidak ada ditolak", async () => {
     const p = await pendaftarWizard();
     const id = p.id.toString();

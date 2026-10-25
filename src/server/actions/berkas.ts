@@ -81,8 +81,11 @@ export async function ambilBerkasPendaftar(id: string): Promise<DeskripsiBerkas[
   return daftarBerkasPendaftar(p);
 }
 
-/** Aliran berkas untuk dilihat panitia. Setiap pembukaan dicatat di audit. */
-export async function bukaBerkas(id: string, kunci: string, indeks: number, ctx: KonteksAksi) {
+/**
+ * Aliran berkas untuk dilihat panitia; setiap pembukaan oleh panitia dicatat di audit. Tanpa `ctx` dipakai pendaftar
+ * sendiri lewat sesi Edit Formulir (tidak diaudit sebagai "berkas dilihat").
+ */
+export async function bukaBerkas(id: string, kunci: string, indeks: number, ctx?: KonteksAksi) {
   const pid = idPendaftar(id);
   const p = await prisma.pendaftar.findUnique({
     where: { id: pid },
@@ -102,7 +105,7 @@ export async function bukaBerkas(id: string, kunci: string, indeks: number, ctx:
   }
   if (!aliran) throw GalatApi.tidakDitemukan("Berkas belum tersedia. Coba sinkron ulang ke Drive.");
 
-  await catatAudit({ userId: ctx.userId, aksi: "pendaftar.berkas_lihat", entitasTipe: "pendaftar", entitasId: pid.toString(), dataBaru: { berkas: kunci, indeks }, ip: ctx.ip });
+  if (ctx) await catatAudit({ userId: ctx.userId, aksi: "pendaftar.berkas_lihat", entitasTipe: "pendaftar", entitasId: pid.toString(), dataBaru: { berkas: kunci, indeks }, ip: ctx.ip });
   const mime = MIME_AMAN.has(item.b.mime) ? item.b.mime : "application/octet-stream";
   return { aliran, mime, nama: item.b.nama };
 }
@@ -151,10 +154,11 @@ export async function sinkronSemuaTertunda(ctx?: KonteksAksi, batas = 25) {
   };
 }
 
-// ------------------------------------------------------------------ ganti, tambah, hapus berkas oleh panitia
+// ------------------------------------------------------------------ ganti, tambah, hapus berkas oleh panitia atau pendaftar
 
 // Foto rapor tidak lagi diunggah (PRD butir 40); berkas rapor lama (bila ada) masih bisa dilihat dan dihapus.
-const KUNCI_ADMIN = ["akta", "kk"] as const;
+// Pas foto bisa diganti juga (PRD 1.3 butir 66): masuk Cloudinary bila dikonfigurasi, selain itu menunggu Drive.
+export const KUNCI_BERKAS_GANTI = ["akta", "kk", "pas_foto"] as const;
 
 const bersihNama = (nama: string) => nama.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "berkas";
 
@@ -177,13 +181,23 @@ function adaYangTertunda(meta: BerkasDraf, p: { aktaFileId: string | null; kkFil
   return Array.isArray(meta.rapor) && meta.rapor.some((_, i) => !rapor[i]);
 }
 
-/** Ganti Akta atau KK. Isi diperiksa dari byte, bukan dari nama atau tipe kiriman. */
-export async function unggahBerkasPendaftar(id: string, kunci: string, isi: Buffer, namaAsli: string, ctx: KonteksAksi): Promise<DeskripsiBerkas[]> {
-  if (!(KUNCI_ADMIN as readonly string[]).includes(kunci)) throw GalatApi.validasi({ berkas: ["Jenis berkas tidak dikenal."] });
+/**
+ * Ganti Akta, KK, atau pas foto. Isi diperiksa dari byte, bukan dari nama atau tipe kiriman. Dipakai panitia (ctx.userId)
+ * dan pendaftar sendiri lewat Edit Formulir (tanpa userId, aksi audit `pendaftar.berkas_unggah_publik`).
+ */
+export async function unggahBerkasPendaftar(
+  id: string,
+  kunci: string,
+  isi: Buffer,
+  namaAsli: string,
+  ctx: { userId?: string; ip?: string },
+): Promise<DeskripsiBerkas[]> {
+  if (!(KUNCI_BERKAS_GANTI as readonly string[]).includes(kunci)) throw GalatApi.validasi({ berkas: ["Jenis berkas tidak dikenal."] });
   if (isi.length === 0) throw GalatApi.validasi({ berkas: ["Berkas kosong."] });
   if (isi.length > MAKS_UKURAN_BYTE) throw GalatApi.validasi({ berkas: ["Ukuran berkas melebihi 5 MB."] });
   const jenis = deteksiMime(isi);
   if (!jenis) throw GalatApi.validasi({ berkas: ["Format berkas harus JPG, PNG, WebP, atau PDF."] });
+  if (kunci === "pas_foto" && !jenis.mime.startsWith("image/")) throw GalatApi.validasi({ berkas: ["Pas foto harus berupa gambar JPG, PNG, atau WebP."] });
 
   const pid = idPendaftar(id);
   const p = await prisma.pendaftar.findUnique({ where: { id: pid } });
@@ -197,16 +211,37 @@ export async function unggahBerkasPendaftar(id: string, kunci: string, isi: Buff
     ukuran: isi.length,
   };
 
-  const data: Prisma.PendaftarUpdateInput = { berkasSinkron: "menunggu" };
+  const data: Prisma.PendaftarUpdateInput = {};
   const lama = meta[kunci] as Berkas | undefined;
   if (lama) await temp.hapus(lama.ref).catch(() => undefined);
-  await hapusDariDrive(kunci === "akta" ? p.aktaFileId : p.kkFileId);
+  const kustomId = { ...((p.kustomFileIds ?? {}) as Record<string, string>) };
+  await hapusDariDrive(kunci === "akta" ? p.aktaFileId : kunci === "kk" ? p.kkFileId : kustomId[kunci]);
   meta[kunci] = baru;
   if (kunci === "akta") data.aktaFileId = null;
-  else data.kkFileId = null;
+  else if (kunci === "kk") data.kkFileId = null;
+  else {
+    delete kustomId[kunci];
+    data.kustomFileIds = kustomId;
+  }
   data.berkasMeta = JSON.parse(JSON.stringify(meta));
+  // Pas foto di Cloudinary tidak menunggu Drive; selain itu berkas baru menunggu disinkronkan.
+  data.berkasSinkron = adaYangTertunda(meta, {
+    aktaFileId: kunci === "akta" ? null : p.aktaFileId,
+    kkFileId: kunci === "kk" ? null : p.kkFileId,
+    raporFileIds: p.raporFileIds,
+    kustomFileIds: kustomId,
+  })
+    ? "menunggu"
+    : "selesai";
   await prisma.pendaftar.update({ where: { id: pid }, data });
-  await catatAudit({ userId: ctx.userId, aksi: "pendaftar.berkas_unggah", entitasTipe: "pendaftar", entitasId: pid.toString(), dataBaru: { berkas: kunci, nama: baru.nama }, ip: ctx.ip });
+  await catatAudit({
+    userId: ctx.userId,
+    aksi: ctx.userId ? "pendaftar.berkas_unggah" : "pendaftar.berkas_unggah_publik",
+    entitasTipe: "pendaftar",
+    entitasId: pid.toString(),
+    dataBaru: { berkas: kunci, nama: baru.nama },
+    ip: ctx.ip,
+  });
 
   await sinkronBerkasPendaftar(id).catch(() => undefined); // coba langsung ke Drive; bila belum bisa, tetap menunggu
   return ambilBerkasPendaftar(id);

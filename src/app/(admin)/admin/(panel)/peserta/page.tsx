@@ -41,11 +41,20 @@ export default async function HalamanPeserta({ searchParams }: PageProps<"/admin
 
       <FilterPesertaForm filter={filter} jurusan={jurusan.map((j) => j.kode)} periodeAktif={tahunAjaran} />
 
-      <p className="mt-3">
-        <Link href={`/admin/ekspor${queryFilter(filter, { halaman: undefined })}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primer-tua underline underline-offset-4">
-          Ekspor hasil filter ini (XLSX atau rekap PDF)
-        </Link>
-      </p>
+      {filter.ganda ? (
+        <p role="status" className="mt-3 text-sm text-tinta">
+          Menampilkan pendaftar kemungkinan ganda: nama dan tanggal lahir sama, belum ditandai bukan pendaftar ganda.{" "}
+          <Link href="/admin/peserta" className="font-semibold text-primer-tua underline underline-offset-4">
+            Tampilkan semua
+          </Link>
+        </p>
+      ) : (
+        <p className="mt-3">
+          <Link href={`/admin/ekspor${queryFilter(filter, { halaman: undefined })}`} className="inline-flex min-h-11 items-center text-sm font-semibold text-primer-tua underline underline-offset-4">
+            Ekspor hasil filter ini (XLSX atau rekap PDF)
+          </Link>
+        </p>
+      )}
 
       {(filter.sinkron === "menunggu" || filter.sinkron === "gagal") && (
         <div className="mt-4">

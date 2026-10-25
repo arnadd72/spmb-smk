@@ -19,7 +19,7 @@ export const jsonPost = (body: unknown): RequestInit => ({
 });
 
 export function simpanLangkahKlien(langkah: number, data: unknown) {
-  return apiFetch<{ langkahTerakhir: number }>(`/draf/langkah/${langkah}`, {
+  return apiFetch<{ langkahTerakhir: number; peringatan?: string }>(`/draf/langkah/${langkah}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),

@@ -7,6 +7,7 @@ import { hashToken } from "@/server/services/kripto";
 import { susunKolom } from "@/server/services/pendaftarKolom";
 import { nomorBerikut } from "@/server/services/pendaftaran";
 import { muatJurusanAktif } from "@/server/services/rekomendasi";
+import { pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
 import { GalatApi } from "@/server/types/galat";
 import { VERSI_MINAT } from "@/server/validasi/minat";
 import type { Prisma } from "@/generated/prisma/client";
@@ -46,6 +47,8 @@ export async function buatPendaftarManual(masukan: unknown, ctx: KonteksAksi) {
 
   const baru = await prisma.$transaction(async (tx) => {
     const nomor = await nomorBerikut(tx, tahun);
+    // NISN ganda ditolak (poin E); panitia diberi tahu nomor pendaftar yang sudah ada.
+    await pastikanNisnBelumTerdaftar(hasil.nisn, { untukPanitia: true, klien: tx });
     // Input luring ikut gelombang berjalan dan tidak diblokir kuota (keputusan panitia).
     const gelombangId = await tetapkanGelombang(tx, periode, { blokir: false });
     return tx.pendaftar.create({

@@ -2,6 +2,7 @@ import "dotenv/config";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
+import { nisnUnik } from "./masuk";
 
 // Alur wizard pendaftaran lengkap secara manual (tanpa OCR) di layar HP, lalu cek status.
 // Data uji memakai nama "UJI E2E WIZARD" dan dibersihkan setelahnya.
@@ -85,7 +86,7 @@ test.describe("wizard pendaftaran manual", () => {
     await page.getByRole("checkbox").check();
     await lanjut(page);
     await expect(page.getByText("NISN harus 10 digit angka.")).toBeVisible();
-    await page.getByLabel("NISN").fill("1234567890");
+    await page.getByLabel("NISN").fill(nisnUnik());
     await axe(page);
     await lanjut(page);
 

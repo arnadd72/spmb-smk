@@ -4,6 +4,7 @@ import path from "node:path";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { Client } from "pg";
+import { nisnUnik } from "./masuk";
 
 // OCR di browser (PRD v4 Bagian 11). Hasil baca dipalsukan lewat window.__SPMB_OCR_PALSU__ agar alur deterministik;
 // satu uji terakhir memakai mesin PaddleOCR sungguhan pada foto KK sintetis. Data uji memakai nama "Uji E2E OCR".
@@ -58,7 +59,7 @@ async function mulaiSampaiLangkah2(page: Page) {
   await page.goto("/daftar");
   await page.getByRole("button", { name: "Mulai mendaftar" }).click();
   await page.getByLabel("Nama lengkap").fill(NAMA);
-  await page.getByLabel("NISN").fill("1234567890");
+  await page.getByLabel("NISN").fill(nisnUnik());
   await page.getByLabel("Tanggal lahir").fill("2011-03-09");
   await page.getByRole("checkbox").check();
   await lanjut(page);

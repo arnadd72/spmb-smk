@@ -10,6 +10,8 @@ export type FilterPeserta = {
   jurusan?: string;
   sumber?: "daring" | "luring";
   sinkron?: "menunggu" | "selesai" | "gagal";
+  /** Hanya pendaftar dengan nama dan tanggal lahir sama yang belum ditandai bukan duplikat (poin E). */
+  ganda?: boolean;
   /** "semua" = semua periode. Kosong = periode aktif. */
   periode?: string;
   dari?: string;
@@ -41,6 +43,7 @@ export function bacaFilter(sp: Record<string, string | string[] | undefined>): F
     jurusan: satu(sp.jurusan)?.toUpperCase().slice(0, 20) || undefined,
     sumber: pilih(satu(sp.sumber), ENUM.sumber),
     sinkron: pilih(satu(sp.sinkron), ENUM.sinkron),
+    ganda: satu(sp.ganda) === "1" || undefined,
     periode: satu(sp.periode)?.slice(0, 20) || undefined,
     dari: tanggal(satu(sp.dari)),
     sampai: tanggal(satu(sp.sampai)),

@@ -1,6 +1,7 @@
 import { prisma } from "@/server/db/client";
 import { ambilKonfigWizard } from "@/server/services/draf";
 import { terdaftarPerJurusan } from "@/server/services/kuota";
+import { idKemungkinanGanda } from "@/server/services/pendaftarGanda";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 
 // Data dashboard admin (PRD v3.1 13.2) untuk periode (tahun ajaran) berjalan.
@@ -74,6 +75,10 @@ export async function ambilDashboard(): Promise<DataDashboard> {
   }
   if (gagal > 0) peringatan.push({ nada: "bahaya", teks: `${gagal} pendaftar gagal sinkron berkas ke Drive.`, href: "/admin/peserta?sinkron=gagal" });
   else if (drive.terhubung && menunggu > 0) peringatan.push({ nada: "peringatan", teks: `${menunggu} pendaftar menunggu sinkron berkas ke Drive.`, href: "/admin/peserta?sinkron=menunggu" });
+  const ganda = (await idKemungkinanGanda()).length;
+  if (ganda > 0) {
+    peringatan.push({ nada: "peringatan", teks: `${ganda} pendaftar kemungkinan ganda (nama dan tanggal lahir sama).`, href: "/admin/peserta?ganda=1" });
+  }
   for (const j of perJurusan.filter((x) => x.persen >= 80)) {
     peringatan.push({ nada: j.persen >= 100 ? "bahaya" : "peringatan", teks: `Kuota ${j.kode} terisi ${j.persen}% (${j.terdaftar} dari ${j.kuota}).`, href: "/admin/kuota" });
   }

@@ -17,6 +17,7 @@ import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/
 import { pastikanKuotaTersedia } from "@/server/services/kuota";
 import { kirimKodePendaftaran } from "@/server/services/notifikasi";
 import { susunKolom } from "@/server/services/pendaftarKolom";
+import { pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { adalahRefCloudinary } from "@/server/services/penyimpanan/driverCloudinary";
 import { hitungRekomendasi, muatJurusanAktif } from "@/server/services/rekomendasi";
@@ -88,6 +89,8 @@ export async function kirimPendaftaran(token: string | undefined, konfirmasiFina
     if (ulang) return { ...ulang, baru: false as const };
 
     const nomor = await nomorBerikut(tx, tahun);
+    // Kunci advisory nomor sudah dipegang: dua pendaftaran ber-NISN sama yang dikirim bersamaan tidak lolos keduanya (poin E).
+    await pastikanNisnBelumTerdaftar(semua.nisn, { klien: tx });
     // Kunci advisory nomor sudah dipegang: hitung kuota gelombang aman dari kirim bersamaan.
     const gelombangId = await tetapkanGelombang(tx, konfig.tahunAjaran, { blokir: true });
     // Pendaftar langsung diterima, jadi kuota jurusan ditegakkan di sini, di bawah kunci yang sama (PRD 1.3 butir 62).

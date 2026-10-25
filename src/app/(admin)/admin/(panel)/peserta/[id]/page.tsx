@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChatCircleDotsIcon, FilePdfIcon, PencilSimpleIcon } from "@phosphor-icons/react/dist/ssr";
+import { ChatCircleDotsIcon, FilePdfIcon, PencilSimpleIcon, WarningCircleIcon } from "@phosphor-icons/react/dist/ssr";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { labelAksi } from "@/features/admin/audit/label";
 import { KelolaBerkas } from "@/features/admin/peserta/kelola-berkas";
+import { TombolBukanDuplikat } from "@/features/admin/peserta/tombol-bukan-duplikat";
 import { PenampilBerkas } from "@/features/admin/verifikasi/penampil-berkas";
 import { TombolSinkron } from "@/features/admin/verifikasi/tombol-sinkron";
 import { formatTanggal } from "@/lib/format";
@@ -13,6 +14,7 @@ import { ambilPeserta } from "@/server/actions/peserta";
 import { PERAN } from "@/server/auth/peran";
 import { wajibPeranHalaman } from "@/server/auth/verifikasiSesi";
 import { muatDefinisiField } from "@/server/services/draf";
+import { kemungkinanGanda } from "@/server/services/pendaftarGanda";
 import { GalatApi } from "@/server/types/galat";
 import { NAMA_LANGKAH, type DefinisiField } from "@/server/validasi/wizard";
 
@@ -45,7 +47,7 @@ export default async function DetailPendaftar({
     if (e instanceof GalatApi && e.status === 404) notFound();
     throw e;
   }
-  const [fields, berkas] = await Promise.all([muatDefinisiField(), ambilBerkasPendaftar(id)]);
+  const [fields, berkas, ganda] = await Promise.all([muatDefinisiField(), ambilBerkasPendaftar(id), kemungkinanGanda(BigInt(p.id))]);
 
   const bagian = [1, 5, 6, 7].map((l) => ({
     judul: NAMA_LANGKAH[l - 1],
@@ -112,6 +114,32 @@ export default async function DetailPendaftar({
           </a>
         </div>
       </div>
+
+      {ganda.length > 0 && (
+        <div role="note" className="mt-4 flex flex-col gap-3 rounded-kartu border border-peringatan/30 bg-peringatan-latar p-4 text-peringatan sm:flex-row sm:items-start sm:justify-between">
+          <p className="flex items-start gap-3">
+            <WarningCircleIcon aria-hidden weight="fill" className="mt-0.5 size-5 shrink-0" />
+            <span>
+              <span className="block font-semibold">Kemungkinan pendaftar ganda</span>
+              <span className="text-sm">
+                Nama dan tanggal lahirnya sama dengan{" "}
+                {ganda.map((g, i) => (
+                  <span key={g.id}>
+                    {i > 0 && ", "}
+                    <Link href={`/admin/peserta/${g.id}`} className="angka font-semibold underline underline-offset-4">
+                      {g.nomor}
+                    </Link>
+                  </span>
+                ))}
+                , dengan NISN berbeda. Periksa apakah orang yang sama; bila bukan, tandai di sini.
+              </span>
+            </span>
+          </p>
+          <div className="shrink-0">
+            <TombolBukanDuplikat id={p.id} />
+          </div>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-4 lg:grid-cols-3">
         <Card className="lg:col-span-2">

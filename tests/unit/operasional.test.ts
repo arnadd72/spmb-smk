@@ -159,7 +159,7 @@ describe("input manual pendaftar luring", () => {
 
   it("nomor tidak bentrok saat beberapa input manual berjalan bersamaan", async () => {
     const isi = await isianValid();
-    const hasil = await Promise.all([1, 2, 3, 4].map(() => buatPendaftarManual({ ...isi, jurusan_1: "AKL" }, ctx)));
+    const hasil = await Promise.all([1, 2, 3, 4].map((i) => buatPendaftarManual({ ...isi, jurusan_1: "AKL", nisn: `98765432${10 + i}` }, ctx))); // NISN beda: NISN ganda ditolak (poin E)
     expect(new Set(hasil.map((h) => h.nomor)).size).toBe(4);
   });
 });

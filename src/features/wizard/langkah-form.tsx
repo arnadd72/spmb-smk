@@ -48,6 +48,8 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
   const [galat, setGalat] = useState<PetaGalat>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
+  // Peringatan pendaftar ganda (poin E): data sudah tersimpan; pendaftar memilih membuka Cek Pendaftaran atau tekan Lanjut lagi.
+  const [peringatan, setPeringatan] = useState<string>();
   const formRef = useRef<HTMLFormElement>(null);
 
   const terkunci = new Set(sama && salinan ? Object.keys(salinan.peta) : []);
@@ -88,7 +90,12 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
 
     setMenyimpan(true);
     try {
-      await simpanLangkahKlien(langkah, isi);
+      const hasil = await simpanLangkahKlien(langkah, isi);
+      if (hasil.peringatan && !peringatan) {
+        setPeringatan(hasil.peringatan);
+        setMenyimpan(false);
+        return;
+      }
       router.push(`/daftar/langkah/${langkah + 1}`);
     } catch (err) {
       const { umum, field } = pecahGalat(err);
@@ -107,6 +114,15 @@ export function LangkahForm({ langkah, fields, awal, salinan, dariDokumen, pembu
         <p role="alert" className="rounded-kontrol bg-bahaya-latar px-3 py-2.5 text-sm font-semibold text-bahaya">
           {galatUmum}
         </p>
+      )}
+
+      {peringatan && (
+        <div role="alert" className="flex flex-col gap-2 rounded-kontrol border border-peringatan/30 bg-peringatan-latar px-3 py-2.5 text-sm text-peringatan">
+          <p className="font-semibold">{peringatan}</p>
+          <Link href="/cek-pendaftaran" className="inline-flex min-h-11 items-center self-start font-semibold underline underline-offset-4">
+            Buka Cek Pendaftaran
+          </Link>
+        </div>
       )}
 
       <div className="grid gap-x-5 gap-y-5 sm:grid-cols-2">

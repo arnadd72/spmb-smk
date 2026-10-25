@@ -48,6 +48,9 @@ export function nilaiValid(f: DefinisiField): unknown {
 /** Jawaban tes minat bakat contoh: 10 jawaban B (AKL) dan 5 jawaban D (TKR), jadi saran utama AKL. */
 export const JAWABAN_MINAT_CONTOH = SOAL_MINAT.map((_, i) => (i < 10 ? 1 : 3));
 
+// NISN unik per pendaftar uji (poin E memblokir NISN ganda); yang pertama di tiap berkas tes tetap 1234567890.
+let urutNisn = 0;
+
 export async function isiLengkap(token: string, tanpaJurusan2 = false) {
   const fields = await muatDefinisiField();
 
@@ -59,6 +62,7 @@ export async function isiLengkap(token: string, tanpaJurusan2 = false) {
     }
     const isi: Record<string, unknown> = {};
     for (const f of fields.filter((x) => x.langkah === n && x.tipe !== "file" && x.tipe !== "tabel")) isi[f.kunci] = nilaiValid(f);
+    if (n === 1) isi.nisn = String(1234567890 + urutNisn++);
     if (n === 3) isi.minat = JAWABAN_MINAT_CONTOH;
     if (n === 4 && tanpaJurusan2) delete isi.jurusan_2;
     await simpanLangkah(token, n, isi);

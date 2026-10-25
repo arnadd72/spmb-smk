@@ -12,6 +12,7 @@ import {
   susunKolom,
 } from "@/server/services/pendaftarKolom";
 import { kondisiPeserta, type FilterPeserta } from "@/server/services/pencarianPeserta";
+import { idKemungkinanGanda, pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
 import { GalatApi } from "@/server/types/galat";
 import type { DefinisiField } from "@/server/validasi/wizard";
 
@@ -53,7 +54,8 @@ const URUTAN: Record<NonNullable<FilterPeserta["urut"]>, string> = {
 };
 
 export async function daftarPeserta(f: FilterPeserta, periodeAktif: string): Promise<HasilDaftarPeserta> {
-  const where = kondisiPeserta(f, periodeAktif);
+  const dasar = kondisiPeserta(f, periodeAktif);
+  const where = f.ganda ? { AND: [dasar, { id: { in: await idKemungkinanGanda() } }] } : dasar;
   const urut = URUTAN[f.urut ?? "dikirim"];
   const arah = f.arah ?? "desc";
   const halaman = Math.max(f.halaman ?? 1, 1);
@@ -200,6 +202,10 @@ export async function ubahPeserta(id: string, masukan: unknown, ctx: { userId?: 
     }
   }
   if (Object.keys(galat).length > 0) throw GalatApi.validasi(galat);
+  // NISN yang diubah ke milik pendaftar lain ditolak (poin E). Pendaftar sendiri lewat Cek Pendaftaran tidak melihat nomor orang lain.
+  if (hasil.nisn !== lama.nisn) {
+    await pastikanNisnBelumTerdaftar(hasil.nisn, { kecualiId: pid, untukPanitia: ctx.aksi !== "pendaftar.ubah_publik" });
+  }
 
   const jurusan = await prisma.jurusan.findMany({ where: { kode: { in: [String(hasil.jurusan_1), String(hasil.jurusan_2 ?? "")] } } });
   const j1 = jurusan.find((j) => j.kode === hasil.jurusan_1);

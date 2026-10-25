@@ -186,3 +186,11 @@ Selesai di branch `feat/penyimpanan-drive` (PRD butir 68): menu "Cek Pendaftaran
 formulir PDF lewat sesi, email wajib untuk semua pendaftar (termasuk luring), email dan Tanya Sunan menunjuk Cek Pendaftaran, migrasi data FAQ.
 Migrasi `20261026120000_cek_pendaftaran` (dan `20261025090000_tes_minat_bakat` milik rekan setim) belum di-deploy ke Supabase: butuh
 persetujuan pemilik.
+
+## Status E (26 Okt 2026)
+
+Selesai di branch `feat/penyimpanan-drive` (PRD butir 69): NISN sama dihentikan (wizard, kirim, input manual, ubah data); nama + tanggal lahir sama boleh
+lanjut dengan peringatan; panitia melihat banner, tombol "Bukan pendaftar ganda", filter `?ganda=1`, dan peringatan dashboard.
+Migrasi `20261026130000_pendaftar_bukan_duplikat` belum di-deploy ke Supabase (butuh persetujuan pemilik), bersama dua migrasi sebelumnya.
+Tes: unit 344/344 lulus. E2E yang masih gagal sudah gagal sebelum B/D/E (rapor dihapus rekan setim: input manual dan ubah data peserta; wizard RT/RW
+kini angka saja; Cek Status lama; axe contrast landing; galeri timing).

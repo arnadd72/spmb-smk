@@ -249,7 +249,7 @@ describe("pengiriman email", () => {
     const h = await buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", email: "lama@contoh.id" }, ctx);
     const p = await prisma.pendaftar.update({ where: { id: BigInt(h.id) }, data: { email: null } });
     expect((await kirimKodePendaftaran(p.nomorPendaftaran)).dilewatiKarena).toBe("tanpa-email");
-    await buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", email: "luring@contoh.id" }, ctx);
+    await buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", nisn: "5555555555", email: "luring@contoh.id" }, ctx);
     expect((await kirimUlangEmailTertunda()).diproses).toBe(0); // luring tidak masuk antrean kirim ulang
     expect(kirim.mock).not.toHaveBeenCalled();
   });

@@ -272,6 +272,8 @@ model Pendaftar {
   berkasMeta    Json?
   berkasSinkron BerkasSinkron @default(menunggu)
   dataKustom    Json?
+  /// Panitia sudah memeriksa: nama dan tanggal lahir sama dengan pendaftar lain, tetapi bukan orang yang sama (poin E).
+  bukanDuplikat Boolean       @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

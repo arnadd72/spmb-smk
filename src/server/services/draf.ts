@@ -3,6 +3,7 @@ import { prisma } from "@/server/db/client";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
 import { kompresGambar, profilBerkas } from "@/server/services/kompresi";
 import { pastikanKuotaTersedia, terdaftarPerJurusan } from "@/server/services/kuota";
+import { PERINGATAN_NAMA_TANGGAL, adaNamaTanggalSama, pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatJurusanAktif, type HasilRekomendasi } from "@/server/services/rekomendasi";
@@ -319,7 +320,11 @@ export async function konteksValidasi(): Promise<KonteksValidasi & { konfig: Kon
   return { fields, konfig };
 }
 
-export async function simpanLangkah(token: string | undefined, langkah: number, input: unknown): Promise<{ langkahTerakhir: number }> {
+export async function simpanLangkah(
+  token: string | undefined,
+  langkah: number,
+  input: unknown,
+): Promise<{ langkahTerakhir: number; peringatan?: string }> {
   if (!Number.isInteger(langkah) || langkah < 1 || langkah >= TOTAL_LANGKAH) {
     throw GalatApi.validasi({ langkah: ["Langkah tidak valid."] });
   }
@@ -332,6 +337,8 @@ export async function simpanLangkah(token: string | undefined, langkah: number, 
 
   const ctx = await konteksValidasi();
   const bersih = validasiLangkah(langkah, input, bacaBerkas(baris), ctx);
+  // Pendaftar ganda (poin E): NISN yang sudah terdaftar dihentikan di langkah pertama, sebelum isian lain terbuang.
+  if (langkah === 1) await pastikanNisnBelumTerdaftar(bersih.nisn);
   // Jurusan yang kuotanya penuh tidak bisa dipilih (PRD 1.3 butir 62).
   if (typeof bersih.jurusan_1 === "string") {
     const j = await prisma.jurusan.findUnique({ where: { kode: bersih.jurusan_1 }, select: { id: true } });
@@ -345,6 +352,10 @@ export async function simpanLangkah(token: string | undefined, langkah: number, 
     where: { id: baris.id },
     data: { data: bungkusData(data), langkahTerakhir: terakhir },
   });
+  // Nama dan tanggal lahir sama dengan pendaftar lain: tetap tersimpan, pendaftar diberi peringatan (poin E).
+  if (langkah === 1 && (await adaNamaTanggalSama(bersih.nama_lengkap, bersih.tanggal_lahir))) {
+    return { langkahTerakhir: terakhir, peringatan: PERINGATAN_NAMA_TANGGAL };
+  }
   return { langkahTerakhir: terakhir };
 }
 

@@ -8,15 +8,14 @@ import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpan
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { idDrivePertama } from "@/server/services/pendaftaran";
 import { GalatApi } from "@/server/types/galat";
+import type { BarisHapus, HasilHapus, HasilPratinjau } from "@/server/types/hapusPendaftar";
 import { MAKS_HAPUS, skemaHapus, skemaPilihanHapus, type PilihanHapus } from "@/server/validasi/hapusPendaftar";
 
 // Hapus pendaftar permanen (PRD 1.3 butir 75): database, catatan OCR, berkas sementara, dan folder Drive. Hanya superadmin
 // (dijaga rute API). Log audit tetap, tanpa data sensitif. Penghapusan Drive lebih dulu: bila gagal, pendaftar itu dibiarkan
 // utuh supaya tidak ada folder Drive yatim tanpa catatan.
 
-export type BarisHapus = { id: string; nomor: string; nama: string; tanggal: string; sumber: string };
-export type HasilPratinjau = { total: number; ids: string[]; contoh: BarisHapus[] };
-export type HasilHapus = { terhapus: number; dilewati: number; gagal: { nomor: string; pesan: string }[] };
+export type { BarisHapus, HasilHapus, HasilPratinjau };
 
 const BATAS_SALAH = 5;
 const JENDELA_MENIT = 15;

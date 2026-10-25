@@ -45,7 +45,7 @@ test.describe("admin: data peserta", () => {
     await page.getByRole("button", { name: "Simpan perubahan" }).click();
     await expect(page.getByText("Ada isian yang perlu diperbaiki.").or(page.locator("[aria-invalid=true]").first())).toBeVisible();
 
-    const nilai: Record<string, string> = { nik: "3302010101010001", no_kk: "3302010101010002", anak_ke: "2", jumlah_saudara: "3", tinggi_badan: "160", berat_badan: "50", no_hp: "081234567890", no_wa: "081234567891", no_hp_ortu: "081298765432", email: "uji@contoh.id", nik_ayah: "3302010101010003", nik_ibu: "3302010101010004", ayah_tanggal_lahir: "1980-03-03", ibu_tanggal_lahir: "1983-07-12" };
+    const nilai: Record<string, string> = { nik: "3302010101010001", no_kk: "3302010101010002", anak_ke: "2", jumlah_saudara: "3", tinggi_badan: "160", berat_badan: "50", no_hp: "081234567890", no_wa: "081234567891", no_hp_ortu: "081298765432", email: "uji@contoh.id", nik_ayah: "3302010101010003", nik_ibu: "3302010101010004", ayah_tanggal_lahir: "1980-03-03", ibu_tanggal_lahir: "1983-07-12", rt: "1", rw: "2", ortu_rt: "1", ortu_rw: "2", lama_belajar: "3" };
     for (const el of await page.locator("input[name]:not([type=radio]):not([type=hidden]):not([disabled])").all()) {
       if ((await el.inputValue()) !== "") continue;
       await el.fill(nilai[(await el.getAttribute("name")) ?? ""] ?? "Contoh");

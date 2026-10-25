@@ -23,7 +23,8 @@ export type IkonMenu =
   | "pengaturan"
   | "ocr"
   | "akun"
-  | "audit";
+  | "audit"
+  | "hapus";
 
 export type ItemMenu = {
   label: string;
@@ -52,6 +53,7 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
     item: [
       { label: "Data Peserta", href: "/admin/peserta", ket: "Daftar semua pendaftar", ikon: "peserta", peran: PENDAFTAR, siap: true },
       { label: "Input Manual", href: "/admin/input-manual", ket: "Daftarkan siswa yang datang langsung", ikon: "manual", peran: PENDAFTAR, siap: true },
+      { label: "Hapus Pendaftar", href: "/admin/hapus-pendaftar", ket: "Bersihkan data uji atau pendaftar keliru", ikon: "hapus", peran: SISTEM, siap: true },
       { label: "Ekspor Data", href: "/admin/ekspor", ket: "Unduh data ke Excel atau PDF", ikon: "ekspor", peran: PENDAFTAR, siap: true },
     ],
   },

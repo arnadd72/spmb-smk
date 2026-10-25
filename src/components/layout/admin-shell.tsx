@@ -26,6 +26,7 @@ import {
   ShieldCheckIcon,
   SignOutIcon,
   SquaresFourIcon,
+  TrashIcon,
   UserPlusIcon,
   UsersIcon,
   XIcon,
@@ -55,6 +56,7 @@ const IKON: Record<IkonMenu, Icon> = {
   ocr: ScanIcon,
   akun: ShieldCheckIcon,
   audit: ClockCounterClockwiseIcon,
+  hapus: TrashIcon,
 };
 
 function Merek({ logo }: { logo: string }) {

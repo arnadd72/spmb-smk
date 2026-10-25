@@ -14,6 +14,7 @@ export const LABEL_AKSI: Record<string, string> = {
   "pendaftar.berkas_unggah_publik": "Berkas diganti pendaftar (Cek Pendaftaran)",
   "pendaftar.ubah_publik": "Data diubah pendaftar (Cek Pendaftaran)",
   "pendaftar.berkas_hapus": "Berkas dihapus",
+  "pendaftar.hapus": "Pendaftar dihapus permanen",
   "pendaftar.sinkron": "Berkas disinkronkan ke Drive",
   "pendaftar.bukan_duplikat": "Ditandai bukan pendaftar ganda",
   "pendaftar.input_manual": "Pendaftar luring diinput",

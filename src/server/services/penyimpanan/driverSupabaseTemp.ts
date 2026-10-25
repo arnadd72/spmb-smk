@@ -36,6 +36,8 @@ export class DriverSupabaseTemp implements PenyimpananDokumen {
 
   async gantiNamaFolder(): Promise<void> {}
 
+  async hapusFolderInduk(): Promise<void> {}
+
   async hapus(referensi: string): Promise<void> {
     const { error } = await this.supabase.storage.from(this.bucket).remove([referensi]);
     if (error) throw new Error(`Gagal menghapus berkas sementara: ${error.message}`);

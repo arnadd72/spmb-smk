@@ -15,6 +15,7 @@ const drive = vi.hoisted(() => ({
   isi: new Map<string, Buffer>(),
   path: [] as string[],
   folder: [] as string[],
+  folderDihapus: [] as string[],
   n: 0,
 }));
 vi.mock("@/server/services/penyimpanan/driveOAuth", async (asli) => ({
@@ -40,6 +41,10 @@ vi.mock("@/server/services/penyimpanan", async (asli) => ({
         if (drive.gagal) throw new Error("Drive menolak pembaruan");
         if (!drive.isi.has(id)) throw new Error("berkas tidak ada");
         drive.isi.set(id, isi);
+      },
+      hapusFolderInduk: async (_id: string, awalan: string) => {
+        if (drive.gagal) throw new Error("Drive menolak hapus folder");
+        drive.folderDihapus.push(awalan);
       },
       gantiNamaFolder: async (_id: string, nama: string) => {
         if (drive.gagal) throw new Error("Drive menolak ganti nama");
@@ -86,6 +91,7 @@ beforeEach(async () => {
   drive.isi.clear();
   drive.path.length = 0;
   drive.folder.length = 0;
+  drive.folderDihapus.length = 0;
   await prisma.user.create({
     data: {
       id: BigInt(1),

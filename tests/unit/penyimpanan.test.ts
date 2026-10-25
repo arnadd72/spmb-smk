@@ -112,6 +112,28 @@ describe("DriverDrive", () => {
     expect(del).toHaveBeenCalledWith({ fileId: "file-x" });
   });
 
+  it("hapusFolderInduk menghapus folder induk bila nama diawali awalan", async () => {
+    const { drive, get, del } = driveTiruan();
+    get.mockResolvedValueOnce({ data: { parents: ["folder-pendaftar"] } }).mockResolvedValueOnce({ data: { name: "SPMB-2027-0001 - AHMAD" } });
+    await new DriverDrive(drive, "root-id").hapusFolderInduk("file-x", "SPMB-2027-0001 - ");
+    expect(del).toHaveBeenCalledTimes(1);
+    expect(del).toHaveBeenCalledWith({ fileId: "folder-pendaftar" });
+  });
+
+  it("hapusFolderInduk menolak bila nama folder tidak cocok awalan", async () => {
+    const { drive, get, del } = driveTiruan();
+    get.mockResolvedValueOnce({ data: { parents: ["folder-lain"] } }).mockResolvedValueOnce({ data: { name: "SPMB-2027-0002 - BUDI" } });
+    await expect(new DriverDrive(drive, "root-id").hapusFolderInduk("file-x", "SPMB-2027-0001 - ")).rejects.toThrow(/tidak cocok/);
+    expect(del).not.toHaveBeenCalled();
+  });
+
+  it("hapusFolderInduk menolak bila induk adalah folder akar", async () => {
+    const { drive, get, del } = driveTiruan();
+    get.mockResolvedValueOnce({ data: { parents: ["root-id"] } });
+    await expect(new DriverDrive(drive, "root-id").hapusFolderInduk("file-x", "SPMB-2027-0001 - ")).rejects.toThrow(/akar/);
+    expect(del).not.toHaveBeenCalled();
+  });
+
   it("menolak path traversal sebelum memanggil Drive", async () => {
     const { drive, create } = driveTiruan();
     await expect(new DriverDrive(drive, "root-id").simpan("a/../b", Buffer.from("x"))).rejects.toThrow();

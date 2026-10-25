@@ -16,6 +16,11 @@ export interface PenyimpananDokumen {
   perbarui(referensi: string, isi: Buffer, mime?: string, namaBaru?: string): Promise<void>;
   /** Ganti nama folder yang memuat berkas `referensi`. Driver tanpa folder tidak berbuat apa-apa. */
   gantiNamaFolder(referensi: string, namaBaru: string): Promise<void>;
+  /**
+   * Hapus folder yang memuat berkas `referensi` beserta isinya, hanya bila namanya diawali `awalanNama` dan bukan folder akar.
+   * Pengaman agar berkas yang salah rujuk tidak menyeret folder lain. Driver tanpa folder tidak berbuat apa-apa.
+   */
+  hapusFolderInduk(referensi: string, awalanNama: string): Promise<void>;
 }
 
 /** Pecah path jadi segmen folder dan nama berkas. Menolak traversal dan path kosong. */

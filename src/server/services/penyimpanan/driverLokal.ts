@@ -38,6 +38,8 @@ export class DriverLokal implements PenyimpananDokumen {
 
   async gantiNamaFolder(): Promise<void> {}
 
+  async hapusFolderInduk(): Promise<void> {}
+
   async hapus(referensi: string): Promise<void> {
     await rm(this.lokasi(referensi), { force: true });
   }

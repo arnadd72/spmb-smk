@@ -63,6 +63,16 @@ export class DriverDrive implements PenyimpananDokumen {
     this.cacheFolder.clear();
   }
 
+  async hapusFolderInduk(referensi: string, awalanNama: string): Promise<void> {
+    const berkas = await this.drive.files.get({ fileId: referensi, fields: "parents" });
+    const induk = berkas.data.parents?.[0];
+    if (!induk || induk === this.idFolderRoot) throw new Error("Folder induk adalah folder akar atau tidak ditemukan, tidak dihapus.");
+    const folder = await this.drive.files.get({ fileId: induk, fields: "name" });
+    if (!folder.data.name?.startsWith(awalanNama)) throw new Error("Folder tidak cocok dengan pendaftar, tidak dihapus.");
+    await this.drive.files.delete({ fileId: induk });
+    this.cacheFolder.clear();
+  }
+
   async ada(referensi: string): Promise<boolean> {
     try {
       const res = await this.drive.files.get({ fileId: referensi, fields: "id,trashed" });

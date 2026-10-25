@@ -180,4 +180,73 @@ test.describe("OCR di wizard", () => {
     await expect(kartu.getByLabel("Nomor Kartu Keluarga")).toHaveValue("3301012503090001");
     await expect(kartu.getByLabel("NIK calon siswa")).toHaveValue("3301011205100002");
   });
+
+  test("NIK dan nomor HP: peringatan langsung saat mengetik, hanya angka, dan jadi benar begitu sesuai (tanpa klik simpan)", async ({ page }) => {
+    test.setTimeout(120_000);
+    await palsukanOcr(page, { kk: KK_PALSU });
+    await mulaiSampaiLangkah2(page);
+    await page.locator("[data-berkas=kk]").setInputFiles({ name: "kk.png", mimeType: "image/png", buffer: PNG });
+    const kartu = page.getByRole("region", { name: "Hasil baca Kartu Keluarga" });
+    await expect(kartu).toBeVisible();
+
+    for (const label of ["NIK calon siswa", "NIK ayah", "NIK ibu"]) {
+      const kolom = kartu.getByLabel(label);
+      const medan = kolom.locator("xpath=ancestor::div[contains(@class,'flex-col')][1]");
+      await expect(kolom).toHaveAttribute("inputmode", "numeric");
+
+      // Belum 16 digit: peringatan muncul langsung, kolom ditandai.
+      await kolom.fill("330101");
+      await expect(medan.getByText("Baru 6 dari 16 digit. NIK harus tepat 16 digit angka.")).toBeVisible();
+      await expect(kolom).toHaveAttribute("aria-invalid", "true");
+
+      // Huruf, spasi, dan tanda tidak diterima dan langsung diberi tahu; digit yang valid tetap masuk.
+      await kolom.fill("33a01-01 2204");
+      await expect(kolom).toHaveValue("33010122 04".replace(" ", ""));
+      await expect(medan.getByText("Hanya angka yang diterima. Huruf, spasi, dan tanda dihapus.")).toBeVisible();
+
+      // Tempelan berformat dengan spasi tetap utuh 16 digit (maxLength biasa memotongnya di 16 karakter).
+      await kolom.fill("3301 0122 0478 0001");
+      await expect(kolom).toHaveValue("3301012204780001");
+      await expect(medan.getByText("16 digit, sudah benar.")).toBeVisible();
+      await expect(kolom).not.toHaveAttribute("aria-invalid", "true");
+
+      // Kelebihan digit dibuang dan diberi tahu.
+      await kolom.fill("33010122047800019");
+      await expect(kolom).toHaveValue("3301012204780001");
+      await expect(medan.getByText("Maksimal 16 digit. Kelebihan digit dihapus.")).toBeVisible();
+    }
+
+    // Langkah 2 tidak bisa dilanjutkan dengan NIK yang masih kurang, dan kolom pertama yang salah mendapat fokus.
+    const ayah = kartu.getByLabel("NIK ayah");
+    await ayah.fill("330101220478000");
+    await unggahAkta(page);
+    await lanjut(page);
+    await expect(page).toHaveURL(/\/langkah\/2$/);
+    await expect(page.getByText(/Perbaiki dulu: NIK ayah/)).toBeVisible();
+    await expect(ayah).toBeFocused();
+
+    // Dilengkapi 16 digit: peringatan berubah menjadi benar dan lanjut.
+    await ayah.fill("3301012204780001");
+    await expect(kartu.getByLabel("NIK ayah").locator("xpath=ancestor::div[contains(@class,'flex-col')][1]").getByText("16 digit, sudah benar.")).toBeVisible();
+    await lanjut(page);
+    await expect(page).toHaveURL(/\/langkah\/3$/);
+
+    // Nomor HP di formulir: langsung diperingatkan, hanya angka, 9 sampai 13 digit.
+    await bukaGerbangLangkah(page, 5);
+    await page.goto("/daftar/langkah/5");
+    const hp = page.locator("input[name=no_hp]");
+    const medanHp = hp.locator("xpath=ancestor::div[contains(@class,'flex-col')][1]");
+    await expect(hp).toHaveAttribute("inputmode", "numeric");
+    await hp.fill("0812");
+    await expect(medanHp.getByText("Baru 4 digit. Nomor HP harus 9 sampai 13 digit angka.")).toBeVisible();
+    await hp.fill("+62 812-3456 7890abc");
+    await expect(hp).toHaveValue("6281234567890");
+    await expect(medanHp.getByText("Hanya angka yang diterima. Huruf, spasi, dan tanda dihapus.")).toBeVisible();
+    await expect(medanHp.getByText("13 digit, sudah benar.")).toBeVisible();
+    await hp.fill("08123456789012345");
+    await expect(hp).toHaveValue("0812345678901");
+    await expect(medanHp.getByText("Maksimal 13 digit. Kelebihan digit dihapus.")).toBeVisible();
+    await hp.fill("081234567");
+    await expect(medanHp.getByText("9 digit, sudah benar.")).toBeVisible();
+  });
 });

@@ -10,6 +10,8 @@ import type { Tahap } from "@/lib/ocr/mesin";
 import type { Keyakinan } from "@/lib/ocr/tipe";
 import { NAMA_TAHAP } from "./ocr";
 import { CONTOH_ISIAN_OCR, LABEL_ISIAN_OCR, OPSI_JENIS_KELAMIN, type Saran } from "./ocr-isian";
+import { PesanAngka, useIsianAngka } from "./pesan-angka";
+import { ANGKA_OCR, aturanAngka, saringAngkaOcr } from "./schema-client";
 
 export type StatusBaca = { status: "membaca"; tahap?: Tahap } | { status: "gagal"; pesan: string } | { status: "selesai" };
 
@@ -71,19 +73,7 @@ export function KartuIsianOcr({ judul, kunci, saran, suntingan, awal, peringatan
           const diubah = suntingan[k] !== undefined && suntingan[k] !== (saran[k]?.nilai ?? awal[k] ?? "");
           return (
             <div key={k} className="flex flex-col gap-1.5">
-              <Field label={LABEL_ISIAN_OCR[k]} bantuan={CONTOH_ISIAN_OCR[k]}>
-                {k === "jenis_kelamin" ? (
-                  <Select name={`ocr_${k}`} opsi={OPSI_JENIS_KELAMIN} nilai={nilai || undefined} onChange={(v) => onUbah(k, v)} />
-                ) : (
-                  <Input
-                    name={`ocr_${k}`}
-                    value={nilai}
-                    maxLength={k === "nik" || k === "no_kk" ? 16 : k === "rt" || k === "rw" ? 3 : 255}
-                    inputMode={k === "nik" || k === "no_kk" || k === "rt" || k === "rw" ? "numeric" : undefined}
-                    onChange={(e) => onUbah(k, k === "nik" || k === "no_kk" || k === "rt" || k === "rw" ? e.target.value.replace(/\D/g, "") : e.target.value.toLocaleUpperCase("id-ID"))}
-                  />
-                )}
-              </Field>
+              <IsianOcr kunci={k} nilai={nilai} onUbah={onUbah} />
               {keyakinan && keyakinan !== "NOT_FOUND" && !diubah && <BadgeKeyakinan level={keyakinan === "HIGH" ? "HIGH" : "MEDIUM"} />}
             </div>
           );
@@ -94,5 +84,32 @@ export function KartuIsianOcr({ judul, kunci, saran, suntingan, awal, peringatan
         <p className="text-sm text-tinta-redup">Tidak terbaca: {hilang.join(", ")}. Silakan isi manual pada kolom kosong di atas.</p>
       )}
     </section>
+  );
+}
+
+/**
+ * Satu isian pada kartu hasil baca. NIK dan Nomor KK memakai peringatan angka langsung (tepat 16 digit, hanya angka);
+ * RT dan RW hanya angka paling banyak 3 digit; isian lain huruf kapital biasa.
+ */
+function IsianOcr({ kunci: k, nilai, onUbah }: { kunci: string; nilai: string; onUbah: (kunci: string, nilai: string) => void }) {
+  const aturan = aturanAngka(k);
+  const angkaSingkat = ANGKA_OCR[k] && !aturan; // RT dan RW
+  const isian = useIsianAngka(aturan, nilai, (v) => onUbah(k, v));
+  return (
+    <Field label={LABEL_ISIAN_OCR[k]} bantuan={CONTOH_ISIAN_OCR[k]}>
+      {k === "jenis_kelamin" ? (
+        <Select name={`ocr_${k}`} opsi={OPSI_JENIS_KELAMIN} nilai={nilai || undefined} onChange={(v) => onUbah(k, v)} />
+      ) : (
+        <Input
+          name={`ocr_${k}`}
+          value={nilai}
+          maxLength={aturan ? undefined : angkaSingkat ? ANGKA_OCR[k].panjang : 255}
+          inputMode={aturan || angkaSingkat ? "numeric" : undefined}
+          {...isian.propsInput}
+          onChange={(e) => (aturan ? isian.saatUbah(e.target.value) : onUbah(k, angkaSingkat ? saringAngkaOcr(k, e.target.value) : e.target.value.toLocaleUpperCase("id-ID")))}
+        />
+      )}
+      {aturan && isian.status && <PesanAngka aturan={aturan} status={isian.status} dibuang={isian.dibuang} />}
+    </Field>
   );
 }

@@ -75,9 +75,11 @@ describe("saran OCR di draf (langkah 2)", () => {
   it("langkah 2 menyimpan saran isian yang sudah disaring dan tetap bisa diambil kembali", async () => {
     const { token } = await buatDraf();
     await isiLengkap(token);
-    await simpanLangkah(token, 2, { ocr: { nik: "3302010101010009", no_kk: "bukan-angka", tempat_lahir: "CILACAP", liar: "x" } });
+    await simpanLangkah(token, 2, { ocr: { nik: "3302010101010009", tempat_lahir: "CILACAP", liar: "x" } });
     const draf = await ambilDraf(token);
     expect(draf?.data["2"].ocr).toEqual({ nik: "3302010101010009", tempat_lahir: "CILACAP" });
+    // Isian angka yang salah kini ditolak (422), tidak dibuang diam-diam: lihat blok "langkah 2 menolak NIK ..." di bawah.
+    expect((await galat(simpanLangkah(token, 2, { ocr: { no_kk: "bukan-angka" } }))).status).toBe(422);
   });
 
   it("langkah 2 tanpa saran tidak membuat kunci ocr", async () => {
@@ -150,5 +152,29 @@ describe("catatHasilOcr", () => {
       data: Array.from({ length: MAKS_CATATAN_PER_JAM }, () => ({ draftId: draf.id, jenis: "akta", durasiMs: 1, sukses: true, fields: {}, confidence: {} })),
     });
     expect((await galat(catatHasilOcr(token, { jenis: "akta", sukses: true, durasiMs: 5 }))).status).toBe(429);
+  });
+});
+
+describe("langkah 2 menolak NIK dan nomor KK yang bukan 16 digit angka (laporan pemilik, 26 Okt 2026)", () => {
+  it.each([
+    ["nik", "330101"],
+    ["nik_ayah", "33010122047800O1"],
+    ["nik_ibu", "33010168118300031"],
+    ["no_kk", "1472 0226 1205 0006"],
+    ["rt", "tiga"],
+  ])("%s tidak valid: 422 dan tidak ada yang disimpan", async (kunci, nilai) => {
+    const { token } = await buatDraf();
+    await isiLengkap(token);
+    const e = await galat(simpanLangkah(token, 2, { ocr: { alamat: "DUSUN", [kunci]: nilai } }));
+    expect(e.status).toBe(422);
+    expect(e.errors?.[kunci]?.[0]).toMatch(/digit angka/);
+    expect((await ambilDraf(token))?.data["2"]?.ocr).toBeUndefined();
+  });
+
+  it("nilai valid dan kosong tetap diterima; kunci liar tetap dibuang diam-diam", async () => {
+    const { token } = await buatDraf();
+    await isiLengkap(token);
+    await simpanLangkah(token, 2, { ocr: { nik: "3302010101010009", nik_ayah: "", nik_ibu: "3302010101010010", rt: "003", liar: "x" } });
+    expect((await ambilDraf(token))?.data["2"].ocr).toEqual({ nik: "3302010101010009", nik_ibu: "3302010101010010", rt: "003" });
   });
 });

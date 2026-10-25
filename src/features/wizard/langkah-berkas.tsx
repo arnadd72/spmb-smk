@@ -15,7 +15,8 @@ import { PesanGalat } from "./bidang";
 import { pecahGalat, simpanLangkahKlien } from "./api";
 import { KartuIsianOcr, StatusOcr, type StatusBaca } from "./kartu-ocr";
 import { bacaAkta, bacaKk, pesanGagalOcr } from "./ocr";
-import { KUNCI_AKTA, KUNCI_KK, gabungSaran, nilaiAkhirOcr } from "./ocr-isian";
+import { KUNCI_AKTA, KUNCI_KK, LABEL_ISIAN_OCR, gabungSaran, nilaiAkhirOcr } from "./ocr-isian";
+import { galatAngkaOcr } from "./schema-client";
 
 export type BerkasKlien = { ref: string; nama: string; mime: string; ukuran: number };
 export type SlotBerkas = {
@@ -308,12 +309,20 @@ export function LangkahAkta({
       setGalat(`${kurang.label} wajib diunggah.`);
       return;
     }
+    const isian = nilaiAkhirOcr(saran, suntingan, awal);
+    const salah = Object.keys(galatAngkaOcr(isian));
+    if (salah.length > 0) {
+      setGalat(`Perbaiki dulu: ${salah.map((k) => LABEL_ISIAN_OCR[k] ?? k).join(", ")}. NIK dan Nomor KK harus tepat 16 digit angka. Kosongkan kolomnya bila tidak ingin diisi dari dokumen.`);
+      requestAnimationFrame(() => document.querySelector<HTMLElement>("input[aria-invalid=true]")?.focus());
+      return;
+    }
     setMenyimpan(true);
     try {
-      await simpanLangkahKlien(2, { ocr: nilaiAkhirOcr(saran, suntingan, awal) });
+      await simpanLangkahKlien(2, { ocr: isian });
       router.push("/daftar/langkah/3");
     } catch (err) {
-      setGalat(pecahGalat(err).umum ?? "Ada berkas yang perlu dilengkapi.");
+      const { umum, field } = pecahGalat(err);
+      setGalat(umum ?? Object.values(field)[0] ?? "Ada berkas yang perlu dilengkapi.");
       setMenyimpan(false);
     }
   }

@@ -30,6 +30,38 @@ const SKEMA_ISIAN_OCR: Record<string, z.ZodType<string>> = {
 
 export const KUNCI_ISIAN_OCR = Object.keys(SKEMA_ISIAN_OCR);
 
+/**
+ * Isian angka pada kartu hasil baca: panjang maksimum, dan `tepat` bila panjangnya harus persis itu (NIK dan Nomor KK 16 digit).
+ * Satu sumber untuk klien (menyaring ketikan dan menandai isian kurang) dan server (menolak isian yang lolos dari klien).
+ */
+export const ANGKA_OCR: Record<string, { panjang: number; tepat: boolean }> = {
+  nik: { panjang: 16, tepat: true },
+  nik_ayah: { panjang: 16, tepat: true },
+  nik_ibu: { panjang: 16, tepat: true },
+  no_kk: { panjang: 16, tepat: true },
+  rt: { panjang: 3, tepat: false },
+  rw: { panjang: 3, tepat: false },
+};
+
+/** Buang semua selain angka dan potong ke panjang maksimum untuk isian angka; isian lain dikembalikan apa adanya. */
+export function saringAngkaOcr(kunci: string, nilai: string): string {
+  const aturan = ANGKA_OCR[kunci];
+  return aturan ? nilai.replace(/\D/g, "").slice(0, aturan.panjang) : nilai;
+}
+
+/** Galat isian angka yang tidak tepat (huruf, spasi, tanda, kurang, atau lebih). Isian kosong atau tidak dikirim bukan galat. */
+export function galatAngkaOcr(input: unknown): Record<string, string[]> {
+  const galat: Record<string, string[]> = {};
+  if (!input || typeof input !== "object") return galat;
+  for (const [kunci, aturan] of Object.entries(ANGKA_OCR)) {
+    const nilai = (input as Record<string, unknown>)[kunci];
+    if (nilai === undefined || nilai === null || nilai === "") continue;
+    const sah = typeof nilai === "string" && (aturan.tepat ? new RegExp(`^\\d{${aturan.panjang}}$`) : new RegExp(`^\\d{1,${aturan.panjang}}$`)).test(nilai);
+    if (!sah) galat[kunci] = [aturan.tepat ? `Harus tepat ${aturan.panjang} digit angka, tanpa huruf, spasi, atau tanda.` : `Harus 1 sampai ${aturan.panjang} digit angka.`];
+  }
+  return galat;
+}
+
 /** Saring isian hasil OCR: kunci tak dikenal dan nilai tak valid dibuang diam-diam (hanya saran, bukan data final). */
 export function bersihkanIsianOcr(input: unknown): Record<string, string> {
   if (!input || typeof input !== "object") return {};

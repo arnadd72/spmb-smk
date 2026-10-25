@@ -6,7 +6,8 @@ import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { cn } from "@/lib/cn";
-import type { DefinisiField } from "./schema-client";
+import { PesanAngka, useIsianAngka } from "./pesan-angka";
+import { aturanAngka, type DefinisiField } from "./schema-client";
 
 type Props = {
   f: DefinisiField;
@@ -21,15 +22,19 @@ type Props = {
 const teks = (v: unknown) => (v === undefined || v === null ? "" : String(v));
 const kapitalSemua = (nilai: string) => nilai.toLocaleUpperCase("id-ID");
 const KUNCI_ANGKA_SAJA = new Set(["nisn", "nik", "nik_ayah", "nik_ibu", "no_kk", "rt", "rw", "ortu_rt", "ortu_rw", "lama_belajar"]);
+/** Nomor telepon: hanya angka, paling banyak 13 digit (aturan 9 sampai 13 digit diperiksa skema form di klien dan server). */
+const PANJANG_TELEPON = 13;
 
 function batasPanjang(f: DefinisiField): number | undefined {
+  // NIK, Nomor KK, NISN, dan telepon dipotong sendiri setelah huruf dan spasi dibuang (maxLength menghitungnya sebagai karakter).
+  if (aturanAngka(f.kunci, f.tipe)) return undefined;
   if (f.kunci === "nisn") return 10;
   if (f.kunci === "lama_belajar") return 1;
   if (["tinggi_badan", "berat_badan"].includes(f.kunci)) return 3;
   if (["rt", "rw", "ortu_rt", "ortu_rw"].includes(f.kunci)) return 3;
   if (["nik", "nik_ayah", "nik_ibu", "no_kk"].includes(f.kunci)) return 16;
   switch (f.tipe) {
-    case "tel": return 18;
+    case "tel": return PANJANG_TELEPON;
     case "email": return 255;
     case "textarea": return 1000;
     case "number": return 6;
@@ -42,6 +47,8 @@ function batasPanjang(f: DefinisiField): number | undefined {
 export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Props) {
   const id = useId();
   const [lainnyaDipilih, setLainnyaDipilih] = useState(false);
+  const aturan = aturanAngka(f.kunci, f.tipe);
+  const isianAngka = useIsianAngka(aturan, teks(nilai), (v) => onChange(f.kunci, v));
   const tandaDokumen = dariDokumen ? (
     <p className="flex items-center gap-1.5 text-sm font-medium text-info">
       <FileTextIcon aria-hidden weight="duotone" className="size-4 shrink-0" />
@@ -190,16 +197,21 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
 
   const lebar = f.tipe === "textarea" ? "sm:col-span-2" : undefined;
   const satuan = f.kunci === "tinggi_badan" ? "cm" : f.kunci === "berat_badan" ? "kg" : f.kunci === "lama_belajar" ? "tahun" : undefined;
-  const angkaSaja = f.tipe === "number" || KUNCI_ANGKA_SAJA.has(f.kunci);
+  const angkaSaja = f.tipe === "number" || f.tipe === "tel" || KUNCI_ANGKA_SAJA.has(f.kunci);
   const input = (
     <Input
       name={f.kunci}
       type={f.tipe === "date" ? "date" : f.tipe === "email" ? "email" : f.tipe === "tel" ? "tel" : "text"}
       inputMode={angkaSaja ? "numeric" : undefined}
       autoComplete={AUTOFILL[f.kunci]}
+      {...isianAngka.propsInput}
       value={teks(nilai)}
       maxLength={batasPanjang(f)}
-      onChange={(e) => onChange(f.kunci, angkaSaja ? e.target.value.replace(/\D/g, "") : f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)}
+      onChange={(e) =>
+        aturan
+          ? isianAngka.saatUbah(e.target.value)
+          : onChange(f.kunci, angkaSaja ? e.target.value.replace(/\D/g, "") : f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)
+      }
       disabled={disabled}
       placeholder={f.kunci === "lama_belajar" ? undefined : f.placeholder ?? undefined}
       className={cn((f.tipe === "number" || satuan) && "max-w-40", satuan && "pr-12")}
@@ -225,6 +237,7 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
           </div>
         ) : input
       )}
+      {aturan && isianAngka.status && <PesanAngka aturan={aturan} status={isianAngka.status} dibuang={isianAngka.dibuang} />}
       {tandaDokumen}
     </Field>
   );

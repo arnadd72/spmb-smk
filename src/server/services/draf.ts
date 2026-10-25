@@ -10,7 +10,7 @@ import { hitungRekomendasi, muatJurusanAktif, type HasilRekomendasi } from "@/se
 import { GalatApi } from "@/server/types/galat";
 import { KUNCI_INTI, KUNCI_WAJIB } from "@/server/validasi/formField";
 import { skemaJawabanMinat, type JawabanMinat } from "@/server/validasi/minat";
-import { bersihkanIsianOcr } from "@/server/validasi/ocr";
+import { bersihkanIsianOcr, galatAngkaOcr } from "@/server/validasi/ocr";
 import { KUNCI_FILE_KHUSUS, TOTAL_LANGKAH, skemaLangkah, skemaNilaiUjian, type DefinisiField } from "@/server/validasi/wizard";
 
 // Draf pendaftaran tanpa login (PRD v3.1 10.4, v4 7.4): token acak di cookie httpOnly, hash SHA-256 di database.
@@ -299,8 +299,13 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
 
   // Saran isian dari OCR Akta dan KK (langkah 2): hanya prapengisian langkah 5 dan 6, disaring ulang di sini.
   if (langkah === 2) {
-    const ocr = bersihkanIsianOcr(mentah.ocr);
-    if (Object.keys(ocr).length > 0) hasil.ocr = ocr;
+    // Isian angka (NIK, Nomor KK, RT, RW) yang diketik pendaftar harus persis: ditolak, bukan dibuang diam-diam.
+    const galatAngka = galatAngkaOcr(mentah.ocr);
+    if (Object.keys(galatAngka).length > 0) Object.assign(galat, galatAngka);
+    else {
+      const ocr = bersihkanIsianOcr(mentah.ocr);
+      if (Object.keys(ocr).length > 0) hasil.ocr = ocr;
+    }
   }
 
   // Tabel nilai ujian (langkah 7)

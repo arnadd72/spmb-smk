@@ -5,7 +5,7 @@ import type { FieldOcr, HasilParser } from "@/lib/ocr/tipe";
 /** Isian yang bersumber dari Akta (Akta lebih dipercaya untuk data kelahiran dan nama orang tua). */
 export const KUNCI_AKTA = ["tempat_lahir", "jenis_kelamin", "nama_ayah", "nama_ibu"] as const;
 /** Isian yang bersumber dari KK. Nama orang tua dari KK hanya cadangan bila Akta tidak memberinya. */
-export const KUNCI_KK = ["no_kk", "nik", "alamat", "rt", "rw", "desa", "kecamatan", "kabupaten", "propinsi"] as const;
+export const KUNCI_KK = ["no_kk", "nik", "nik_ayah", "nik_ibu", "alamat", "rt", "rw", "desa", "kecamatan", "kabupaten", "propinsi"] as const;
 
 export const LABEL_ISIAN_OCR: Record<string, string> = {
   tempat_lahir: "Tempat lahir",
@@ -14,6 +14,8 @@ export const LABEL_ISIAN_OCR: Record<string, string> = {
   nama_ibu: "Nama ibu",
   no_kk: "Nomor Kartu Keluarga",
   nik: "NIK calon siswa",
+  nik_ayah: "NIK ayah",
+  nik_ibu: "NIK ibu",
   alamat: "Alamat",
   rt: "RT",
   rw: "RW",
@@ -31,6 +33,8 @@ export const CONTOH_ISIAN_OCR: Record<string, string> = {
   nama_ibu: "Nama lengkap sesuai Akta. Contoh: SITI AMINAH",
   no_kk: "16 angka di bagian atas KK. Contoh: 3302010406080001",
   nik: "16 angka milik calon siswa. Contoh: 3302010903100002",
+  nik_ayah: "16 angka di baris ayah pada KK. Contoh: 3302012003800001",
+  nik_ibu: "16 angka di baris ibu pada KK. Contoh: 3302011208820001",
   alamat: "Nama jalan atau dusun, tanpa RT/RW. Contoh: DUSUN SIDAURIP",
   rt: "Contoh: 003",
   rw: "Contoh: 002",

@@ -19,7 +19,8 @@ export function normal(s: string): string {
     .trim();
 }
 
-function levenshtein(a: string, b: string): number {
+/** Jarak edit Levenshtein (jumlah huruf yang harus diubah). */
+export function levenshtein(a: string, b: string): number {
   if (a === b) return 0;
   if (a.length === 0) return b.length;
   if (b.length === 0) return a.length;

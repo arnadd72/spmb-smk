@@ -8,8 +8,8 @@ import type { BarisOcr } from "./tipe";
 
 /** Batas waktu satu pembacaan (keputusan pemilik proyek: 40 detik). Lewat batas, pendaftar diminta mengisi manual. */
 export const BATAS_WAKTU_MS = 40_000;
-/** Sisi terpanjang gambar yang dibaca. 1500 px menjaga angka KK tetap terbaca dan waktu baca wajar di HP. */
-export const SISI_MAKS_PX = 1500;
+/** Sisi terpanjang gambar yang dibaca; foto lebih kecil diperbesar ke ukuran ini (uji 26 Okt 2026: 1600 px terbaik, 2000 px tidak lebih akurat dan lebih berat di HP). */
+export const SISI_MAKS_PX = 1600;
 
 export type Tahap = "muat-model" | "siapkan" | "baca";
 export type HasilBaca = { baris: BarisOcr[]; lebar: number; tinggi: number; sudut: number; durasiMs: number };

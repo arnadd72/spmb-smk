@@ -22,7 +22,7 @@ const KK_PALSU = [
   "Kelurahan/Desa : SIDANEGARA Provinsi JAWA TENGAH",
   "1 SUTARNO 3301012204780001 LAKI-LAKI CILACAP 22-04-1978",
   "2 LISA TRI SAPARININGRUM 3301018611830003 PEREMPUAN CILACAP 28-11-1983",
-  `3 ${NAMA.toUpperCase()} 3301010903060002 LAKI-LAKI CILACAP 09-03-2011`,
+  `3 ${NAMA.toUpperCase()} 3301010903110002 LAKI-LAKI CILACAP 09-03-2011`,
 ].map((t, i) => baris(t, i * 40));
 
 /** Pasang mesin OCR palsu sebelum halaman dimuat: kembalikan hasil tetap, atau gagal bila `gagal` true. */
@@ -96,7 +96,7 @@ test.describe("OCR di wizard", () => {
     await page.locator("[data-berkas=kk]").setInputFiles({ name: "kk.png", mimeType: "image/png", buffer: PNG });
     const kartu = page.getByRole("region", { name: "Hasil baca Kartu Keluarga" });
     await expect(kartu).toBeVisible();
-    await expect(kartu.getByLabel("NIK calon siswa")).toHaveValue("3301010903060002");
+    await expect(kartu.getByLabel("NIK calon siswa")).toHaveValue("3301010903110002");
     await expect(kartu.getByLabel("Nomor Kartu Keluarga")).toHaveValue("3301010406080001");
     await expect(kartu.getByLabel("Alamat")).toHaveValue("DUSUN SIDAURIP");
     await expect(kartu.getByLabel("Kecamatan")).toHaveValue("KEDUNGREJA");
@@ -116,7 +116,7 @@ test.describe("OCR di wizard", () => {
     // Langkah 5 terisi dari dokumen dan diberi tanda
     await bukaGerbangLangkah(page, 5);
     await page.goto("/daftar/langkah/5");
-    await expect(page.locator("input[name=nik]")).toHaveValue("3301010903060002");
+    await expect(page.locator("input[name=nik]")).toHaveValue("3301010903110002");
     await expect(page.locator("input[name=no_kk]")).toHaveValue("3301010406080001");
     await expect(page.locator("input[name=alamat]")).toHaveValue("DUSUN SIDAURIP KULON");
     await expect(page.getByText("Dari dokumen. Periksa kembali.").first()).toBeVisible();

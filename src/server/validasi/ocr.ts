@@ -17,6 +17,8 @@ const SKEMA_ISIAN_OCR: Record<string, z.ZodType<string>> = {
   nama_ibu: teksWajar(),
   no_kk: z.string().regex(/^\d{16}$/),
   nik: z.string().regex(/^\d{16}$/),
+  nik_ayah: z.string().regex(/^\d{16}$/),
+  nik_ibu: z.string().regex(/^\d{16}$/),
   alamat: teksWajar(),
   rt: z.string().trim().regex(/^\d{1,3}$/),
   rw: z.string().trim().regex(/^\d{1,3}$/),

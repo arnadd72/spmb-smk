@@ -199,3 +199,11 @@ kini angka saja; Cek Status lama; axe contrast landing; galeri timing).
 
 Migrasi Cloudinary ke Drive dijalankan (9 foto web, 2 pas foto, 3 folder; gagal 0) dan diverifikasi: 9/9 foto web terbaca dari Drive.
 Cloudinary dicabut total dari kode, tes, dan `.env.example`. Hapus `CLOUDINARY_*` dari `.env` lokal dan dari Vercel. Migrasi Prisma sudah di-deploy ke Supabase.
+
+## Status F: OCR (26 Okt 2026)
+
+Diukur pada foto asli di `docs/ocr/` (kunci jawaban `docs/ocr/kunci.json`, tidak di-commit), lalu diperbaiki: mesin (perbesar 1600 px, per-box,
+orientasi otomatis), parser Akta (format kalimat, tanggal huruf), parser KK (berbasis kotak, validasi NIK dan No KK, NIK orang tua).
+Hasil: 74% benar dan 5% terisi salah (awal 9% dan 13%). PRD butir 70 dan Bagian 11. Ukur ulang:
+`OCR_REKAM=1 OCR_REKAM_KE=_akhir npx playwright test tests/e2e/ocr-rekam.spec.ts --workers=1` lalu `npx tsx tests/ocr-akurasi/nilai.ts _akhir --rinci`.
+Foto contoh baru cukup ditaruh di `docs/ocr/akta` atau `docs/ocr/kk` dan ditambahkan ke `kunci.json`.

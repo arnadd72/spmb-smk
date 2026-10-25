@@ -46,6 +46,10 @@ const galat = async (p: Promise<unknown>) => {
 };
 
 describe("bersihkanIsianOcr", () => {
+  it("menerima NIK ayah dan ibu 16 digit dari KK, membuang yang tidak 16 digit (poin F)", () => {
+    expect(bersihkanIsianOcr({ nik_ayah: "3301012204780001", nik_ibu: "33010168118300" })).toEqual({ nik_ayah: "3301012204780001" });
+  });
+
   it("menyimpan nilai valid dan membuang kunci tak dikenal serta nilai tak valid", () => {
     expect(
       bersihkanIsianOcr({

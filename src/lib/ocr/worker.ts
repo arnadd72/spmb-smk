@@ -1,10 +1,11 @@
 /// <reference lib="webworker" />
-// Web Worker OCR (PRD v4 11.2): PaddleOCR PP-OCRv6 tiny lewat onnxruntime-web, sepenuhnya di browser pendaftar.
+// Web Worker OCR (PRD v4 11.2, poin F): PaddleOCR PP-OCRv6 tiny lewat onnxruntime-web, sepenuhnya di browser pendaftar.
 // Model dan runtime WASM disajikan dari domain sendiri (/ocr/model, /ocr/ort) dan di-cache panjang oleh browser.
 // Semua kerja piksel (decode, perkecil, luruskan, baca) ada di sini supaya antarmuka tidak macet di HP.
 import * as ort from "onnxruntime-web";
 import { PaddleOcrService } from "ppu-paddle-ocr/web";
 import { perkirakanSudut } from "./deskew";
+import { PUTARAN_CADANGAN, bacaanLemah, kekuatanBaca } from "./orientasi";
 import type { BarisOcr } from "./tipe";
 
 export type PesanMasuk = { id: number; berkas: Blob; sisiMaks: number };
@@ -27,7 +28,7 @@ const MODEL = {
 let layanan: Promise<PaddleOcrService> | null = null;
 function ambilLayanan(): Promise<PaddleOcrService> {
   layanan ??= (async () => {
-    const s = new PaddleOcrService({ model: MODEL, session: { executionProviders: ["wasm"], graphOptimizationLevel: "all" } });
+    const s = new PaddleOcrService({ model: MODEL, detection: { maxSideLength: 1600 }, session: { executionProviders: ["wasm"], graphOptimizationLevel: "all" } });
     await s.initialize();
     return s;
   })().catch((e) => {
@@ -37,20 +38,37 @@ function ambilLayanan(): Promise<PaddleOcrService> {
   return layanan;
 }
 
-/** Decode (mengikuti orientasi EXIF), perkecil ke sisi terpanjang `sisiMaks`, lalu luruskan bila miring. */
-async function siapkanKanvas(berkas: Blob, sisiMaks: number): Promise<{ kanvas: OffscreenCanvas; sudut: number }> {
+/** Decode (mengikuti orientasi EXIF) lalu skalakan ke sisi terpanjang `sisiMaks`, termasuk memperbesar foto kecil. */
+async function muatKanvas(berkas: Blob, sisiMaks: number): Promise<OffscreenCanvas> {
   const bmp = await createImageBitmap(berkas, { imageOrientation: "from-image" });
-  const skala = Math.min(1, sisiMaks / Math.max(bmp.width, bmp.height));
+  // Foto kecil diperbesar: huruf setinggi 10 piksel tidak terdeteksi model tiny, setelah diperbesar terbaca (uji 26 Okt 2026).
+  const skala = sisiMaks / Math.max(bmp.width, bmp.height);
   const lebar = Math.max(1, Math.round(bmp.width * skala));
   const tinggi = Math.max(1, Math.round(bmp.height * skala));
   const kanvas = new OffscreenCanvas(lebar, tinggi);
   const ctx = kanvas.getContext("2d", { willReadFrequently: true })!;
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, lebar, tinggi);
+  ctx.imageSmoothingQuality = "high";
   ctx.drawImage(bmp, 0, 0, lebar, tinggi);
   bmp.close();
+  return kanvas;
+}
 
-  // Kemiringan diperkirakan pada salinan kecil (cepat), lalu diterapkan ke gambar penuh.
+/** Putar kanvas 90, 180, atau 270 derajat searah jarum jam. */
+function putar(sumber: OffscreenCanvas, derajat: number): OffscreenCanvas {
+  const tegak = derajat % 180 !== 0;
+  const kanvas = new OffscreenCanvas(tegak ? sumber.height : sumber.width, tegak ? sumber.width : sumber.height);
+  const ctx = kanvas.getContext("2d", { willReadFrequently: true })!;
+  ctx.translate(kanvas.width / 2, kanvas.height / 2);
+  ctx.rotate((derajat * Math.PI) / 180);
+  ctx.drawImage(sumber, -sumber.width / 2, -sumber.height / 2);
+  return kanvas;
+}
+
+/** Luruskan kemiringan kecil. Kemiringan diperkirakan pada salinan kecil (cepat), lalu diterapkan ke gambar penuh. */
+function luruskan(kanvas: OffscreenCanvas): { kanvas: OffscreenCanvas; sudut: number } {
+  const { width: lebar, height: tinggi } = kanvas;
   const k = Math.min(1, 600 / Math.max(lebar, tinggi));
   const kl = Math.max(20, Math.round(lebar * k));
   const kt = Math.max(20, Math.round(tinggi * k));
@@ -73,23 +91,36 @@ async function siapkanKanvas(berkas: Blob, sisiMaks: number): Promise<{ kanvas: 
   return { kanvas: lurus, sudut };
 }
 
+async function baca(s: PaddleOcrService, kanvas: OffscreenCanvas): Promise<BarisOcr[]> {
+  // per-box: sel tabel KK dibaca terpisah. per-line menggabungkan sel yang dipisah garis tabel dan hasilnya rusak.
+  const hasil = await s.recognize(kanvas as never, { flatten: true, strategy: "per-box" });
+  return hasil.results.map((r) => ({ teks: r.text, kotak: [r.box.x, r.box.y, r.box.x + r.box.width, r.box.y + r.box.height], skor: r.confidence }));
+}
+
 self.onmessage = async (e: MessageEvent<PesanMasuk>) => {
   const { id, berkas, sisiMaks } = e.data;
   const mulai = performance.now();
   try {
     // Decode lebih dulu: berkas yang rusak gagal cepat tanpa mengunduh model.
     kirim({ tipe: "tahap", id, tahap: "siapkan" });
-    const { kanvas, sudut } = await siapkanKanvas(berkas, sisiMaks);
+    const asli = await muatKanvas(berkas, sisiMaks);
     kirim({ tipe: "tahap", id, tahap: "muat-model" });
     const s = await ambilLayanan();
     kirim({ tipe: "tahap", id, tahap: "baca" });
-    const hasil = await s.recognize(kanvas as never, { flatten: true });
-    const baris: BarisOcr[] = hasil.results.map((r) => ({
-      teks: r.text,
-      kotak: [r.box.x, r.box.y, r.box.x + r.box.width, r.box.y + r.box.height],
-      skor: r.confidence,
-    }));
-    kirim({ tipe: "hasil", id, baris, lebar: kanvas.width, tinggi: kanvas.height, sudut, durasiMs: performance.now() - mulai });
+
+    let terbaik = luruskan(asli);
+    let baris = await baca(s, terbaik.kanvas);
+    // Dokumen terputar (KK mendatar difoto dengan HP tegak): coba putaran lain, pakai yang terbaca paling kuat.
+    for (const derajat of PUTARAN_CADANGAN) {
+      if (!bacaanLemah(baris)) break;
+      const calon = luruskan(putar(asli, derajat));
+      const barisCalon = await baca(s, calon.kanvas);
+      if (kekuatanBaca(barisCalon) > kekuatanBaca(baris)) {
+        terbaik = calon;
+        baris = barisCalon;
+      }
+    }
+    kirim({ tipe: "hasil", id, baris, lebar: terbaik.kanvas.width, tinggi: terbaik.kanvas.height, sudut: terbaik.sudut, durasiMs: performance.now() - mulai });
   } catch (err) {
     kirim({ tipe: "galat", id, pesan: err instanceof Error ? err.message : String(err) });
   }

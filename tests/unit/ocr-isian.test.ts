@@ -39,3 +39,11 @@ describe("nilaiAkhirOcr", () => {
     expect(nilaiAkhirOcr(saran, { alamat: "  " }, {})).toEqual({ nik: "3301010903060002" });
   });
 });
+
+describe("NIK orang tua dari KK (poin F)", () => {
+  it("NIK ayah dan ibu dari KK ikut menjadi saran isian", () => {
+    const s = gabungSaran(undefined, { nik_ayah: f("3301012204780001"), nik_ibu: f("3301016811830003", "MEDIUM") });
+    expect(s.nik_ayah.nilai).toBe("3301012204780001");
+    expect(s.nik_ibu).toEqual({ nilai: "3301016811830003", keyakinan: "MEDIUM" });
+  });
+});

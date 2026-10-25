@@ -156,11 +156,16 @@ const namaAman = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").trim().toUpperCas
 
 type BarisDrive = { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown; kustomFileIds: unknown };
 
-/** ID Drive pertama milik pendaftar (berkas apa pun), atau null bila belum ada satu pun di Drive. */
-export function idDrivePertama(p: BarisDrive): string | null {
+/** Semua ID Drive milik pendaftar (akta, KK, rapor, berkas kustom), berurutan; kosong bila belum ada satu pun di Drive. */
+export function semuaIdDrive(p: BarisDrive): string[] {
   const kustom = Object.values((p.kustomFileIds ?? {}) as Record<string, string | string[]>).flat();
   const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
-  return [p.aktaFileId, p.kkFileId, ...rapor, ...kustom].find((id): id is string => typeof id === "string" && id !== "") ?? null;
+  return [p.aktaFileId, p.kkFileId, ...rapor, ...kustom].filter((id): id is string => typeof id === "string" && id !== "");
+}
+
+/** ID Drive pertama milik pendaftar (berkas apa pun), atau null bila belum ada satu pun di Drive. */
+export function idDrivePertama(p: BarisDrive): string | null {
+  return semuaIdDrive(p)[0] ?? null;
 }
 
 /** Samakan nama folder pendaftar di Drive dengan nama sekarang. Tidak berbuat apa-apa bila belum ada berkas di Drive. */

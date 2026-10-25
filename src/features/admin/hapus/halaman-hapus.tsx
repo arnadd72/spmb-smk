@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -44,13 +44,16 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
   const [periodeDipilih, setPeriodeDipilih] = useState("semua");
   const [kata, setKata] = useState("");
   const [baris, setBaris] = useState<BarisHapus[]>([]);
-  const [dicentang, setDicentang] = useState<Set<string>>(new Set());
+  // Pilihan manual disimpan lengkap (bukan hanya ID) supaya dialog bisa menyebut namanya walau sudah hilang dari hasil pencarian.
+  const [dicentang, setDicentang] = useState<Map<string, BarisHapus>>(new Map());
   const [dariTanggal, setDariTanggal] = useState("");
   const [sampaiTanggal, setSampaiTanggal] = useState("");
   const [dariNomor, setDariNomor] = useState("");
   const [sampaiNomor, setSampaiNomor] = useState("");
-  const [pratinjau, setPratinjau] = useState<HasilPratinjau | null>(null);
-  const [galatPilihan, setGalatPilihan] = useState<string>();
+  // Pratinjau dan galatnya terikat pada pilihan yang menghasilkannya: begitu isian berubah, hasil lama tidak dipakai lagi.
+  const [hasilPratinjau, setHasilPratinjau] = useState<{ kunci: string; data: HasilPratinjau } | null>(null);
+  const [galatRentang, setGalatRentang] = useState<{ kunci: string; pesan: string } | null>(null);
+  const [galatCari, setGalatCari] = useState<string>();
   const [muat, setMuat] = useState(false);
   const [versi, setVersi] = useState(0);
   const [dialog, setDialog] = useState(false);
@@ -61,10 +64,17 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
   // Periode bawaan tab tanggal dan nomor: periode berjalan. Tab manual: semua periode, supaya data uji lama ikut tercari.
   const periodeRentang = periodeDipilih === "semua" ? periodeBawaan : periodeDipilih;
 
+  const pilihan: PilihanHapus | null = useMemo(() => {
+    if (mode === "tanggal" && dariTanggal && sampaiTanggal) return { mode, periode: periodeRentang, dari: dariTanggal, sampai: sampaiTanggal };
+    if (mode === "nomor" && dariNomor !== "" && sampaiNomor !== "") return { mode, periode: periodeRentang, dari: Number(dariNomor), sampai: Number(sampaiNomor) };
+    return null;
+  }, [mode, periodeRentang, dariTanggal, sampaiTanggal, dariNomor, sampaiNomor]);
+  const kunciPilihan = pilihan ? JSON.stringify(pilihan) : null;
+  const pratinjau = hasilPratinjau && hasilPratinjau.kunci === kunciPilihan ? hasilPratinjau.data : null;
+  const galatPilihan = mode === "manual" ? galatCari : galatRentang && galatRentang.kunci === kunciPilihan ? galatRentang.pesan : undefined;
+
   function gantiTab(m: Mode) {
     setMode(m);
-    setPratinjau(null);
-    setGalatPilihan(undefined);
     setPeriodeDipilih(m === "manual" ? "semua" : periodeBawaan);
   }
 
@@ -78,10 +88,10 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
         const { data } = await apiFetch<{ data: BarisHapus[] }>(`/admin/hapus-pendaftar/cari?q=${encodeURIComponent(kata)}&periode=${encodeURIComponent(periodeDipilih)}`);
         if (id === idPermintaan.current) {
           setBaris(data);
-          setGalatPilihan(undefined);
+          setGalatCari(undefined);
         }
       } catch (e) {
-        if (id === idPermintaan.current) setGalatPilihan(pesanGalat(e));
+        if (id === idPermintaan.current) setGalatCari(pesanGalat(e));
       } finally {
         if (id === idPermintaan.current) setMuat(false);
       }
@@ -91,11 +101,7 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
 
   // Tab tanggal dan nomor urut: pratinjau otomatis begitu isiannya lengkap.
   useEffect(() => {
-    if (mode === "manual") return;
-    let pilihan: PilihanHapus | null = null;
-    if (mode === "tanggal" && dariTanggal && sampaiTanggal) pilihan = { mode, periode: periodeRentang, dari: dariTanggal, sampai: sampaiTanggal };
-    if (mode === "nomor" && dariNomor !== "" && sampaiNomor !== "") pilihan = { mode, periode: periodeRentang, dari: Number(dariNomor), sampai: Number(sampaiNomor) };
-    if (!pilihan) return;
+    if (!pilihan || !kunciPilihan) return;
     const id = ++idPermintaan.current;
     const t = setTimeout(async () => {
       setMuat(true);
@@ -106,29 +112,30 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
           body: JSON.stringify(pilihan),
         });
         if (id === idPermintaan.current) {
-          setPratinjau(data);
-          setGalatPilihan(undefined);
+          setHasilPratinjau({ kunci: kunciPilihan, data });
+          setGalatRentang(null);
         }
       } catch (e) {
         if (id === idPermintaan.current) {
-          setPratinjau(null);
-          setGalatPilihan(pesanGalat(e));
+          setHasilPratinjau(null);
+          setGalatRentang({ kunci: kunciPilihan, pesan: pesanGalat(e) });
         }
       } finally {
         if (id === idPermintaan.current) setMuat(false);
       }
     }, 300);
     return () => clearTimeout(t);
-  }, [mode, periodeRentang, dariTanggal, sampaiTanggal, dariNomor, sampaiNomor, versi]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- pilihan ditentukan sepenuhnya oleh kunciPilihan, versi memuat ulang setelah hapus
+  }, [kunciPilihan, versi]);
 
-  const ids = mode === "manual" ? [...dicentang] : (pratinjau?.ids ?? []);
+  const ids = mode === "manual" ? [...dicentang.keys()] : (pratinjau?.ids ?? []);
   const jumlah = ids.length;
 
-  function centang(id: string, nilai: boolean) {
+  function centang(b: BarisHapus, nilai: boolean) {
     setDicentang((lama) => {
-      const baru = new Set(lama);
-      if (nilai) baru.add(id);
-      else baru.delete(id);
+      const baru = new Map(lama);
+      if (nilai) baru.set(b.id, b);
+      else baru.delete(b.id);
       return baru;
     });
   }
@@ -143,7 +150,7 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
       // Yang gagal tetap tercentang supaya bisa dicoba lagi; yang terhapus hilang dari daftar.
       if (mode === "manual") {
         const gagal = new Set(selesai.gagal.map((g) => g.nomor));
-        setDicentang(new Set(baris.filter((b) => gagal.has(b.nomor)).map((b) => b.id)));
+        setDicentang(new Map([...dicentang].filter(([, b]) => gagal.has(b.nomor))));
       }
       setVersi((v) => v + 1);
     }
@@ -151,7 +158,7 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
 
   async function jalankan() {
     setProses({ sedang: true, selesai: 0, total: ids.length });
-    const total: HasilHapus = { terhapus: 0, dilewati: 0, gagal: [] };
+    const total: HasilHapus = { terhapus: 0, dilewati: 0, gagal: [], folderHilang: [] };
     try {
       for (let i = 0; i < ids.length; i += MAKS_PER_PERMINTAAN) {
         const potongan = ids.slice(i, i + MAKS_PER_PERMINTAAN);
@@ -163,6 +170,7 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
         total.terhapus += data.terhapus;
         total.dilewati += data.dilewati;
         total.gagal.push(...data.gagal);
+        total.folderHilang.push(...data.folderHilang);
         setProses({ sedang: true, selesai: Math.min(i + potongan.length, ids.length), total: ids.length });
       }
       setProses({ sedang: false, selesai: ids.length, total: ids.length, hasil: total });
@@ -262,9 +270,9 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
                 <td className="w-12 py-2 pr-2">
                   <input
                     type="checkbox"
-                    aria-label={`Pilih ${b.nama}`}
+                    aria-label={`Pilih ${b.nama} (${b.nomor})`}
                     checked={dicentang.has(b.id)}
-                    onChange={(e) => centang(b.id, e.target.checked)}
+                    onChange={(e) => centang(b, e.target.checked)}
                     className="size-5 accent-[var(--color-bahaya)]"
                   />
                 </td>
@@ -346,6 +354,18 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
                 </ul>
               </div>
             )}
+            {hasil.folderHilang.length > 0 && (
+              <p className="rounded-kontrol border border-garis p-3 text-tinta">
+                Folder Drive tidak ditemukan untuk{" "}
+                {hasil.folderHilang.map((n, i) => (
+                  <span key={n}>
+                    {i > 0 && ", "}
+                    <span className="angka">{n}</span>
+                  </span>
+                ))}
+                . Datanya sudah terhapus; periksa Drive secara manual kalau masih ada folder yang tersisa.
+              </p>
+            )}
             {proses.galat && <p className="text-bahaya">{proses.galat}</p>}
           </div>
         ) : (
@@ -356,6 +376,16 @@ export function HalamanHapus({ periodeBawaan, periode }: Props) {
             }}
             className="flex flex-col gap-3"
           >
+            {mode === "manual" && (
+              <ul aria-label="Pendaftar yang akan dihapus" className="max-h-40 list-disc overflow-y-auto pl-5 text-sm text-tinta">
+                {[...dicentang.values()].slice(0, 10).map((b) => (
+                  <li key={b.id}>
+                    {b.nama} (<span className="angka">{b.nomor}</span>)
+                  </li>
+                ))}
+                {dicentang.size > 10 && <li className="list-none text-tinta-redup">dan {dicentang.size - 10} lainnya</li>}
+              </ul>
+            )}
             <Field label="Password admin Anda" galat={proses.galat}>
               <Input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} disabled={proses.sedang} />
             </Field>

@@ -103,7 +103,7 @@ describe("rute hapus pendaftar", () => {
 
     const benar = await (hapus as Handler)(kirim(URL_DASAR, { ids: [p.id.toString()], password: PASSWORD }));
     expect(benar.status).toBe(200);
-    expect((await benar.json()).data).toEqual({ terhapus: 1, dilewati: 0, gagal: [] });
+    expect((await benar.json()).data).toEqual({ terhapus: 1, dilewati: 0, gagal: [], folderHilang: [] });
     expect(await prisma.pendaftar.count()).toBe(0);
   });
 

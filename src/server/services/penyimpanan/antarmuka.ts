@@ -19,8 +19,10 @@ export interface PenyimpananDokumen {
   /**
    * Hapus folder yang memuat berkas `referensi` beserta isinya, hanya bila namanya diawali `awalanNama` dan bukan folder akar.
    * Pengaman agar berkas yang salah rujuk tidak menyeret folder lain. Driver tanpa folder tidak berbuat apa-apa.
+   * Mengembalikan true bila tidak ada yang perlu dihapus atau folder terhapus, false bila berkas referensi sudah tidak ada di Drive
+   * (404) sehingga foldernya tidak bisa dicari dari sana.
    */
-  hapusFolderInduk(referensi: string, awalanNama: string): Promise<void>;
+  hapusFolderInduk(referensi: string, awalanNama: string): Promise<boolean>;
 }
 
 /** Pecah path jadi segmen folder dan nama berkas. Menolak traversal dan path kosong. */

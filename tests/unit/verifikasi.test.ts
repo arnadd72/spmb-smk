@@ -45,6 +45,7 @@ vi.mock("@/server/services/penyimpanan", async (asli) => ({
       hapusFolderInduk: async (_id: string, awalan: string) => {
         if (drive.gagal) throw new Error("Drive menolak hapus folder");
         drive.folderDihapus.push(awalan);
+        return true;
       },
       gantiNamaFolder: async (_id: string, nama: string) => {
         if (drive.gagal) throw new Error("Drive menolak ganti nama");

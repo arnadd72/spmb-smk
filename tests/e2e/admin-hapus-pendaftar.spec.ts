@@ -57,6 +57,40 @@ test.describe("hapus pendaftar", () => {
     await expect(page.getByRole("button", { name: /^Hapus \d+ pendaftar$/ })).toHaveCount(0);
   });
 
+  test("mengosongkan salah satu tanggal langsung menyembunyikan tombol hapus, bukan memakai pratinjau lama", async ({ page }) => {
+    await masukSebagai(page, "superadmin");
+    await sisipPendaftar(`Uji E2E Peserta Usang ${Date.now()}`);
+    await page.goto("/admin/hapus-pendaftar");
+    await page.getByRole("tab", { name: "Berdasarkan tanggal" }).click();
+    const hari = (selisih: number) => new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Jakarta" }).format(new Date(Date.now() + selisih * 86400_000));
+    await page.getByLabel("Periode").selectOption("2027/2028");
+    await page.getByLabel("Dari tanggal").fill(hari(-1));
+    await page.getByLabel("Sampai tanggal").fill(hari(1));
+    await expect(page.getByRole("button", { name: /^Hapus \d+ pendaftar$/ })).toBeVisible();
+    await page.getByLabel("Sampai tanggal").fill("");
+    await expect(page.getByRole("button", { name: /^Hapus \d+ pendaftar$/ })).toHaveCount(0);
+  });
+
+  test("dialog menyebut nama semua yang dipilih, termasuk dari pencarian sebelumnya", async ({ page }) => {
+    await masukSebagai(page, "superadmin");
+    const stempel = Date.now();
+    const satu = `Uji E2E Peserta Pilih Satu ${stempel}`;
+    const dua = `Uji E2E Peserta Pilih Dua ${stempel}`;
+    await sisipPendaftar(satu);
+    await sisipPendaftar(dua);
+    await page.goto("/admin/hapus-pendaftar");
+    await page.getByLabel("Periode").selectOption("semua");
+    await page.getByLabel("Cari nama atau nomor pendaftaran").fill(satu);
+    await page.getByRole("checkbox", { name: new RegExp(`Pilih ${satu}`) }).check();
+    await page.getByLabel("Cari nama atau nomor pendaftaran").fill(dua);
+    await page.getByRole("checkbox", { name: new RegExp(`Pilih ${dua}`) }).check();
+    await page.getByRole("button", { name: "Hapus 2 pendaftar" }).click();
+    const dialog = page.getByRole("dialog");
+    await expect(dialog.getByText(satu)).toBeVisible();
+    await expect(dialog.getByText(dua)).toBeVisible();
+    await dialog.getByRole("button", { name: "Batal" }).click();
+  });
+
   test("rentang tanggal terbalik ditolak dengan pesan, bukan menghapus semua", async ({ page }) => {
     await masukSebagai(page, "superadmin");
     await page.goto("/admin/hapus-pendaftar");

@@ -68,7 +68,9 @@ class PenyimpananMemori implements PenyimpananDokumen {
     this.berkas.set(ref, isi);
   }
   async gantiNamaFolder() {}
-  async hapusFolderInduk() {}
+  async hapusFolderInduk() {
+    return true;
+  }
 }
 
 describe("ujiPenyimpanan", () => {

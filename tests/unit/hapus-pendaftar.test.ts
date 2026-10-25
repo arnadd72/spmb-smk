@@ -18,9 +18,12 @@ vi.mock("@/server/services/penyimpanan", async (asli) => ({
   penyimpananDokumen: async () => {
     if (!drive.terhubung) throw new Error("Google Drive belum terhubung.");
     return {
-      hapusFolderInduk: async (_id: string, awalan: string) => {
+      // Ber-ID "hilang-..." meniru berkas yang sudah tidak ada di Drive (404): driver mengembalikan false.
+      hapusFolderInduk: async (id: string, awalan: string) => {
         if (drive.gagal) throw new Error("Drive menolak hapus folder");
+        if (id.startsWith("hilang-")) return false;
         drive.folderDihapus.push(awalan);
+        return true;
       },
     };
   },
@@ -119,7 +122,7 @@ describe("hapusPendaftar", () => {
     await prisma.ocrHasil.create({ data: { pendaftarId: p.id, jenis: "akta", fields: { nama: "AHMAD" }, confidence: {}, durasiMs: 10, sukses: true } });
 
     const hasil = await hapusPendaftar(sesi, { ids: [p.id.toString()], password: PASSWORD }, "1.2.3.4");
-    expect(hasil).toEqual({ terhapus: 1, dilewati: 0, gagal: [] });
+    expect(hasil).toEqual({ terhapus: 1, dilewati: 0, gagal: [], folderHilang: [] });
     expect(await prisma.pendaftar.count()).toBe(0);
     expect(await prisma.ocrHasil.count()).toBe(0);
 
@@ -172,12 +175,53 @@ describe("hapusPendaftar", () => {
     expect(await prisma.pendaftar.count()).toBe(1);
   });
 
+  it("berkas pertama sudah hilang di Drive: berkas berikutnya dicoba sampai folder terhapus", async () => {
+    const p = await buatPendaftarUji({ nomor: "SPMB-2027-0001" });
+    await prisma.pendaftar.update({ where: { id: p.id }, data: { aktaFileId: "hilang-akta", kkFileId: "drive-kk" } });
+    const hasil = await hapusPendaftar(sesi, { ids: [p.id.toString()], password: PASSWORD });
+    expect(hasil).toEqual({ terhapus: 1, dilewati: 0, gagal: [], folderHilang: [] });
+    expect(drive.folderDihapus).toEqual(["SPMB-2027-0001 - "]);
+  });
+
+  it("semua berkas sudah hilang di Drive: pendaftar tetap terhapus dan nomornya dilaporkan agar folder diperiksa manual", async () => {
+    const p = await buatPendaftarUji({ nomor: "SPMB-2027-0001" });
+    await prisma.pendaftar.update({ where: { id: p.id }, data: { aktaFileId: "hilang-akta", kkFileId: "hilang-kk" } });
+    const hasil = await hapusPendaftar(sesi, { ids: [p.id.toString()], password: PASSWORD });
+    expect(hasil.terhapus).toBe(1);
+    expect(hasil.folderHilang).toEqual(["SPMB-2027-0001"]);
+    expect(await prisma.pendaftar.count()).toBe(0);
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { aksi: "pendaftar.hapus" } });
+    expect(audit.dataBaru).toEqual({ folderDrive: "tidak-ditemukan" });
+  });
+
+  it("audit yang gagal ditulis membatalkan penghapusan: pendaftar utuh dan dilaporkan gagal", async () => {
+    const p = await buatPendaftarUji({ nomor: "SPMB-2027-0001" });
+    const spy = vi.spyOn(prisma.auditLog, "create").mockImplementationOnce(() => {
+      throw new Error("audit gagal ditulis");
+    });
+    const hasil = await hapusPendaftar(sesi, { ids: [p.id.toString()], password: PASSWORD });
+    spy.mockRestore();
+    expect(hasil.terhapus).toBe(0);
+    expect(hasil.gagal).toHaveLength(1);
+    expect(await prisma.pendaftar.count()).toBe(1);
+  });
+
+  it("20 percobaan salah paralel menghasilkan paling banyak 5 percobaan yang diperiksa, sisanya 429", async () => {
+    const p = await buatPendaftarUji({ nomor: "SPMB-2027-0001" });
+    const hasil = await Promise.allSettled(Array.from({ length: 20 }, () => hapusPendaftar(sesi, { ids: [p.id.toString()], password: "salah" })));
+    const status = hasil.map((h) => (h.status === "rejected" ? (h.reason as GalatApi).status : 200));
+    expect(status.filter((s) => s === 422).length).toBeLessThanOrEqual(5);
+    expect(status.filter((s) => s === 429).length).toBeGreaterThanOrEqual(15);
+    expect(await prisma.percobaanLogin.count({ where: { username: "hapus:1" } })).toBeLessThanOrEqual(5);
+    expect(await prisma.pendaftar.count()).toBe(1);
+  });
+
   it("ID tak sah atau lebih dari 10 ditolak 422, ID yang sudah tidak ada dilewati", async () => {
     expect((await galat(hapusPendaftar(sesi, { ids: ["abc"], password: PASSWORD }))).status).toBe(422);
     expect((await galat(hapusPendaftar(sesi, { ids: [], password: PASSWORD }))).status).toBe(422);
     expect((await galat(hapusPendaftar(sesi, { ids: Array.from({ length: 11 }, (_, i) => String(i + 1)), password: PASSWORD }))).status).toBe(422);
     expect((await galat(hapusPendaftar(sesi, { ids: ["1"] }))).status).toBe(422);
     const hasil = await hapusPendaftar(sesi, { ids: ["999999999"], password: PASSWORD });
-    expect(hasil).toEqual({ terhapus: 0, dilewati: 1, gagal: [] });
+    expect(hasil).toEqual({ terhapus: 0, dilewati: 1, gagal: [], folderHilang: [] });
   });
 });

@@ -2,11 +2,10 @@ import bcrypt from "bcryptjs";
 import type { ZodType } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db/client";
-import { catatAudit } from "@/server/services/audit";
 import type { Berkas, BerkasDraf } from "@/server/services/draf";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
-import { idDrivePertama } from "@/server/services/pendaftaran";
+import { semuaIdDrive } from "@/server/services/pendaftaran";
 import { GalatApi } from "@/server/types/galat";
 import type { BarisHapus, HasilHapus, HasilPratinjau } from "@/server/types/hapusPendaftar";
 import { MAKS_HAPUS, skemaHapus, skemaPilihanHapus, type PilihanHapus } from "@/server/validasi/hapusPendaftar";
@@ -92,16 +91,19 @@ export async function pratinjauHapus(mentah: unknown): Promise<HasilPratinjau> {
 async function pastikanPassword(userId: string, password: string, ip?: string): Promise<void> {
   const penanda = `hapus:${userId}`;
   const sejak = new Date(Date.now() - JENDELA_MENIT * 60_000);
-  const salah = await prisma.percobaanLogin.count({ where: { username: penanda, berhasil: false, createdAt: { gte: sejak } } });
-  if (salah >= BATAS_SALAH) throw GalatApi.terlaluBanyak();
+  // Periksa batas dan catat percobaan dalam satu langkah yang dikunci per pengguna: permintaan paralel tidak bisa lolos
+  // bersamaan karena masing-masing melihat hitungan sebelum percobaannya sendiri dicatat. Berhasil = catatan dihapus.
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${penanda}))`;
+    const salah = await tx.percobaanLogin.count({ where: { username: penanda, berhasil: false, createdAt: { gte: sejak } } });
+    if (salah >= BATAS_SALAH) throw GalatApi.terlaluBanyak();
+    await tx.percobaanLogin.create({ data: { username: penanda, ip, berhasil: false } });
+  });
 
   const user = await prisma.user.findUnique({ where: { id: BigInt(userId) } });
   if (!user || !user.isActive) throw GalatApi.tidakTerautentikasi();
   if (user.peran !== "superadmin") throw GalatApi.dilarang();
-  if (!(await bcrypt.compare(password, user.passwordHash))) {
-    await prisma.percobaanLogin.create({ data: { username: penanda, ip, berhasil: false } });
-    throw GalatApi.validasi({ password: ["Password salah."] });
-  }
+  if (!(await bcrypt.compare(password, user.passwordHash))) throw GalatApi.validasi({ password: ["Password salah."] });
   await prisma.percobaanLogin.deleteMany({ where: { username: penanda } });
 }
 
@@ -116,7 +118,7 @@ export async function hapusPendaftar(sesi: { sub: string }, mentah: unknown, ip?
   const input = urai(skemaHapus, mentah);
   await pastikanPassword(sesi.sub, input.password, ip);
 
-  const hasil: HasilHapus = { terhapus: 0, dilewati: 0, gagal: [] };
+  const hasil: HasilHapus = { terhapus: 0, dilewati: 0, gagal: [], folderHilang: [] };
   for (const idTeks of input.ids) {
     const p = await prisma.pendaftar.findUnique({ where: { id: BigInt(idTeks) } });
     if (!p) {
@@ -124,25 +126,44 @@ export async function hapusPendaftar(sesi: { sub: string }, mentah: unknown, ip?
       continue;
     }
     try {
-      const idDrive = idDrivePertama(p);
-      if (idDrive) {
+      // Coba tiap berkas Drive sampai folder ditemukan dan terhapus; bila semuanya sudah hilang dari Drive, pendaftar tetap
+      // dihapus dan nomornya dilaporkan supaya folder yang mungkin tersisa diperiksa manual.
+      const idDrive = semuaIdDrive(p);
+      let folderHilang = false;
+      if (idDrive.length > 0) {
         if (!(await statusDrive().catch(() => ({ terhubung: false }))).terhubung) {
           throw new Error("Google Drive belum terhubung, folder berkas tidak bisa dihapus.");
         }
-        await (await penyimpananDokumen()).hapusFolderInduk(idDrive, `${p.nomorPendaftaran} - `);
+        const drive = await penyimpananDokumen();
+        let folderTerhapus = false;
+        for (const id of idDrive) {
+          if (await drive.hapusFolderInduk(id, `${p.nomorPendaftaran} - `)) {
+            folderTerhapus = true;
+            break;
+          }
+        }
+        folderHilang = !folderTerhapus;
       }
       const temp = penyimpananTemp();
       for (const ref of refSementara(p.berkasMeta)) await temp.hapus(ref).catch(() => undefined);
 
-      await prisma.$transaction([prisma.ocrHasil.deleteMany({ where: { pendaftarId: p.id } }), prisma.pendaftar.delete({ where: { id: p.id } })]);
-      await catatAudit({
-        userId: sesi.sub,
-        aksi: "pendaftar.hapus",
-        entitasTipe: "pendaftar",
-        entitasId: p.id.toString(),
-        dataLama: { nomor: p.nomorPendaftaran, nama: p.namaLengkap, periode: p.periode, sumber: p.sumber },
-        ip,
-      });
+      // Audit ikut dalam transaksi yang sama: tidak ada pendaftar terhapus tanpa catatan, dan galat audit tidak salah dilaporkan.
+      await prisma.$transaction([
+        prisma.ocrHasil.deleteMany({ where: { pendaftarId: p.id } }),
+        prisma.pendaftar.delete({ where: { id: p.id } }),
+        prisma.auditLog.create({
+          data: {
+            userId: BigInt(sesi.sub),
+            aksi: "pendaftar.hapus",
+            entitasTipe: "pendaftar",
+            entitasId: p.id.toString(),
+            dataLama: { nomor: p.nomorPendaftaran, nama: p.namaLengkap, periode: p.periode, sumber: p.sumber },
+            ...(folderHilang ? { dataBaru: { folderDrive: "tidak-ditemukan" } } : {}),
+            ip,
+          },
+        }),
+      ]);
+      if (folderHilang) hasil.folderHilang.push(p.nomorPendaftaran);
       hasil.terhapus++;
     } catch (e) {
       hasil.gagal.push({ nomor: p.nomorPendaftaran, pesan: e instanceof Error ? e.message : "Gagal menghapus pendaftar." });

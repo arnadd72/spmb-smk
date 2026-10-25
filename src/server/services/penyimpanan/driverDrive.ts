@@ -63,12 +63,12 @@ export class DriverDrive implements PenyimpananDokumen {
     this.cacheFolder.clear();
   }
 
-  async hapusFolderInduk(referensi: string, awalanNama: string): Promise<void> {
+  async hapusFolderInduk(referensi: string, awalanNama: string): Promise<boolean> {
     let induk: string | undefined;
     try {
       induk = (await this.drive.files.get({ fileId: referensi, fields: "parents" })).data.parents?.[0];
     } catch (e) {
-      if (kodeGalat(e) === 404) return; // berkas sudah tidak ada di Drive (dihapus manual): tidak ada yang perlu dihapus
+      if (kodeGalat(e) === 404) return false; // berkas sudah tidak ada di Drive (dihapus manual): foldernya tidak bisa dicari dari sini
       throw e;
     }
     if (!induk || induk === this.idFolderRoot) throw new Error("Folder induk adalah folder akar atau tidak ditemukan, tidak dihapus.");
@@ -76,6 +76,7 @@ export class DriverDrive implements PenyimpananDokumen {
     if (!folder.data.name?.startsWith(awalanNama)) throw new Error("Folder tidak cocok dengan pendaftar, tidak dihapus.");
     await this.drive.files.delete({ fileId: induk });
     this.cacheFolder.clear();
+    return true;
   }
 
   async ada(referensi: string): Promise<boolean> {

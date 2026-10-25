@@ -169,3 +169,20 @@ Rencana audit (read-only dulu, baru perbaikan):
 - Berikutnya: Tahap 2 (uji kecepatan), Tahap 3 (migrasi, butuh persetujuan pemilik), Tahap 4 (cabut Cloudinary).
 - Tes yang sudah gagal sebelum poin B (perubahan rekan setim, belum diperbaiki): akses-admin, dokumen x2, formbuilder, peserta, seed
   (email kini wajib), tanya.
+
+## Hasil Tahap 2 B: uji kecepatan foto web lewat Drive (26 Okt 2026)
+
+Build produksi lokal (`next start`), Drive sekolah sungguhan, satu foto uji 2400x1350 (42 KB) lalu dihapus lagi.
+- Kompresi: tersimpan WebP 1600 px, 7,3 KB.
+- `/api/v1/media/{id}` langsung: 2,8 dtk (pertama), lalu 1,3-1,5 dtk. Lokal tidak ada cache CDN, jadi setiap panggilan ke Drive.
+- Lewat `next/image` (yang dipakai halaman): 1,45 dtk pertama kali, lalu 11-24 ms dari cache optimasi.
+- Header: `Cache-Control: public, max-age=31536000, immutable` dan `nosniff` terkirim.
+- ID berkas KK pendaftar lewat route media: 404 `{"message":"Gambar tidak ditemukan."}`.
+- Kesimpulan: lambat hanya pada muat pertama tiap gambar per ukuran; setelah itu cepat. Di Vercel, CDN menambah cache di depan.
+
+## Status D (26 Okt 2026)
+
+Selesai di branch `feat/penyimpanan-drive` (PRD butir 68): menu "Cek Pendaftaran" di `/cek-pendaftaran` (alamat lama dialihkan), unduh ulang
+formulir PDF lewat sesi, email wajib untuk semua pendaftar (termasuk luring), email dan Tanya Sunan menunjuk Cek Pendaftaran, migrasi data FAQ.
+Migrasi `20261026120000_cek_pendaftaran` (dan `20261025090000_tes_minat_bakat` milik rekan setim) belum di-deploy ke Supabase: butuh
+persetujuan pemilik.

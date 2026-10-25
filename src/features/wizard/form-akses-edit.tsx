@@ -32,7 +32,7 @@ export function FormAksesEdit() {
     setSibuk(true);
     try {
       await apiFetch<{ berhasil: boolean }>("/edit-formulir/akses", jsonPost(cek.data));
-      router.push("/edit-formulir/form");
+      router.push("/cek-pendaftaran/form");
     } catch (err) {
       if (err instanceof ApiError && err.errors) {
         const peta: Record<string, string> = {};
@@ -57,7 +57,7 @@ export function FormAksesEdit() {
       </Field>
       {galatUmum && <PesanGalat pesan={galatUmum} />}
       <Button type="submit" ukuran="lg" memuat={sibuk} className="w-full">
-        {sibuk ? "Memeriksa data" : "Lanjut ke edit formulir"}
+        {sibuk ? "Memeriksa data" : "Buka pendaftaran"}
       </Button>
     </form>
   );

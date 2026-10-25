@@ -17,7 +17,7 @@ const TOMBOL_CEPAT = [
   { label: "Tes minat", tanya: "Apa itu tes minat bakat?" },
   { label: "Jurusan", tanya: "Jurusan apa saja yang ada?" },
   { label: "Rekomendasi", tanya: "Bagaimana rekomendasi jurusan dihitung?" },
-  { label: "Edit formulir", tanya: "Bagaimana cara mengedit formulir pendaftaran?" },
+  { label: "Cek pendaftaran", tanya: "Bagaimana cara melihat, mengubah, atau mengunduh ulang formulir pendaftaran?" },
 ];
 
 const SAPAAN: Pesan = {

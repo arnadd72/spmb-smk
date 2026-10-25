@@ -2,19 +2,34 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import { sisipPendaftar } from "./masuk";
 
-// Edit Formulir: pendaftar membuka formulirnya sendiri dengan nomor dan tanggal lahir, lalu bisa mengganti
+// Cek Pendaftaran (dulu Edit Formulir, poin D): pendaftar membuka formulirnya sendiri dengan nomor dan tanggal lahir, lalu bisa mengganti
 // foto Akta, KK, dan pas foto (PRD 1.3 butir 66).
 const PNG = Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==", "base64");
 
 async function masukEdit(page: Page, nomor: string) {
-  await page.goto("/edit-formulir");
+  await page.goto("/cek-pendaftaran");
   await page.getByLabel("Nomor pendaftaran").fill(nomor);
   await page.getByLabel("Tanggal lahir").fill("2011-05-17");
-  await page.getByRole("button", { name: "Lanjut ke edit formulir" }).click();
-  await expect(page).toHaveURL(/\/edit-formulir\/form$/, { timeout: 30_000 });
+  await page.getByRole("button", { name: "Buka pendaftaran" }).click();
+  await expect(page).toHaveURL(/\/cek-pendaftaran\/form$/, { timeout: 30_000 });
 }
 
-test.describe("edit formulir oleh pendaftar", () => {
+test.describe("cek pendaftaran oleh pendaftar", () => {
+  test("unduh ulang formulir PDF dari sesi Cek Pendaftaran; tanpa sesi ditolak (poin D)", async ({ page, browser }) => {
+    const a = await sisipPendaftar(`Uji E2E Peserta Unduh Ulang ${Date.now()}`);
+    await masukEdit(page, a.nomor);
+    const tautan = page.getByRole("link", { name: "Unduh ulang formulir (PDF)" });
+    await expect(tautan).toBeVisible();
+    const res = await page.request.get((await tautan.getAttribute("href"))!);
+    expect(res.status()).toBe(200);
+    expect(res.headers()["content-type"]).toBe("application/pdf");
+    expect(res.headers()["content-disposition"]).toBe(`attachment; filename="Formulir-${a.nomor}.pdf"`);
+
+    const tanpaSesi = await browser.newContext({ baseURL: test.info().project.use.baseURL });
+    expect((await tanpaSesi.request.get("/api/v1/edit-formulir/formulir")).status()).toBe(401);
+    await tanpaSesi.close();
+  });
+
   test("mengganti KK dan pas foto: langsung tersimpan dan pratinjau tampil; lolos axe", async ({ page }) => {
     test.setTimeout(120_000);
     const a = await sisipPendaftar(`Uji E2E Peserta Edit Berkas ${Date.now()}`, { berkas: true });

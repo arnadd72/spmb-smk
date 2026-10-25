@@ -67,7 +67,7 @@ export const FAQ = [
   },
   {
     pertanyaan: "Bagaimana cara mengecek status pendaftaran?",
-    jawaban: "Buka halaman Cek Status, lalu isi nomor pendaftaran dan tanggal lahir sesuai yang Anda daftarkan.",
+    jawaban: "Buka halaman Cek Pendaftaran, lalu isi nomor pendaftaran dan tanggal lahir sesuai yang Anda daftarkan. Di sana Anda bisa melihat data, memperbaikinya, dan unduh ulang formulir PDF.",
     keywords: ["status", "cek", "hasil", "nomor", "pendaftaran", "diterima"],
     kategori: "Status",
   },

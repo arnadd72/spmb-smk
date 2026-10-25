@@ -130,12 +130,16 @@ export function jawabanAturan(pertanyaan: string, k: Konteks): Jawaban | null {
     };
   }
 
-  if (ada("edit formulir", "ubah formulir") && ada("buat apa", "untuk apa", "fungsi", "guna", "manfaat", "cara", "bagaimana", "akses", "buka")) {
+  // Cek Pendaftaran menggantikan Cek Status dan Edit Formulir (poin D): satu halaman untuk melihat, mengubah, dan
+  // mengunduh ulang formulir, termasuk bagi pendaftar yang lupa mengunduh PDF setelah kirim.
+  const tanyaHalaman = ada("cek status", "cek pendaftaran", "edit formulir", "ubah formulir") && ada("buat apa", "untuk apa", "fungsi", "guna", "manfaat", "cara", "bagaimana", "akses", "buka", "dapat apa");
+  const tanyaUnduhUlang = ada("formulir", "pdf") && ada("lupa", "unduh ulang", "download ulang", "cetak ulang", "unduh lagi", "download lagi", "hilang", "belum unduh", "belum download");
+  if (tanyaHalaman || tanyaUnduhUlang) {
     return {
       sumber: "aturan",
       jawaban:
-        "Untuk mengedit data pendaftaran, masukkan nomor pendaftaran dan tanggal lahir pada halaman Edit Formulir. Setelah cocok, data formulir dapat diperbarui dan disimpan.",
-      tautan: [{ label: "Buka Edit Formulir", href: "/edit-formulir" }],
+        "Buka halaman Cek Pendaftaran, lalu masukkan nomor pendaftaran dan tanggal lahir. Setelah cocok, Anda bisa melihat data, memperbaiki isian atau foto berkas yang keliru, dan unduh ulang formulir PDF kapan saja, termasuk bila lupa mengunduhnya setelah mendaftar. Nomor pendaftaran ada di email yang dikirim setelah pendaftaran.",
+      tautan: [{ label: "Buka Cek Pendaftaran", href: "/cek-pendaftaran" }],
     };
   }
 
@@ -205,7 +209,7 @@ function instruksiSistem(k: Konteks): string {
     konfig.kontak ? `Kontak panitia: ${konfig.kontak}.` : "",
     konfig.persyaratan ? `Persyaratan: ${konfig.persyaratan.slice(0, 1200)}` : "",
     "Alur: daftar tanpa akun di halaman Daftar (8 langkah: persetujuan dan identitas; akta dan KK opsional, dibaca otomatis di HP untuk membantu mengisi dan hasilnya bisa diperbaiki; tes minat bakat opsional, 15 soal yang sama dengan halaman Tes Minat Bakat; saran jurusan dari hasil tes bila dikerjakan, atau pilih jurusan sendiri bila tidak; nilai rapor tidak diminta; data murid dengan pas foto 3x4; data orang tua; data pendidikan, kesehatan, dan seragam; tinjau dan kirim). Ijazah fisik opsional. Setelah kirim pendaftar mendapat nomor pendaftaran, formulir PDF yang bisa diunduh atau dicetak, dan tombol bergabung ke grup WhatsApp pendaftar.",
-    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. Tes yang sama ada di langkah 3 pendaftaran untuk saran jurusan. (2) Edit Formulir: masukkan nomor pendaftaran dan tanggal lahir untuk membuka serta memperbarui data formulir. (3) Jurusan, Berita, dan FAQ di menu situs.",
+    "Fitur situs: (1) Tes Minat Bakat di menu Tes Minat Bakat (halaman /tes-minat-bakat): 15 pertanyaan pilihan A sampai D tanpa jawaban benar atau salah, hasilnya dihitung di HP pengunjung, tidak disimpan, dan hanya gambaran awal yang tidak menentukan penerimaan atau pilihan jurusan. Tes yang sama ada di langkah 3 pendaftaran untuk saran jurusan. (2) Cek Pendaftaran (halaman /cek-pendaftaran, dulu Cek Status dan Edit Formulir): masukkan nomor pendaftaran dan tanggal lahir untuk melihat data, memperbaiki isian dan foto berkas, serta unduh ulang formulir PDF. (3) Jurusan, Berita, dan FAQ di menu situs.",
     konfig.waGroup.startsWith("https://")
       ? "Grup WhatsApp: pendaftar wajib bergabung ke grup WhatsApp pendaftar. Pengumuman jadwal datang ke sekolah dan berkas yang dibawa disampaikan lewat grup ini. Tautan grup muncul di halaman pendaftaran berhasil setelah formulir dikirim."
       : "",

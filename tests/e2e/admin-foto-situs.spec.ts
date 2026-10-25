@@ -46,14 +46,14 @@ test.describe("admin: foto situs di halaman Galeri", () => {
     await expect(kartu.getByText("Diganti", { exact: true })).toBeVisible();
     await expect(kartu.getByRole("img")).toHaveAttribute("src", URL_UNGGAHAN);
 
-    await page.goto("/cek-status");
+    await page.goto("/cek-pendaftaran");
     await expect(page.locator("header img").first()).toHaveAttribute("src", URL_UNGGAHAN);
 
     await page.goto("/admin/foto-beranda");
     await page.getByRole("button", { name: /Kembalikan ke foto bawaan: Logo sekolah/ }).click();
     await expect(page.locator('[data-aset="logo"]').getByText("Bawaan", { exact: true })).toBeVisible();
 
-    await page.goto("/cek-status");
+    await page.goto("/cek-pendaftaran");
     await expect(page.locator("header img").first()).toHaveAttribute("src", /logo-sekolah/);
   });
 

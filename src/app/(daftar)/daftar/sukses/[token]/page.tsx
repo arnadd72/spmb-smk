@@ -75,14 +75,13 @@ export default async function HalamanSukses({ params }: PageProps<"/daftar/sukse
         <ol className="mt-3 list-decimal space-y-2 pl-5 text-tinta">
           <li>Pendaftaran Anda langsung diterima, tanpa menunggu pemeriksaan panitia.</li>
           <li>Bawa akta dan kartu keluarga saat datang ke sekolah sesuai jadwal di grup WhatsApp.</li>
-          <li>Status pendaftaran bisa dilihat kapan saja lewat halaman Cek Status.</li>
-          <li>Perbarui data lewat halaman Edit Formulir.</li>
+          <li>Lihat dan perbarui data, atau unduh ulang formulir, kapan saja lewat halaman Cek Pendaftaran.</li>
         </ol>
         <Link
-          href="/edit-formulir"
+          href="/cek-pendaftaran"
           className="mt-5 inline-flex min-h-11 items-center rounded-kontrol border border-primer px-4 text-sm font-semibold text-primer-tua hover:bg-permukaan-alt print:hidden"
         >
-          Buka Edit Formulir
+          Buka Cek Pendaftaran
         </Link>
       </section>
     </div>

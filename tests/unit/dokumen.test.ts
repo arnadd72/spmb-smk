@@ -31,6 +31,15 @@ import { PNG, isiLengkap, nilaiValid } from "../fixture-wizard";
 
 void buatFormulirPdf;
 const ctx = { userId: "1", ip: "127.0.0.1" };
+
+async function galat(p: Promise<unknown>) {
+  try {
+    await p;
+  } catch (e) {
+    return e as { status: number };
+  }
+  throw new Error("Seharusnya melempar galat.");
+}
 const AKTIF = "2027/2028";
 
 async function bersih() {
@@ -182,7 +191,11 @@ describe("email kode pendaftaran", () => {
     const e = emailKodePendaftaran({ ...data, aksesToken: undefined, waGroup: "javascript:alert(1)" });
     expect(e.html).not.toContain("/daftar/sukses/");
     expect(e.html).not.toContain("javascript:");
-    expect(e.html).toContain("/cek-status");
+    expect(e.html).toContain("/cek-pendaftaran");
+    expect(e.html).toContain("Cek pendaftaran");
+    expect(e.html).not.toContain("/edit-formulir");
+    expect(e.teks).toContain("Cek pendaftaran (lihat, ubah, unduh ulang formulir): https://");
+    expect(e.teks).toMatch(/\/cek-pendaftaran$/m);
   });
 });
 
@@ -230,9 +243,11 @@ describe("pengiriman email", () => {
 
   it("tanpa email atau pendaftar luring tidak dikirimi", async () => {
     process.env.RESEND_API_KEY = "re_uji";
-    const h = await buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", email: "" }, ctx);
-    const p = await prisma.pendaftar.findUniqueOrThrow({ where: { id: BigInt(h.id) } });
-    expect(p.email).toBeNull();
+    // Email wajib untuk semua pendaftar, termasuk luring (poin D): input manual tanpa email ditolak.
+    expect((await galat(buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", email: "" }, ctx))).status).toBe(422);
+    // Data lama tanpa email tetap dilewati pengirim.
+    const h = await buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", email: "lama@contoh.id" }, ctx);
+    const p = await prisma.pendaftar.update({ where: { id: BigInt(h.id) }, data: { email: null } });
     expect((await kirimKodePendaftaran(p.nomorPendaftaran)).dilewatiKarena).toBe("tanpa-email");
     await buatPendaftarManual({ ...(await isianManual()), jurusan_1: "AKL", email: "luring@contoh.id" }, ctx);
     expect((await kirimUlangEmailTertunda()).diproses).toBe(0); // luring tidak masuk antrean kirim ulang

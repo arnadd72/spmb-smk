@@ -89,10 +89,10 @@ describe("seed form field", () => {
     ]);
   });
 
-  it("nomor ijazah tidak dipakai; email dan no_wa opsional, NIK wajib", async () => {
+  it("nomor ijazah tidak dipakai; email dan NIK wajib, no_wa opsional (poin D)", async () => {
     const f = await prisma.formField.findMany({ where: { kunci: { in: ["email", "no_wa", "nik"] } } });
     const wajib = Object.fromEntries(f.map((x) => [x.kunci, x.wajib]));
-    expect(wajib).toEqual({ email: false, no_wa: false, nik: true });
+    expect(wajib).toEqual({ email: true, no_wa: false, nik: true });
     expect(await prisma.formField.findMany({ where: { kunci: { in: ["no_ijazah", "ijazah_nomor_tahun"] } } })).toHaveLength(0);
   });
 

@@ -119,7 +119,7 @@ describe("jawabPertanyaan: aturan dan FAQ", () => {
     expect(r.sumber).toBe("faq");
     expect(r.jawaban).toMatch(/Akta Kelahiran/);
     expect((await jawabPertanyaan("saya kehilangan nomor pendaftaran")).jawaban).toMatch(/tautan halaman sukses/);
-    expect((await jawabPertanyaan("cara cek status pendaftaran")).jawaban).toMatch(/halaman Cek Status/);
+    expect((await jawabPertanyaan("cara cek status pendaftaran")).jawaban).toMatch(/halaman Cek Pendaftaran/);
   });
 
   it("pertanyaan yang cocok dengan FAQ dijawab dari FAQ dan memberi pertanyaan terkait", async () => {
@@ -160,16 +160,14 @@ describe("jawabPertanyaan: fitur situs yang sering ditanyakan", () => {
     expect(r.jawaban).not.toMatch(/wajib bergabung ke grup WhatsApp/);
   });
 
-  it("pertanyaan fungsi Cek Status dijawab fungsinya, bukan cara membukanya", async () => {
-    for (const q of ["cek status buat apa?", "setelah cek status dapat apa?", "apa fungsi cek status"]) {
+  it("Cek Pendaftaran (dulu Cek Status dan Edit Formulir): fungsi, cara membuka, dan unduh ulang formulir (poin D)", async () => {
+    for (const q of ["cek status buat apa?", "apa fungsi cek pendaftaran", "bagaimana cara edit formulir", "saya lupa download formulir pdf", "cara cetak ulang formulir"]) {
       const r = await jawabPertanyaan(q, "ip-status");
-      expect(r.sumber).toBe("aturan");
-      expect(r.jawaban).toMatch(/memantau perkembangan/);
-      expect(r.jawaban).toMatch(/langsung diterima/);
-      expect(r.tautan?.[0].href).toBe("/cek-status");
+      expect(r.sumber, q).toBe("aturan");
+      expect(r.jawaban, q).toMatch(/nomor pendaftaran dan tanggal lahir/);
+      expect(r.jawaban, q).toMatch(/unduh ulang formulir/);
+      expect(r.tautan?.[0], q).toEqual({ label: "Buka Cek Pendaftaran", href: "/cek-pendaftaran" });
     }
-    // Pertanyaan cara tetap dijawab FAQ.
-    expect((await jawabPertanyaan("cara cek status pendaftaran", "ip-status")).sumber).toBe("faq");
   });
 });
 

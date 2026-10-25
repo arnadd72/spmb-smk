@@ -54,10 +54,10 @@ test("jawaban aturan memuat tautan, dan pertanyaan kosong tidak terkirim", async
   await expect(dialog.getByRole("link", { name: "Lihat semua jurusan" })).toHaveAttribute("href", "/jurusan");
 });
 
-test("chatbot juga ada di halaman pendaftaran dan cek status, tetapi tidak di panel admin", async ({ page }) => {
+test("chatbot juga ada di halaman pendaftaran dan cek pendaftaran, tetapi tidak di panel admin", async ({ page }) => {
   await page.goto("/daftar");
   await expect(page.getByRole("button", { name: "Tanya Sunan" })).toBeVisible();
-  await page.goto("/cek-status");
+  await page.goto("/cek-pendaftaran");
   await expect(page.getByRole("button", { name: "Tanya Sunan" })).toBeVisible();
 
   await masukSebagai(page, "panitia");

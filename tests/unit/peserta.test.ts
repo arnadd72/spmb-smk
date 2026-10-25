@@ -181,12 +181,14 @@ describe("detail dan ubah data pendaftar", () => {
   });
 
   it("mengosongkan field opsional menulis null; mengganti jurusan memperbarui relasi", async () => {
+    // Email kini wajib (poin D), jadi uji mengosongkan isian yang memang opsional.
     const p = await pendaftarDariWizard();
-    expect(p.email).not.toBeNull();
     const d = await ambilPeserta(p.id.toString());
-    await ubahPeserta(p.id.toString(), { ...d.nilai, email: "", jurusan_1: "TKR", jurusan_2: "" }, ctx);
+    await ubahPeserta(p.id.toString(), { ...d.nilai, penyakit_pernah_diderita: "Asma" }, ctx);
+    expect((await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } })).penyakitPernahDiderita).toBe("Asma");
+    await ubahPeserta(p.id.toString(), { ...d.nilai, penyakit_pernah_diderita: "", jurusan_1: "TKR", jurusan_2: "" }, ctx);
     const baru = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id }, include: { jurusan1: true } });
-    expect(baru.email).toBeNull();
+    expect(baru.penyakitPernahDiderita).toBeNull();
     expect(baru.jurusan1?.kode).toBe("TKR");
     expect(baru.jurusan2Id).toBeNull();
   });

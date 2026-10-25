@@ -57,12 +57,13 @@ const dasar = (f: Awaited<ReturnType<typeof daftarFieldAdmin>>[number]) => ({ la
 
 describe("ubah isian bawaan", () => {
   it("label, bantuan, wajib, dan urutan berubah, dicatat di audit; wizard membaca perubahan itu", async () => {
-    const f = (await daftarFieldAdmin()).find((x) => x.kunci === "hobi_lain")!;
+    // hobi_* kini selalu wajib (KUNCI_WAJIB), jadi uji memakai isian yang memang opsional.
+    const f = (await daftarFieldAdmin()).find((x) => x.kunci === "penyakit_pernah_diderita")!;
     expect(f.wajib).toBe(false);
-    await ubahField("hobi_lain", { ...dasar(f), label: "Kegiatan lain", teksBantuan: "Isi bila ada", wajib: true, urutan: 5 }, ctx);
+    await ubahField("penyakit_pernah_diderita", { ...dasar(f), label: "Riwayat penyakit", teksBantuan: "Isi bila ada", wajib: true, urutan: 5 }, ctx);
 
-    const baru = (await muatDefinisiField()).find((x) => x.kunci === "hobi_lain")!;
-    expect([baru.label, baru.teksBantuan, baru.wajib, baru.urutan]).toEqual(["Kegiatan lain", "Isi bila ada", true, 5]);
+    const baru = (await muatDefinisiField()).find((x) => x.kunci === "penyakit_pernah_diderita")!;
+    expect([baru.label, baru.teksBantuan, baru.wajib, baru.urutan]).toEqual(["Riwayat penyakit", "Isi bila ada", true, 5]);
     const audit = await prisma.auditLog.findFirstOrThrow({ where: { aksi: "formfield.ubah" } });
     expect((audit.dataLama as { wajib: boolean }).wajib).toBe(false);
     expect((audit.dataBaru as { wajib: boolean }).wajib).toBe(true);

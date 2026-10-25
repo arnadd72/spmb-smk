@@ -315,7 +315,7 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
 
 type BarisPendaftar = NonNullable<Awaited<ReturnType<typeof cari>>>;
 
-function cari(where: { aksesTokenHash: string } | { nomorPendaftaran: string }) {
+function cari(where: { aksesTokenHash: string } | { nomorPendaftaran: string } | { id: bigint }) {
   return prisma.pendaftar.findUnique({ where, include: { jurusan1: true, jurusan2: true } });
 }
 
@@ -418,6 +418,15 @@ async function formatTanggalVerifikasi(): Promise<string | null> {
 export async function formulirDariToken(aksesToken: string): Promise<{ pdf: Uint8Array; nomor: string } | null> {
   if (!/^[A-Za-z0-9_-]{20,80}$/.test(aksesToken)) return null;
   const p = await cari({ aksesTokenHash: hashToken(aksesToken) });
+  if (!p) return null;
+  const { pdf } = await buatFormulirPdf({ ...dataFormulirDari(p, await formatTanggalVerifikasi()), pasFoto: await muatPasFoto(p) });
+  return { pdf, nomor: p.nomorPendaftaran };
+}
+
+/** Unduh ulang dari Cek Pendaftaran (poin D): ID pendaftar dari sesi yang sudah diverifikasi. Null bila tidak dikenal. */
+export async function formulirDariId(id: string): Promise<{ pdf: Uint8Array; nomor: string } | null> {
+  if (!/^\d{1,18}$/.test(id)) return null;
+  const p = await cari({ id: BigInt(id) });
   if (!p) return null;
   const { pdf } = await buatFormulirPdf({ ...dataFormulirDari(p, await formatTanggalVerifikasi()), pasFoto: await muatPasFoto(p) });
   return { pdf, nomor: p.nomorPendaftaran };

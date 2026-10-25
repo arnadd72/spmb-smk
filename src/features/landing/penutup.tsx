@@ -68,9 +68,9 @@ export function Penutup({ logo }: { logo: string }) {
             </Link>
           </Magnetik>
           <Magnetik className="sm:inline-block" kekuatan={0.4}>
-            <Link data-aksi href="/edit-formulir" className="block">
+            <Link data-aksi href="/cek-pendaftaran" className="block">
               <Button varian="terang" ukuran="lg" className="w-full sm:w-auto">
-                Edit Formulir
+                Cek Pendaftaran
               </Button>
             </Link>
           </Magnetik>

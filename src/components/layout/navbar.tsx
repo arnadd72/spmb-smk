@@ -13,7 +13,7 @@ const tautan = [
   { href: "/#alur-daftar", label: "Alur Daftar" },
   { href: "/berita", label: "Berita" },
   { href: "/#faq", label: "FAQ" },
-  { href: "/edit-formulir", label: "Edit Formulir" },
+  { href: "/cek-pendaftaran", label: "Cek Pendaftaran" },
 ];
 
 export function Navbar({ logo }: { logo: string }) {

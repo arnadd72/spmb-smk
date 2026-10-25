@@ -170,16 +170,17 @@ test.describe("wizard pendaftaran manual", () => {
     await page.goto("/daftar/langkah/3");
     await expect(page).toHaveURL(/\/daftar$/);
 
-    // Cek status
-    await page.goto("/cek-status");
+    // Cek Pendaftaran (dulu Cek Status, poin D)
+    await page.goto("/cek-pendaftaran");
     await page.getByLabel("Nomor pendaftaran").fill(nomor);
     await page.getByLabel("Tanggal lahir").fill("2011-05-18");
-    await page.getByRole("button", { name: "Cek status" }).click();
+    await page.getByRole("button", { name: "Buka pendaftaran" }).click();
     await expect(page.getByText("Nomor pendaftaran atau tanggal lahir tidak cocok.")).toBeVisible();
     await page.getByLabel("Tanggal lahir").fill("2011-05-17");
-    await page.getByRole("button", { name: "Cek status" }).click();
-    await expect(page.getByText("Diterima", { exact: true })).toBeVisible(); // langsung diterima (PRD 1.3 butir 62)
-    await expect(page.getByText(NAMA)).toBeVisible();
+    await page.getByRole("button", { name: "Buka pendaftaran" }).click();
+    await expect(page).toHaveURL(/\/cek-pendaftaran\/form$/);
+    await expect(page.getByRole("heading", { level: 1, name: NAMA })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Unduh ulang formulir (PDF)" })).toBeVisible();
     await axe(page);
   });
 });

@@ -59,7 +59,7 @@ export function FormEditPublik({ fields, nilaiAwal, berkas }: Props) {
         body: JSON.stringify(isi),
       });
       await apiFetch<void>("/edit-formulir/akses", { method: "DELETE" }).catch(() => undefined);
-      router.replace("/edit-formulir?berhasil=1");
+      router.replace("/cek-pendaftaran?berhasil=1");
     } catch (error) {
       if (error instanceof ApiError && error.errors) {
         const petaServer: Record<string, string> = {};

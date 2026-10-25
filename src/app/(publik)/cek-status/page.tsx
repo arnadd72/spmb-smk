@@ -1,7 +1,6 @@
 import { redirect } from "next/navigation";
 
-export const metadata = { title: "Edit formulir" };
-
+// Cek Status digabung ke Cek Pendaftaran (poin D); alamat lama tetap berfungsi.
 export default function HalamanCekStatus() {
-  redirect("/edit-formulir");
+  redirect("/cek-pendaftaran");
 }

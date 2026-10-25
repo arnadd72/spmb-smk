@@ -179,7 +179,8 @@ export async function selarasFolderDrive(id: bigint): Promise<void> {
   try {
     if (!(await statusDrive()).terhubung) throw new Error("Google Drive belum terhubung.");
     await selarasNamaFolder(p, await penyimpananDokumen());
-  } catch {
+  } catch (e) {
+    console.error(`[drive] ganti nama folder ${p.nomorPendaftaran} gagal:`, e instanceof Error ? e.message : e);
     if (p.berkasSinkron === "selesai") await prisma.pendaftar.update({ where: { id }, data: { berkasSinkron: "menunggu" } });
   }
 }

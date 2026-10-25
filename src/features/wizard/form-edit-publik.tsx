@@ -4,6 +4,7 @@ import { useState, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
 import { BooksIcon, FolderOpenIcon, IdentificationCardIcon, InfoIcon, StudentIcon, UserIcon, UsersThreeIcon, type Icon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
+import { Dialog } from "@/components/ui/dialog";
 import { Bidang } from "@/features/wizard/bidang";
 import { BerkasEdit, type AntreanBerkas, type BerkasTersimpan } from "@/features/wizard/berkas-edit";
 import { NAMA_LANGKAH, fieldBiasa, skemaLangkah, type DefinisiField } from "@/features/wizard/schema-client";
@@ -17,7 +18,7 @@ const IKON: Record<number, Icon> = { 1: IdentificationCardIcon, 4: BooksIcon, 5:
 export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props) {
   const router = useRouter();
   const langkahAda = [...new Set(fields.map((field) => field.langkah))].sort((a, b) => a - b);
-  const [awal] = useState<Record<string, unknown>>(() => {
+  const [awal, setAwal] = useState<Record<string, unknown>>(() => {
     const hasil: Record<string, unknown> = {};
     for (const field of fields) {
       const nilaiLama = nilaiAwal[field.kunci];
@@ -29,6 +30,8 @@ export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props)
   const [galat, setGalat] = useState<Record<string, string>>({});
   const [galatUmum, setGalatUmum] = useState<string>();
   const [menyimpan, setMenyimpan] = useState(false);
+  const [tersimpan, setTersimpan] = useState(false);
+  const [keluar, setKeluar] = useState(false);
   // Berkas pengganti ditampung di sini dan baru diunggah saat Simpan perubahan (PRD 1.3 butir 73).
   const [berkas, setBerkas] = useState(berkasAwal);
   const [antrean, setAntrean] = useState<AntreanBerkas>({});
@@ -96,6 +99,7 @@ export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props)
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(isi),
       });
+      setAwal(nilai); // isian sudah tersimpan: jadi dasar perhitungan "diubah" berikutnya
       const gagal = await unggahAntrean();
       if (Object.keys(gagal).length > 0) {
         // Isian sudah tersimpan; hanya berkas yang gagal tetap di antrean untuk dicoba lagi.
@@ -104,8 +108,8 @@ export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props)
         document.getElementById("bagian-berkas")?.scrollIntoView({ behavior: "smooth", block: "start" });
         return;
       }
-      await apiFetch<void>("/edit-formulir/akses", { method: "DELETE" }).catch(() => undefined);
-      router.replace("/cek-pendaftaran?berhasil=1");
+      // Sesi edit dipertahankan: pendaftar memilih lanjut mengubah atau selesai lewat dialog.
+      setTersimpan(true);
     } catch (error) {
       if (error instanceof ApiError && error.errors) {
         const petaServer: Record<string, string> = {};
@@ -118,6 +122,12 @@ export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props)
     } finally {
       setMenyimpan(false);
     }
+  }
+
+  async function selesai() {
+    setKeluar(true);
+    await apiFetch<void>("/edit-formulir/akses", { method: "DELETE" }).catch(() => undefined);
+    router.replace("/cek-pendaftaran?berhasil=1");
   }
 
   return (
@@ -236,6 +246,23 @@ export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props)
           </Button>
         </div>
       </div>
+
+      <Dialog
+        buka={tersimpan}
+        onBukaChange={(buka) => !keluar && setTersimpan(buka)}
+        judul="Perubahan sudah tersimpan"
+        deskripsi="Data dan berkas Anda sudah diperbarui. Mau mengubah lagi atau selesai?"
+        aksi={
+          <>
+            <Button type="button" varian="sekunder" disabled={keluar} onClick={() => setTersimpan(false)}>
+              Lanjut ubah
+            </Button>
+            <Button type="button" memuat={keluar} onClick={selesai}>
+              Selesai dan keluar
+            </Button>
+          </>
+        }
+      />
     </form>
   );
 }

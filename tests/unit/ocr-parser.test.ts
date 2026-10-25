@@ -254,3 +254,29 @@ describe("parseAkta: format kalimat Kutipan Akta Kelahiran", () => {
     expect(h.peringatan.join(" ")).toMatch(/tidak ditemukan/);
   });
 });
+
+describe("tempat lahir akta dipotong di batasnya (laporan pemilik, 26 Okt 2026)", () => {
+  const tempatDari = (baris: string[]) => parseAkta(dariBaris(baris)).fields.tempat_lahir.nilai;
+
+  it("tulisan hari yang salah baca dan nama hari tidak ikut menjadi tempat lahir", () => {
+    expect(tempatDari(["temyata, bahwa di. Bandar Lampung. bhan Senin", "pada tanggal Dua puluh enam Agustus"])).toBe("BANDAR LAMPUNG");
+    expect(tempatDari(["ternyata, bahwa di Bandar Lampung, hari Senin"])).toBe("BANDAR LAMPUNG");
+    expect(tempatDari(["ternyata, bahwa di Kudus hari Sabtu Wage"])).toBe("KUDUS");
+    expect(tempatDari(["bahwa di Kabupaten Banyumas han Selasa"])).toBe("BANYUMAS");
+    expect(tempatDari(["bahwa di Kota Bandung Jumat"])).toBe("BANDUNG");
+  });
+
+  it("nama tempat dua kata yang sah tetap utuh", () => {
+    expect(tempatDari(["bahwa di Bandar Lampung pada tanggal dua puluh"])).toBe("BANDAR LAMPUNG");
+    expect(tempatDari(["bahwa di Tanjung Pinang, pada tanggal"])).toBe("TANJUNG PINANG");
+  });
+});
+
+describe("parseKk: nama wilayah yang menempel pada awalan Kota atau Kabupaten", () => {
+  it("KOTADUMAI menjadi KOTA DUMAI; nama tanpa awalan tidak berubah", () => {
+    const h = parseKk(sel([["No.1472022612050006", 380, 40], ["Kabupaten/Kota", 20, 80], ["KOTADUMAI", 220, 80], ["Provinsi", 600, 80], ["RIAU", 760, 80]]), "");
+    expect(h.fields.kabupaten.nilai).toBe("KOTA DUMAI");
+    const s = parseKk(sel([["No.3404080111110002", 380, 40], ["Kabupaten/Kota", 20, 80], ["SLEMAN", 220, 80]]), "");
+    expect(s.fields.kabupaten.nilai).toBe("SLEMAN");
+  });
+});

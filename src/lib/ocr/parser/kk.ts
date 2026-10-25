@@ -243,7 +243,9 @@ export function parseKk(baris: BarisOcr[], namaTarget: string): HasilKk {
         const p = cocokProvinsi(nilai, levenshtein);
         if (p && !fields.propinsi.nilai) fields.propinsi = bungkus(p, PROVINSI[noKk.slice(0, 2)] === p ? "HIGH" : "MEDIUM");
       } else if (["alamat", "desa", "kecamatan", "kabupaten"].includes(lb.kunci) && !fields[lb.kunci].nilai) {
-        const v = nilai.replace(/[^A-Za-z0-9 .,'/-]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+        let v = nilai.replace(/[^A-Za-z0-9 .,'/-]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+        // "KOTADUMAI" menjadi "KOTA DUMAI". Nama yang memang diawali Kota (Kotamobagu, Kotabaru, Kotawaringin) dibiarkan.
+        if (lb.kunci === "kabupaten") v = v.replace(/^(KOTA|KABUPATEN)(?=(?!MOBAGU|BARU|WARINGIN|GAJAH|BUMI|ANYAR|AGUNG|BANGUN)[A-Z]{4,}$)/, "$1 ");
         const sehat = lb.kunci === "alamat" ? v.replace(/[^A-Z0-9]/g, "").length >= 3 : namaWajar(v);
         fields[lb.kunci] = sehat ? bungkus(v, yakin) : { nilai: "", keyakinan: "LOW" };
       }

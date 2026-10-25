@@ -24,6 +24,7 @@ const J_TANGGAL = /\b(?:p\w{0,2}\s*\w?\s*da\s+)?ta\w{0,2}g+\w{0,2}l\b|\blanggal\
 const J_LAHIR = /\b(?:telah|tela|telan)\b|\blahir\b/i;
 const J_DARI = /\bdari\b/i;
 const J_ORTU = /(ayah|suami|isteri|istri|1steri|lsteri)/i;
+const NAMA_HARI = new Set(["senin", "selasa", "rabu", "kamis", "jumat", "sabtu", "minggu", "ahad", "wage", "pon", "legi", "pahing", "kliwon"]);
 const J_AKHIR_KLAUSA = /(kutipan|excerpt|perkawinan|dikeluarkan|sesuai dengan|kepala\b|head of)/i;
 /** Baris terjemahan bahasa Inggris pada akta dwibahasa: dibuang dari bagian berbahasa Indonesia. */
 const INGGRIS = /\b(that in|on date|on year|was born|thousand|twenty|thirty|child\s*no|chld|from father|and mother|daughter|registry|excerpt|by virtue)\b/i;
@@ -73,10 +74,15 @@ export function parseAkta(baris: BarisOcr[], namaTarget = ""): HasilAkta {
   // ---- tempat lahir: "bahwa di <TEMPAT>" sampai "pada tanggal", koma, atau "hari"
   const iBahwa = teks.findIndex((t) => J_BAHWA.test(t));
   if (iBahwa >= 0) {
-    const sisa = teks[iBahwa].slice(teks[iBahwa].search(J_BAHWA)).replace(J_BAHWA, "");
-    const potong = sisa.split(/\bpada\b|\bta\w{0,2}g+\w{0,2}l\b|,|\bhari\b|\bhan\b|\bthat\b/i)[0];
+    const sisa = teks[iBahwa].slice(teks[iBahwa].search(J_BAHWA)).replace(J_BAHWA, "").replace(/^[\W_]+/, "");
+    // Nama tempat berhenti di tanda baca pertama, "pada tanggal", atau kata hari. Tulisan "hari" sering salah baca ("han", "bhan").
+    const potong = sisa.split(/[.,;:]|\bpada\b|\bta\w{0,2}g+\w{0,2}l\b|\bhari\b|\bthat\b/i)[0];
     // Awalan wilayah dibuang di mana pun posisinya (OCR bisa mengulang: "Kabu Kabupaten Kudus").
-    const tempat = potong.replace(/[^A-Za-z\s]/g, " ").replace(/\b(kab\w*|kota)\b/gi, " ").replace(/\s+/g, " ").trim();
+    const kata = potong.replace(/[^A-Za-z\s]/g, " ").replace(/\b(kab\w*|kota)\b/gi, " ").replace(/\s+/g, " ").trim().split(" ");
+    // Nama hari ("Senin", "Wage") dan sisa kata "hari" di depannya ("han", "bhan") bukan bagian nama tempat.
+    const iHari = kata.findIndex((t) => NAMA_HARI.has(t.toLowerCase()));
+    const batas = iHari < 0 ? kata.length : iHari > 0 && /^(b|l)?h[a-z]{1,3}$/i.test(kata[iHari - 1]) ? iHari - 1 : iHari;
+    const tempat = kata.slice(0, batas).join(" ");
     if (tempat.replace(/\s/g, "").length >= 3 && !hurufBerspasi(potong)) {
       fields.tempat_lahir = bungkus(tempat.toUpperCase(), keyakinan(lines[iBahwa].skor));
     }

@@ -134,6 +134,13 @@ describe("DriverDrive", () => {
     expect(del).not.toHaveBeenCalled();
   });
 
+  it("hapusFolderInduk tidak melempar dan tidak menghapus apa pun bila berkas sudah tidak ada (404)", async () => {
+    const { drive, get, del } = driveTiruan();
+    get.mockRejectedValueOnce(Object.assign(new Error("not found"), { code: 404 }));
+    await expect(new DriverDrive(drive, "root-id").hapusFolderInduk("file-hilang", "SPMB-2027-0001 - ")).resolves.toBeUndefined();
+    expect(del).not.toHaveBeenCalled();
+  });
+
   it("menolak path traversal sebelum memanggil Drive", async () => {
     const { drive, create } = driveTiruan();
     await expect(new DriverDrive(drive, "root-id").simpan("a/../b", Buffer.from("x"))).rejects.toThrow();

@@ -157,7 +157,7 @@ const namaAman = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").trim().toUpperCas
 type BarisDrive = { aktaFileId: string | null; kkFileId: string | null; raporFileIds: unknown; kustomFileIds: unknown };
 
 /** ID Drive pertama milik pendaftar (berkas apa pun), atau null bila belum ada satu pun di Drive. */
-function idDrivePertama(p: BarisDrive): string | null {
+export function idDrivePertama(p: BarisDrive): string | null {
   const kustom = Object.values((p.kustomFileIds ?? {}) as Record<string, string | string[]>).flat();
   const rapor = Array.isArray(p.raporFileIds) ? (p.raporFileIds as (string | null)[]) : [];
   return [p.aktaFileId, p.kkFileId, ...rapor, ...kustom].find((id): id is string => typeof id === "string" && id !== "") ?? null;

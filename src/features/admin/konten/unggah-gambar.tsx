@@ -5,9 +5,10 @@ import { ImageIcon, UploadSimpleIcon, XIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import type { KategoriMedia } from "./schema-client";
 
 /** Isian gambar: tempel alamat atau unggah berkas (JPG, PNG, WebP, maks 5 MB). Pratinjau tampil di bawahnya. */
-export function UnggahGambar({ nilai, onChange }: { nilai: string; onChange: (v: string) => void }) {
+export function UnggahGambar({ kategori, nilai, onChange }: { kategori?: KategoriMedia; nilai: string; onChange: (v: string) => void }) {
   const input = useRef<HTMLInputElement>(null);
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState<string>();
@@ -19,6 +20,7 @@ export function UnggahGambar({ nilai, onChange }: { nilai: string; onChange: (v:
     try {
       const form = new FormData();
       form.set("berkas", f);
+      if (kategori) form.set("kategori", kategori); // tanpa kategori server menolak dengan pesan yang jelas
       const { url } = await apiFetch<{ url: string }>("/admin/media", { method: "POST", body: form });
       onChange(url);
     } catch (e) {

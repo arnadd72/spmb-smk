@@ -3,6 +3,7 @@ import type { drive_v3 } from "googleapis";
 import { pecahPath, type PenyimpananDokumen } from "./antarmuka";
 
 const MIME_FOLDER = "application/vnd.google-apps.folder";
+const KUNCI_TANDA = "spmb";
 
 /**
  * Penyimpanan dokumen pendaftar di Google Drive (scope drive.file). File dan folder tidak pernah
@@ -16,14 +17,15 @@ export class DriverDrive implements PenyimpananDokumen {
     private readonly idFolderRoot: string,
   ) {}
 
-  async simpan(path: string, isi: Buffer, mime = "application/octet-stream"): Promise<string> {
+  /** `publik` menandai berkas (appProperties) sebagai foto web yang boleh dikirim route media; dokumen pendaftar tidak pernah. */
+  async simpan(path: string, isi: Buffer, mime = "application/octet-stream", opsi: { publik?: boolean } = {}): Promise<string> {
     const { folder, nama } = pecahPath(path);
 
     let induk = this.idFolderRoot;
     for (const f of folder) induk = await this.pastikanFolder(f, induk);
 
     const res = await this.drive.files.create({
-      requestBody: { name: nama, parents: [induk] },
+      requestBody: { name: nama, parents: [induk], ...(opsi.publik ? { appProperties: { [KUNCI_TANDA]: "publik" } } : {}) },
       media: { mimeType: mime, body: Readable.from(isi) },
       fields: "id",
     });
@@ -48,6 +50,18 @@ export class DriverDrive implements PenyimpananDokumen {
       return !res.data.trashed;
     } catch (e) {
       if (kodeGalat(e) === 404) return false;
+      throw e;
+    }
+  }
+
+  /** MIME berkas bila bertanda publik dan tidak terhapus; null untuk selain itu, termasuk berkas yang tidak ada. */
+  async metadataPublik(referensi: string): Promise<{ mime: string } | null> {
+    try {
+      const res = await this.drive.files.get({ fileId: referensi, fields: "mimeType,trashed,appProperties" });
+      const d = res.data;
+      return !d.trashed && d.appProperties?.[KUNCI_TANDA] === "publik" && d.mimeType ? { mime: d.mimeType } : null;
+    } catch (e) {
+      if (kodeGalat(e) === 404) return null;
       throw e;
     }
   }

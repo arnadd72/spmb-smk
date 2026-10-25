@@ -62,3 +62,9 @@ __pycache__/
 
 # runtime WASM OCR, disalin dari node_modules oleh scripts/salin-wasm-ocr.mjs
 /public/ocr/ort/
+
+# Foto contoh OCR berisi data pribadi asli, jangan di-commit
+/docs/ocr/
+
+# Ruang kerja agen (ledger rencana), bukan kode
+/.superpowers/

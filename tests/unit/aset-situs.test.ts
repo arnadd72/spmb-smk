@@ -100,7 +100,7 @@ describe("daftar dan penggantian foto situs", () => {
   });
 
   it("mengembalikan ke bawaan menghapus pilihan dan file unggahan lama", async () => {
-    const url = await simpanMedia(PNG);
+    const url = await simpanMedia(PNG, "logo");
     dibuat.push(url);
     expect(existsSync(ke(url))).toBe(true);
 
@@ -113,8 +113,8 @@ describe("daftar dan penggantian foto situs", () => {
   });
 
   it("mengganti dengan foto baru membuang file unggahan sebelumnya", async () => {
-    const lama = await simpanMedia(PNG);
-    const baru = await simpanMedia(Buffer.concat([PNG, Buffer.from([1])]));
+    const lama = await simpanMedia(PNG, "logo");
+    const baru = await simpanMedia(Buffer.concat([PNG, Buffer.from([1])]), "jurusan");
     dibuat.push(lama, baru);
 
     await gantiAset("jurusan-TKR", { url: lama }, ctx);

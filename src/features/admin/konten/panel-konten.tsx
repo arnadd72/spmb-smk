@@ -107,7 +107,7 @@ export function IsiForm({
         return (
           <Field key={f.kunci} label={f.label} wajib={f.wajib} bantuan={f.bantuan} galat={pesan}>
             {f.tipe === "gambar" ? (
-              <UnggahGambar nilai={String(nilai[f.kunci] ?? "")} onChange={(v) => ubah(f.kunci, v)} />
+              <UnggahGambar kategori={f.kategori} nilai={String(nilai[f.kunci] ?? "")} onChange={(v) => ubah(f.kunci, v)} />
             ) : f.tipe === "area" || f.tipe === "html" || f.tipe === "daftarTeks" ? (
               <Textarea
                 rows={f.tipe === "html" ? 10 : f.tipe === "daftarTeks" ? 5 : 4}

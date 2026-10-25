@@ -3,6 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { mkdtempSync } from "node:fs";
 import { Readable } from "node:stream";
+import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 process.env.DRAF_TEMP_DIR = mkdtempSync(path.join(os.tmpdir(), "spmb-verif-"));
@@ -12,6 +13,7 @@ const drive = vi.hoisted(() => ({
   terhubung: true,
   gagal: false,
   isi: new Map<string, Buffer>(),
+  path: [] as string[],
   n: 0,
 }));
 vi.mock("@/server/services/penyimpanan/driveOAuth", async (asli) => ({
@@ -23,8 +25,9 @@ vi.mock("@/server/services/penyimpanan", async (asli) => ({
   penyimpananDokumen: async () => {
     if (!drive.terhubung) throw new Error("Google Drive belum terhubung.");
     return {
-      simpan: async (_p: string, isi: Buffer) => {
+      simpan: async (p: string, isi: Buffer) => {
         if (drive.gagal) throw new Error("Drive menolak unggahan");
+        drive.path.push(p);
         const id = `drive-${++drive.n}`;
         drive.isi.set(id, isi);
         return id;
@@ -71,6 +74,7 @@ beforeEach(async () => {
   drive.terhubung = true;
   drive.gagal = false;
   drive.isi.clear();
+  drive.path.length = 0;
   await prisma.user.create({
     data: {
       id: BigInt(1),
@@ -263,3 +267,46 @@ async function penyimpananTempAda(ref: string) {
   const { penyimpananTemp } = await import("@/server/services/penyimpanan");
   return penyimpananTemp().ada(ref);
 }
+
+describe("kompresi dan folder Drive (poin B)", () => {
+  const pngBesar = () =>
+    sharp({ create: { width: 3000, height: 3000, channels: 3, background: { r: 200, g: 200, b: 200 } } }).png().toBuffer();
+
+  it("berkas pendaftar tersimpan di {periode}/pendaftar/{nomor} - {NAMA}/", async () => {
+    const p = await pendaftarWizard();
+    expect((await sinkronBerkasPendaftar(p.id.toString(), ctx)).status).toBe("selesai");
+    expect(drive.path.length).toBeGreaterThan(0);
+    for (const x of drive.path) expect(x).toMatch(/^[^/]+\/pendaftar\/SPMB-[^/]+ - [^/]+\/[a-z_]+\.\w+$/);
+  });
+
+  it("unggahan panitia dikompres: akta besar menjadi JPEG maksimal 2000 px", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    drive.terhubung = false;
+    const asli = await pngBesar();
+    const daftar = await unggahBerkasPendaftar(id, "akta", asli, "akta.png", ctx);
+    expect(daftar.find((d) => d.kunci === "akta")).toMatchObject({ mime: "image/jpeg" });
+    const { aliran } = await bukaBerkas(id, "akta", 0, ctx);
+    const isi = await baca(aliran);
+    expect(isi.length).toBeLessThan(asli.length);
+    expect((await sharp(isi).metadata()).width).toBe(2000);
+  });
+
+  it("poin C: pas foto dari Edit Formulir masuk folder pendaftar di Drive, lalu admin dan pendaftar membacanya dari Drive", async () => {
+    const p = await pendaftarWizard();
+    const id = p.id.toString();
+    const foto = await sharp({ create: { width: 1200, height: 1600, channels: 3, background: { r: 30, g: 60, b: 90 } } }).jpeg().toBuffer();
+
+    const daftar = await unggahBerkasPendaftar(id, "pas_foto", foto, "pas foto.jpg", { ip: "1.2.3.4" });
+    expect(daftar.find((d) => d.kunci === "pas_foto")?.sumber).toBe("drive");
+    expect(drive.path.some((x) => /^[^/]+\/pendaftar\/SPMB-[^/]+ - [^/]+\/pas_foto\.jpg$/.test(x))).toBe(true);
+
+    const b = await prisma.pendaftar.findUniqueOrThrow({ where: { id: p.id } });
+    const idDrive = (b.kustomFileIds as Record<string, string>).pas_foto;
+    for (const c of [ctx, undefined]) {
+      const { aliran, mime } = await bukaBerkas(id, "pas_foto", 0, c);
+      expect(mime).toBe("image/jpeg");
+      expect((await baca(aliran)).equals(drive.isi.get(idDrive)!)).toBe(true);
+    }
+  });
+});

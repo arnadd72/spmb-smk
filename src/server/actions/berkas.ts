@@ -6,6 +6,7 @@ import { adalahRefCloudinary } from "@/server/services/penyimpanan/driverCloudin
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { pindahkanKeDrive } from "@/server/services/pendaftaran";
 import { MAKS_UKURAN_BYTE, deteksiMime, type Berkas, type BerkasDraf } from "@/server/services/draf";
+import { kompresGambar, profilBerkas } from "@/server/services/kompresi";
 import { buatTokenAcak } from "@/server/services/kripto";
 import { GalatApi } from "@/server/types/galat";
 import type { Prisma } from "@/generated/prisma/client";
@@ -157,7 +158,7 @@ export async function sinkronSemuaTertunda(ctx?: KonteksAksi, batas = 25) {
 // ------------------------------------------------------------------ ganti, tambah, hapus berkas oleh panitia atau pendaftar
 
 // Foto rapor tidak lagi diunggah (PRD butir 40); berkas rapor lama (bila ada) masih bisa dilihat dan dihapus.
-// Pas foto bisa diganti juga (PRD 1.3 butir 66): masuk Cloudinary bila dikonfigurasi, selain itu menunggu Drive.
+// Pas foto bisa diganti juga (PRD 1.3 butir 66): seperti berkas lain, menunggu Drive.
 export const KUNCI_BERKAS_GANTI = ["akta", "kk", "pas_foto"] as const;
 
 const bersihNama = (nama: string) => nama.replace(/[^\w.\- ]+/g, "_").slice(0, 80) || "berkas";
@@ -204,11 +205,12 @@ export async function unggahBerkasPendaftar(
   if (!p) throw GalatApi.tidakDitemukan("Pendaftar tidak ditemukan.");
   const meta = { ...((p.berkasMeta ?? {}) as BerkasDraf) };
   const temp = penyimpananTemp();
+  const hemat = await kompresGambar(isi, jenis.mime, profilBerkas(kunci));
   const baru: Berkas = {
-    ref: await temp.simpan(`admin/${p.nomorPendaftaran}/${kunci}-${buatTokenAcak(8)}.${jenis.ext}`, isi, jenis.mime),
+    ref: await temp.simpan(`admin/${p.nomorPendaftaran}/${kunci}-${buatTokenAcak(8)}.${hemat.ext}`, hemat.isi, hemat.mime),
     nama: bersihNama(namaAsli),
-    mime: jenis.mime,
-    ukuran: isi.length,
+    mime: hemat.mime,
+    ukuran: hemat.isi.length,
   };
 
   const data: Prisma.PendaftarUpdateInput = {};
@@ -224,7 +226,7 @@ export async function unggahBerkasPendaftar(
     data.kustomFileIds = kustomId;
   }
   data.berkasMeta = JSON.parse(JSON.stringify(meta));
-  // Pas foto di Cloudinary tidak menunggu Drive; selain itu berkas baru menunggu disinkronkan.
+  // Pas foto lama di Cloudinary tidak menunggu Drive; berkas baru menunggu disinkronkan.
   data.berkasSinkron = adaYangTertunda(meta, {
     aktaFileId: kunci === "akta" ? null : p.aktaFileId,
     kkFileId: kunci === "kk" ? null : p.kkFileId,

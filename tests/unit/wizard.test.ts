@@ -2,6 +2,7 @@
 import os from "node:os";
 import path from "node:path";
 import { mkdtempSync } from "node:fs";
+import sharp from "sharp";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 process.env.DRAF_TEMP_DIR = mkdtempSync(path.join(os.tmpdir(), "spmb-draf-"));
@@ -12,6 +13,7 @@ import { dekripsi, enkripsi } from "@/server/services/kripto";
 import { cekStatus, kirimPendaftaran, ambilRingkasanSukses } from "@/server/services/pendaftaran";
 import { formulirDariToken } from "@/server/services/pdf/formulir";
 import { simpanPengaturan } from "@/server/services/pengaturan";
+import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatJurusanAktif } from "@/server/services/rekomendasi";
 import { JURUSAN_MINAT, SOAL_MINAT, VERSI_MINAT } from "@/server/validasi/minat";
 import { skemaLangkah } from "@/server/validasi/wizard";
@@ -309,5 +311,42 @@ describe("cek status", () => {
     expect((await galat(cekStatus({ nomor: "X", tanggalLahir: "2011-05-17" }, "2.2.2.2"))).status).toBe(429);
     // IP lain tidak terpengaruh
     expect((await galat(cekStatus({ nomor: "X", tanggalLahir: "2011-05-17" }, "3.3.3.3"))).status).toBe(404);
+  });
+});
+
+describe("kompresi berkas wizard (poin B)", () => {
+  const gambar = (width: number, height: number) =>
+    sharp({ create: { width, height, channels: 3, background: { r: 90, g: 120, b: 150 } } }).png().toBuffer();
+  const bacaTemp = async (ref: string) => {
+    const bagian: Buffer[] = [];
+    for await (const b of await penyimpananTemp().ambilStream(ref)) bagian.push(Buffer.from(b));
+    return Buffer.concat(bagian);
+  };
+
+  it("akta dikompres menjadi JPEG, ukuran tercatat dari hasil kompresi", async () => {
+    const { token } = await buatDraf();
+    const asli = await gambar(3000, 2000);
+    const b = await unggahBerkas(token, "akta", asli, "akta.png");
+    expect(b.mime).toBe("image/jpeg");
+    expect(b.ref).toMatch(/\.jpg$/);
+    const isi = await bacaTemp(b.ref);
+    expect(b.ukuran).toBe(isi.length);
+    expect(isi.length).toBeLessThan(asli.length);
+    expect((await sharp(isi).metadata()).width).toBe(2000);
+  });
+
+  it("pas foto muat dalam 900x1200", async () => {
+    const { token } = await buatDraf();
+    const b = await unggahBerkas(token, "pas_foto", await gambar(1800, 2400), "foto.png");
+    const m = await sharp(await bacaTemp(b.ref)).metadata();
+    expect(m.width).toBeLessThanOrEqual(900);
+    expect(m.height).toBeLessThanOrEqual(1200);
+  });
+
+  it("PDF tersimpan identik", async () => {
+    const { token } = await buatDraf();
+    const pdf = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.alloc(200, 7)]);
+    const b = await unggahBerkas(token, "akta", pdf, "akta.pdf");
+    expect((await bacaTemp(b.ref)).equals(pdf)).toBe(true);
   });
 });

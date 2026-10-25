@@ -37,11 +37,9 @@ function penyimpananSementaraLama(): PenyimpananDokumen | null {
   return new DriverSupabaseTemp(supabase, process.env.SUPABASE_BUCKET_DRAFT ?? "draf-temp");
 }
 
-const POLA_PAS_FOTO = /(^|\/)pas_foto-[^/]*$/;
-
 /**
- * Pas foto baru masuk Cloudinary (rujukan berawalan "cld:"); berkas lain dan rujukan lama tetap di penyimpanan sementara lama.
- * Membaca dan menghapus dipilih dari rujukannya, jadi pas foto lama di Supabase tetap bisa dibuka sampai dimigrasi.
+ * Semua berkas baru, termasuk pas foto, masuk penyimpanan sementara lalu ke Google Drive. Pas foto lama di Cloudinary
+ * (rujukan berawalan "cld:") masih dibaca dan dihapus dari sana sampai dimigrasi ke Drive.
  */
 class PenyimpananGabungan implements PenyimpananDokumen {
   constructor(
@@ -59,7 +57,7 @@ class PenyimpananGabungan implements PenyimpananDokumen {
   }
 
   simpan(path: string, isi: Buffer, mime?: string) {
-    return POLA_PAS_FOTO.test(path) ? this.cld.simpan(path, isi, mime) : this.lamaAtauGalat().simpan(path, isi, mime);
+    return this.lamaAtauGalat().simpan(path, isi, mime);
   }
   ambilStream(ref: string) {
     return this.untukRef(ref).ambilStream(ref);
@@ -73,8 +71,8 @@ class PenyimpananGabungan implements PenyimpananDokumen {
 }
 
 /**
- * Penyimpanan berkas sementara wizard dan pas foto. Dengan Cloudinary terpasang, pas foto disimpan di sana (terautentikasi);
- * tanpa Cloudinary perilakunya sama seperti sebelumnya.
+ * Penyimpanan berkas sementara wizard dan pas foto. Dengan Cloudinary terpasang, pas foto lama di Cloudinary masih terbaca;
+ * unggahan baru selalu ke penyimpanan sementara.
  */
 export function penyimpananTemp(): PenyimpananDokumen {
   const c = konfigCloudinary();

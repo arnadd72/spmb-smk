@@ -19,7 +19,7 @@ const FIELD: DefField[] = [
   { kunci: "prospekKarir", label: "Prospek karier", tipe: "daftarTeks", bantuan: "Satu baris satu butir." },
   { kunci: "keunggulan", label: "Keunggulan", tipe: "daftarTeks", bantuan: "Satu baris satu butir. Teks contoh, final dari sekolah." },
   { kunci: "kuota", label: "Kuota (daya tampung)", tipe: "angka", wajib: true, bantuan: "0 sampai 1000." },
-  { kunci: "gambar", label: "Foto jurusan", tipe: "gambar" },
+  { kunci: "gambar", label: "Foto jurusan", tipe: "gambar", kategori: "jurusan" },
   { kunci: "urutan", label: "Urutan tampil", tipe: "angka", awal: 0 },
   { kunci: "isActive", label: "Tampilkan di situs", tipe: "centang", awal: true },
 ];

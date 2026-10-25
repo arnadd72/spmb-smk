@@ -89,14 +89,15 @@ describe("unggah dan hapus lewat REST", () => {
     expect(init.body.get("public_id")).toBe("spmb/x/1");
   });
 
-  it("simpanMedia memakai Cloudinary bila dikonfigurasi dan mengembalikan URL f_auto,q_auto", async () => {
+  it("simpanMedia tidak lagi mengunggah ke Cloudinary walau dikonfigurasi (poin B)", async () => {
     vi.stubEnv("CLOUDINARY_CLOUD_NAME", K.cloud);
     vi.stubEnv("CLOUDINARY_API_KEY", K.kunci);
     vi.stubEnv("CLOUDINARY_API_SECRET", K.rahasia);
-    fetchPalsu.mockImplementation(async (_u: string, init: { body: FormData }) => new Response(JSON.stringify({ public_id: init.body.get("public_id") }), { status: 200 }));
 
-    const url = await simpanMedia(JPEG);
-    expect(url).toMatch(/^https:\/\/res\.cloudinary\.com\/demo\/image\/upload\/f_auto,q_auto\/spmb\/konten\/\d{4}\/\d{2}\/[A-Za-z0-9_-]+$/);
+    const url = await simpanMedia(JPEG, "berita");
+    expect(url.startsWith("https://res.cloudinary.com/")).toBe(false);
+    expect(fetchPalsu).not.toHaveBeenCalled();
+    await hapusMediaBila(url);
   });
 
   it("hapusMediaBila menghapus gambar Cloudinary miliknya dan mengabaikan alamat luar", async () => {

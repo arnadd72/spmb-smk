@@ -34,6 +34,7 @@ function KartuAset({
     try {
       const form = new FormData();
       form.set("berkas", f);
+      form.set("kategori", aset.kunci === "logo" ? "logo" : aset.kunci === "hero" ? "hero" : "jurusan");
       const { url } = await apiFetch<{ url: string }>("/admin/media", {
         method: "POST",
         body: form,

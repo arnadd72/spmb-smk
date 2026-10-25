@@ -47,6 +47,31 @@ describe("DriverDrive", () => {
     expect(panggilan[2]).toMatchObject({ name: "akta.jpg", parents: ["id-SPMB-2027-0001 - AHMAD"] });
   });
 
+  it("opsi publik menandai berkas dengan appProperties; tanpa opsi tidak ada tanda", async () => {
+    const { drive, create } = driveTiruan({ folderSudahAda: "folder-ada" });
+    const d = new DriverDrive(drive, "root-id");
+
+    await d.simpan("situs/galeri/a.webp", Buffer.from("x"), "image/webp", { publik: true });
+    await d.simpan("situs/galeri/b.webp", Buffer.from("x"), "image/webp");
+
+    const badan = create.mock.calls.map((c) => c[0].requestBody as { appProperties?: Record<string, string> });
+    expect(badan[0].appProperties).toEqual({ spmb: "publik" });
+    expect(badan[1].appProperties).toBeUndefined();
+  });
+
+  it("metadataPublik hanya mengembalikan berkas publik yang tidak terhapus", async () => {
+    const { drive, get } = driveTiruan();
+    const d = new DriverDrive(drive, "root-id");
+    get.mockResolvedValueOnce({ data: { mimeType: "image/webp", trashed: false, appProperties: { spmb: "publik" } } });
+    expect(await d.metadataPublik("a")).toEqual({ mime: "image/webp" });
+    get.mockResolvedValueOnce({ data: { mimeType: "image/webp", trashed: true, appProperties: { spmb: "publik" } } });
+    expect(await d.metadataPublik("b")).toBeNull();
+    get.mockResolvedValueOnce({ data: { mimeType: "image/jpeg", trashed: false } });
+    expect(await d.metadataPublik("c")).toBeNull();
+    get.mockRejectedValueOnce(Object.assign(new Error("not found"), { code: 404 }));
+    expect(await d.metadataPublik("d")).toBeNull();
+  });
+
   it("memakai ulang folder yang sudah ada dan tidak membuat duplikat", async () => {
     const { drive, create } = driveTiruan({ folderSudahAda: "folder-ada" });
     const d = new DriverDrive(drive, "root-id");
@@ -134,5 +159,30 @@ describe("DriverSupabaseTemp", () => {
     const { client, upload } = supabaseTiruan();
     upload.mockResolvedValueOnce({ error: { message: "bucket tidak ada" } } as never);
     await expect(new DriverSupabaseTemp(client, "draf-temp").simpan("a/b.jpg", Buffer.from("x"))).rejects.toThrow(/bucket tidak ada/);
+  });
+});
+
+describe("penyimpananTemp tanpa Cloudinary untuk unggahan baru (poin B)", () => {
+  it("pas foto baru tetap ke penyimpanan sementara walau env Cloudinary terisi", async () => {
+    const { mkdtempSync } = await import("node:fs");
+    const os = await import("node:os");
+    const path = await import("node:path");
+    const { penyimpananTemp } = await import("@/server/services/penyimpanan");
+    const env = { ...process.env };
+    Object.assign(process.env, {
+      DRAF_TEMP_DIR: mkdtempSync(path.join(os.tmpdir(), "spmb-temp-")),
+      CLOUDINARY_CLOUD_NAME: "uji",
+      CLOUDINARY_API_KEY: "kunci",
+      CLOUDINARY_API_SECRET: "rahasia",
+    });
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    try {
+      const ref = await penyimpananTemp().simpan("draf-1/pas_foto-abc.jpg", Buffer.from([0xff, 0xd8, 0xff, 1, 2]), "image/jpeg");
+      expect(ref.startsWith("cld:")).toBe(false);
+      expect(fetchSpy).not.toHaveBeenCalled();
+    } finally {
+      fetchSpy.mockRestore();
+      process.env = env;
+    }
   });
 });

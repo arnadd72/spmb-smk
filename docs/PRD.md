@@ -197,6 +197,7 @@ Keputusan implementasi yang menyimpang dari teks lama atau melengkapinya:
   64. **Foto tambahan beranda masuk ke kartu Foto utama beranda (24 Okt 2026, permintaan pemilik proyek):** admin mengira foto yang ditambahkan lewat tombol Tambah foto di kartu Foto utama beranda masuk ke kartu itu, padahal muncul di daftar terpisah di bawah. Kartu Foto utama beranda kini tampil paling depan selebar baris dan memuat "Foto berikutnya (n/6)": gambar kecil tiap foto tambahan sesuai urutan tampil, dengan tombol Ubah dan Hapus, serta petak Tambah foto selama belum 6 (`features/admin/konten/foto-tambahan-hero.tsx`). Daftar "Foto tambahan beranda" terpisah dihapus. `BATAS_FOTO_HERO` pindah ke `server/types/aset.ts` agar bisa dibaca klien. API tidak berubah.
   65. **Nilai rapor diganti tes minat bakat (24-25 Okt 2026, permintaan pemilik proyek; menggantikan PRD 11.4, Bagian 12, dan bagian rapor butir 40 dan 62):** (a) Langkah 3 wizard menjadi "Tes minat bakat", **opsional**: pendaftar memilih "Ya, saya ikut tes" atau "Tidak, saya akan memilih jurusan sendiri". Soalnya sama persis dengan halaman publik Tes Minat Bakat (butir 55): 15 soal dari sekolah, pilihan A-D mengarah ke MPLB, AKL, LPK3, TKR. Soal dan hitungan dipindah ke satu modul murni `server/validasi/minat.ts` yang dipakai halaman publik, wizard, dan server; soal tetap di kode (tidak ada menu admin soal). Pendaftar boleh berhenti di tengah; soal yang dijawab tetap dihitung. Draf menyimpan `minat` (indeks pilihan atau null per soal), divalidasi ulang di server. (b) Saran jurusan langkah 4 dihitung dari jawaban: poin jurusan = banyak jawaban yang mengarah ke jurusan itu, skor = persen dari soal yang dijawab; poin tertinggi (termasuk seri) Paling Sesuai, poin lain di atas nol Juga Sesuai, nol Alternatif. Tanpa tes, tidak ada saran. Saran disimpan di kolom rekomendasi yang sama dengan versi `minat-v1` (pendaftar lama tetap `bobot-*`). Hasil tes tidak ditampilkan per pendaftar di admin dan tidak masuk ekspor; dashboard tetap membandingkan jumlah saran tes dengan pilihan 1. (c) Dihapus: tabel nilai rapor wizard dan input manual, OCR rapor (`lib/ocr/parser/rapor.ts`), menu Mata Pelajaran, editor bobot (menu "Jurusan & Bobot" menjadi "Jurusan", alamat tetap `/admin/jurusan-dan-bobot`), panel dan API pemeriksaan nilai (`/api/v1/admin/peserta/{id}/nilai`), kartu dan filter "Nilai belum dicek", kolom rapor, saran, dan skor di XLSX, pengaturan semester rapor, `/api/v1/mapel`, `/api/v1/admin/mapel`, `/api/v1/admin/jurusan/{kode}/bobot`, serta teks rapor di beranda, halaman jurusan, Tanya Sunan, dan kebijakan privasi. Seed tidak lagi mengisi mata pelajaran dan bobot. (d) Data lama tidak dihapus: kolom `nilaiRapor`, `statusNilai`, tabel `MataPelajaran` dan `BobotJurusan` tetap ada tetapi tidak dipakai; pendaftaran baru mengisi `nilaiRapor` `{}`. Migrasi data `20261025090000_tes_minat_bakat` menghapus isian form builder `nilai_rapor` dan memperbarui tiga FAQ bawaan yang menyebut rapor. Skema tidak berubah.
   66. **Edit Formulir: ganti berkas dan tampilan baru (25 Okt 2026, permintaan pemilik proyek; melengkapi fitur Edit Formulir commit 9ca8344):** (a) Pendaftar bisa mengganti atau menambah foto Akta, KK, dan pas foto sendiri di `/edit-formulir/form`, bagian "Berkas pendaftaran" (paling atas, karena catatan panitia paling sering meminta foto diperbaiki). Tiap unggahan langsung tersimpan, terpisah dari tombol Simpan perubahan isian; gambar diperkecil di HP seperti di wizard, maksimal 5 MB, pas foto hanya gambar. Rute `GET`/`POST /api/v1/edit-formulir/berkas` hanya berlaku dengan cookie sesi edit (30 menit), hanya untuk `akta`, `kk`, `pas_foto`, tanpa URL publik. Memakai `unggahBerkasPendaftar` yang sama dengan panel admin (kini juga menerima pas foto: berkas lama di penyimpanan sementara, Cloudinary, atau Drive dihapus, status sinkron dihitung ulang). Unggahan pendaftar diaudit sebagai `pendaftar.berkas_unggah_publik` tanpa akun panitia; melihat berkas sendiri tidak dicatat sebagai "Berkas dilihat". (b) Tampilan: halaman masuk dua kolom (cara pakai bernomor dan kartu form), halaman form dengan kepala mint (nama dan nomor pendaftaran), catatan panitia berikon, daftar bagian yang bisa diklik di layar lebar (titik merah bila ada galat), tiap bagian di kartu berikon, dan bar simpan menempel yang menghitung isian yang berubah (tombol nonaktif bila belum ada perubahan, di HP diangkat di atas tombol Tanya Sunan).
+  67. **Semua gambar di Google Drive, terkompres; Cloudinary dilepas (26 Okt 2026, permintaan pemilik proyek; menggantikan butir 56 dan 58(a), mencabut 58(b), mengubah 7.3 dan 7.4; desain `docs/superpowers/specs/2026-10-26-penyimpanan-drive-design.md`):** (a) **Tahap 1, selesai:** dokumen pendaftar (akta, KK, pas foto, berkas kustom) dan foto web (hero, galeri, berita, agenda, testimoni, foto jurusan, logo) disimpan di Drive sekolah. Akta dan KK **tetap disimpan** dan tampil di admin serta di Edit Formulir (58(b) dicabut). Semua gambar dikompres dengan `sharp` di `src/server/services/kompresi.ts` sebelum disimpan (profil di 7.3); metadata EXIF, termasuk lokasi GPS, dibuang; PDF tidak diubah; gambar yang tidak terbaca disimpan apa adanya. Dokumen dikompres saat masuk `draf-temp` (wizard dan `unggahBerkasPendaftar`), jadi `pindahkanKeDrive` cukup menyalin. Pas foto baru tidak lagi ke Cloudinary. Foto web: `simpanMedia(isi, kategori)` menyimpan ke `SPMB/situs/{kategori}/{yyyy-mm}-{acak}.webp` dengan `appProperties.spmb = "publik"`, dan kolom gambar berisi `/api/v1/media/{fileId}`. Route `GET /api/v1/media/[id]` hanya mengirim berkas bertanda publik bertipe JPEG, PNG, atau WebP, dengan `Cache-Control: public, max-age=31536000, immutable` dan `nosniff`; selain itu 404 yang sama. `hapusMediaBila` hanya menghapus berkas Drive bertanda publik. Unggah foto web di produksi tanpa Drive ditolak 503 ("Google Drive belum terhubung. Hubungkan dari menu Pengaturan."); di pengembangan lokal tetap ke `public/uploads/konten`. Form admin mengirim kategori (field `kategori` pada `DefField` bertipe gambar; panel aset: logo, hero, jurusan). (b) **Tahap 2-4, belum:** uji kecepatan foto web lewat route media; skrip migrasi sekali jalan `scripts/migrasi-ke-drive.ts` (9 foto web dan 2 pas foto dari Cloudinary, plus memindah folder pendaftar lama ke `{periode}/pendaftar/`; mode coba dulu, dijalankan ke Supabase hanya setelah pemilik setuju; isi Cloudinary tidak dihapus); lalu kode dan env `CLOUDINARY_*` dicabut. Foto bawaan di `public/images` tetap di repo sebagai cadangan.
 
 ### 1.4 Catatan serah terima: yang sudah dan belum dikerjakan (13 Oktober 2026)
 
@@ -468,7 +469,21 @@ Sama seperti v3.1 Bagian 7.5, dengan penyesuaian klien:
 - Library: `googleapis` (Node), bukan `google/apiclient` (PHP).
 - Alur OAuth: route handler `src/app/api/v1/admin/google-drive/hubungkan` dan `.../callback`, refresh token disimpan terenkripsi (`src/server/services/penyimpanan/kripto.ts`, pakai `AES-256-GCM` dengan kunci dari env) di tabel `pengaturan`.
 - Scope tetap `drive.file`. Status aplikasi OAuth wajib **"In production"** sebelum go-live (Fase B) — selama Fase A boleh "Testing" karena token di-refresh manual oleh developer.
-- Struktur folder, aturan privasi, kuota, retry, dan ketentuan lain: **tidak berubah dari v3.1 Bagian 7.5.1-7.5.3.**
+- Struktur folder, aturan privasi, kuota, retry, dan ketentuan lain: **tidak berubah dari v3.1 Bagian 7.5.1-7.5.3**, kecuali
+  struktur folder dan kompresi berikut (butir 67):
+
+```
+SPMB/                              (GOOGLE_DRIVE_ROOT_FOLDER_NAME)
+  {periode}/pendaftar/{nomor} - {NAMA}/   akta, kk, pas_foto, berkas kustom (privat, tanpa tanda publik)
+  situs/{hero|galeri|berita|agenda|testimoni|jurusan|logo}/   foto web (appProperties.spmb = "publik")
+```
+
+| Profil kompresi | Untuk | Hasil |
+|---|---|---|
+| `dokumen` | akta, KK, berkas kustom gambar | JPEG, sisi terpanjang maks 2000 px, kualitas 80 |
+| `pasFoto` | pas foto | JPEG, maks 900x1200 px, kualitas 85 |
+| `web` | foto web selain logo | WebP, sisi terpanjang maks 1600 px, kualitas 80 |
+| `logo` | logo | WebP lossless, maks 512 px, transparansi dipertahankan |
 
 ### 7.4 Supabase Storage — sementara wizard & konten publik
 
@@ -477,17 +492,17 @@ Perubahan penting dari v3.1: **tidak ada lagi "disk lokal privat VPS"** untuk be
 | Bucket | Akses | Isi | Catatan |
 |---|---|---|---|
 | `draf-temp` | Private | `{draf_id}/{jenis}-{acak}.{ext}` — berkas yang diunggah selama wizard, sebelum submit | Dihapus oleh cron harian setelah draf kedaluwarsa atau setelah berhasil dipindah ke Drive |
-| `konten-publik` | Public | Hero, galeri, foto kepala sekolah, berita, agenda, testimoni, foto jurusan | Sama seperti v3.1 |
+| `konten-publik` | Public | Tidak dipakai untuk unggahan baru sejak butir 56; foto web kini di Google Drive (butir 67, 7.3) | URL lama masih bisa dihapus |
 
 Alur berkas (menggantikan v3.1 Bagian 7.5.1):
 
 ```
 Wizard (sebelum submit)
-  unggah → Supabase Storage bucket draf-temp: {draf_id}/{jenis}-{acak}.{ext}
+  unggah → kompres (butir 67) → Supabase Storage bucket draf-temp: {draf_id}/{jenis}-{acak}.{ext}
          → OCR membaca foto yang sama langsung di browser (tidak lewat URL dan tidak meninggalkan HP)
 Submit berhasil (dalam satu route handler, synchronous — Vercel Hobby mengizinkan hingga 300 dtk)
   → ambil semua berkas draf-temp
-  → unggah ke Google Drive: SPMB/{periode}/{nomor} - {NAMA}/
+  → unggah ke Google Drive: SPMB/{periode}/pendaftar/{nomor} - {NAMA}/
   → simpan file ID Drive ke tabel pendaftar
   → hapus berkas dari draf-temp
   → bila upload Drive gagal: catat berkas_sinkron = 'gagal', JANGAN hapus dari draf-temp,

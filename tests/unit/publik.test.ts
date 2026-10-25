@@ -171,18 +171,18 @@ describe("API publik JSON", () => {
 
 describe("unggah gambar konten", () => {
   it("menyimpan JPG/PNG/WebP, menolak PDF, HTML bertopeng gambar, kosong, dan lebih dari 5 MB", async () => {
-    const url = await simpanMedia(PNG);
+    const url = await simpanMedia(PNG, "galeri");
     yangDibuat.push(url);
     expect(url).toMatch(/^\/uploads\/konten\/\d{4}\/\d{2}\/[\w-]+\.png$/);
     expect(existsSync(ke(url))).toBe(true);
 
     for (const isi of [Buffer.from("%PDF-1.4 ".padEnd(40, "x")), Buffer.from("<html><script>alert(1)</script>".padEnd(40, " ")), Buffer.alloc(0), Buffer.concat([PNG, Buffer.alloc(5 * 1024 * 1024)])]) {
-      expect((await galat(simpanMedia(isi))).status).toBe(422);
+      expect((await galat(simpanMedia(isi, "galeri"))).status).toBe(422);
     }
   });
 
   it("hapusMediaBila hanya menghapus gambar hasil unggah, tidak menyentuh alamat luar atau path di luar folder", async () => {
-    const url = await simpanMedia(PNG);
+    const url = await simpanMedia(PNG, "galeri");
     await hapusMediaBila("https://contoh.com/gambar.png");
     await hapusMediaBila("/images/sekolah/p5-karya.webp");
     await hapusMediaBila("/uploads/konten/../../../package.json");
@@ -194,8 +194,8 @@ describe("unggah gambar konten", () => {
   });
 
   it("gambar lama ikut terhapus saat diganti atau barisnya dihapus", async () => {
-    const lama = await simpanMedia(PNG);
-    const baru = await simpanMedia(PNG);
+    const lama = await simpanMedia(PNG, "galeri");
+    const baru = await simpanMedia(PNG, "galeri");
     yangDibuat.push(lama, baru);
     const g = (await buatKonten("galeri", { judul: "Foto", gambar: lama, urutan: 1, isActive: true }, ctx)) as { id: string };
 

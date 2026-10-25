@@ -1,5 +1,7 @@
 // Konfigurasi tampilan CRUD konten admin. Aturan validasi tetap di server (src/server/validasi/konten.ts).
 
+import type { KategoriMedia } from "./schema-client";
+
 export type TipeField = "teks" | "area" | "html" | "tanggalwaktu" | "angka" | "gambar" | "centang" | "daftarTeks";
 
 export type DefField = {
@@ -10,6 +12,8 @@ export type DefField = {
   bantuan?: string;
   /** Nilai awal untuk data baru. */
   awal?: unknown;
+  /** Folder Drive untuk unggahan field bertipe "gambar" (SPMB/situs/{kategori}/). */
+  kategori?: KategoriMedia;
 };
 
 export type DefKolom = { kunci: string; label: string; tipe?: "teks" | "tanggal" | "angka" | "status" | "gambar" | "potong" };
@@ -39,7 +43,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
     field: [
       { kunci: "judul", label: "Judul", tipe: "teks", wajib: true },
       { kunci: "isi", label: "Isi berita", tipe: "html", wajib: true, bantuan: "Boleh memakai HTML dasar: p, strong, em, ul, ol, li, h2, h3, a, img. Skrip dan gaya sebaris dibuang otomatis." },
-      { kunci: "gambar", label: "Gambar sampul", tipe: "gambar", bantuan: "Unggah gambar (JPG, PNG, WebP, maks 5 MB) atau tempel alamat yang diawali / atau https://." },
+      { kunci: "gambar", label: "Gambar sampul", tipe: "gambar", kategori: "berita", bantuan: "Unggah gambar (JPG, PNG, WebP, maks 5 MB) atau tempel alamat yang diawali / atau https://." },
       { kunci: "publishedAt", label: "Tanggal terbit", tipe: "tanggalwaktu", bantuan: "Kosong = terbit saat disimpan. Isi tanggal depan untuk menjadwalkan." },
       aktif,
     ],
@@ -60,7 +64,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
       { kunci: "tanggal", label: "Tanggal dan waktu", tipe: "tanggalwaktu", wajib: true },
       { kunci: "lokasi", label: "Lokasi", tipe: "teks" },
       { kunci: "deskripsi", label: "Keterangan", tipe: "area" },
-      { kunci: "gambar", label: "Gambar", tipe: "gambar" },
+      { kunci: "gambar", label: "Gambar", tipe: "gambar", kategori: "agenda" },
       aktif,
     ],
     kosong: { judul: "Belum ada agenda", deskripsi: "Tambahkan jadwal kegiatan sekolah." },
@@ -76,7 +80,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
       { kunci: "isActive", label: "Status", tipe: "status" },
     ],
     field: [
-      { kunci: "gambar", label: "Foto", tipe: "gambar", wajib: true },
+      { kunci: "gambar", label: "Foto", tipe: "gambar", kategori: "galeri", wajib: true },
       { kunci: "judul", label: "Keterangan", tipe: "teks" },
       { kunci: "urutan", label: "Urutan", tipe: "angka", awal: 0, bantuan: "Angka kecil tampil lebih dulu." },
       aktif,
@@ -94,7 +98,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
       { kunci: "isActive", label: "Status", tipe: "status" },
     ],
     field: [
-      { kunci: "gambar", label: "Foto", tipe: "gambar", wajib: true, bantuan: "Pakai foto mendatar yang jelas, sama seperti Foto utama beranda." },
+      { kunci: "gambar", label: "Foto", tipe: "gambar", kategori: "hero", wajib: true, bantuan: "Pakai foto mendatar yang jelas, sama seperti Foto utama beranda." },
       { kunci: "judul", label: "Keterangan", tipe: "teks", bantuan: "Dibacakan pembaca layar sebagai teks alternatif foto." },
       { kunci: "urutan", label: "Urutan", tipe: "angka", awal: 0, bantuan: "Angka kecil tampil lebih dulu, setelah Foto utama beranda." },
       aktif,
@@ -115,7 +119,7 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
       { kunci: "nama", label: "Nama", tipe: "teks", wajib: true },
       { kunci: "keterangan", label: "Keterangan", tipe: "teks", bantuan: "Mis. alumni AKL 2022, bekerja di bank." },
       { kunci: "isi", label: "Isi testimoni", tipe: "area", wajib: true, bantuan: "Singkat saja, maksimal tiga baris di situs." },
-      { kunci: "foto", label: "Foto", tipe: "gambar" },
+      { kunci: "foto", label: "Foto", tipe: "gambar", kategori: "testimoni" },
       { kunci: "urutan", label: "Urutan", tipe: "angka", awal: 0 },
       aktif,
     ],

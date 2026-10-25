@@ -1,6 +1,7 @@
 import { daftarGelombang, keadaanDariGelombang, pesanTutup, type KeadaanPendaftaran } from "@/server/services/gelombang";
 import { prisma } from "@/server/db/client";
 import { buatTokenAcak, dekripsi, enkripsi, hashToken } from "@/server/services/kripto";
+import { kompresGambar, profilBerkas } from "@/server/services/kompresi";
 import { pastikanKuotaTersedia, terdaftarPerJurusan } from "@/server/services/kuota";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
@@ -236,9 +237,10 @@ export async function unggahBerkas(token: string | undefined, kunci: string, isi
   const berkas = bacaBerkas(baris);
   const lama = berkas[kunci];
 
+  const hemat = await kompresGambar(isi, jenis.mime, profilBerkas(kunci));
   const temp = penyimpananTemp();
-  const ref = await temp.simpan(`${baris.id}/${kunci}-${buatTokenAcak(8)}.${jenis.ext}`, isi, jenis.mime);
-  const baru: Berkas = { ref, nama: bersihNama(namaAsli), mime: jenis.mime, ukuran: isi.length };
+  const ref = await temp.simpan(`${baris.id}/${kunci}-${buatTokenAcak(8)}.${hemat.ext}`, hemat.isi, hemat.mime);
+  const baru: Berkas = { ref, nama: bersihNama(namaAsli), mime: hemat.mime, ukuran: hemat.isi.length };
 
   // Satu-slot: berkas lama diganti dan dihapus dari penyimpanan.
   if (lama && !Array.isArray(lama)) await temp.hapus(lama.ref).catch(() => undefined);

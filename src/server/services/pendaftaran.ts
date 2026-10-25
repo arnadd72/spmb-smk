@@ -153,7 +153,7 @@ const namaAman = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").trim().toUpperCas
 
 /**
  * Pindahkan berkas yang belum punya ID Drive dari penyimpanan sementara ke Drive:
- * SPMB/{periode}/{nomor} - {NAMA}/ (PRD v4 7.4). Yang sudah di Drive dilewati, jadi aman dipanggil berulang.
+ * SPMB/{periode}/pendaftar/{nomor} - {NAMA}/ (PRD v4 7.3). Yang sudah di Drive dilewati, jadi aman dipanggil berulang.
  */
 export async function pindahkanKeDrive(nomor: string): Promise<void> {
   const p = await prisma.pendaftar.findUnique({ where: { nomorPendaftaran: nomor } });
@@ -179,7 +179,7 @@ export async function pindahkanKeDrive(nomor: string): Promise<void> {
 
   const drive = await penyimpananDokumen(); // melempar bila Drive belum dihubungkan
   const temp = penyimpananTemp();
-  const folder = `${p.periode.replace("/", "-")}/${nomor} - ${namaAman(p.namaLengkap)}`;
+  const folder = `${p.periode.replace("/", "-")}/pendaftar/${nomor} - ${namaAman(p.namaLengkap)}`;
 
   let akta = p.aktaFileId;
   let kk = p.kkFileId;

@@ -89,18 +89,14 @@ describe("penyimpananTemp dengan Cloudinary terpasang", () => {
     await rm(folder, { recursive: true, force: true });
   });
 
-  it("pas foto masuk Cloudinary, berkas lain tetap ke penyimpanan lama", async () => {
-    fetchPalsu.mockImplementation(async (_u: string, init: { body: FormData }) => ok({ public_id: init.body.get("public_id") }));
+  it("pas foto baru tidak lagi masuk Cloudinary: semua unggahan ke penyimpanan lama (poin B)", async () => {
     const temp = penyimpananTemp();
 
     const refFoto = await temp.simpan("77/pas_foto-xyz.png", PNG, "image/png");
-    expect(adalahRefCloudinary(refFoto)).toBe(true);
-    expect(fetchPalsu).toHaveBeenCalledTimes(1);
-    expect(await readdir(folder)).toEqual([]); // tidak ada yang tertulis ke disk
-
+    expect(adalahRefCloudinary(refFoto)).toBe(false);
     const refLain = await temp.simpan("77/kustom_surat-xyz.png", PNG, "image/png");
     expect(adalahRefCloudinary(refLain)).toBe(false);
-    expect(fetchPalsu).toHaveBeenCalledTimes(1); // tidak menyentuh Cloudinary
+    expect(fetchPalsu).not.toHaveBeenCalled();
     expect(await readdir(folder)).toContain("77");
   });
 

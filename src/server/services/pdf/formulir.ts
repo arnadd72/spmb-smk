@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
-import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { PDFDocument, StandardFonts, clip, endPath, popGraphicsState, pushGraphicsState, rectangle, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import { prisma } from "@/server/db/client";
 import { dekripsi, hashToken } from "@/server/services/kripto";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
@@ -13,13 +13,15 @@ import {
   KOTAK_PENGHASILAN,
   KOTAK_SERAGAM,
   LEBAR_HALAMAN,
+  NOMOR_BARU,
+  POTONGAN,
   SLOT_TEKS,
   TAHUN_TEMPLATE,
   TINGGI_HALAMAN,
   type Kotak,
+  geserY,
   type SlotTeks,
 } from "./peta-formulir";
-import { terbilang } from "./terbilang";
 
 // PDF formulir pendaftaran (PRD v4 15.1): lapisan tetap berasal dari template-dasar.pdf (ekspor template-formulir.docx),
 // kode hanya menimpa isian di koordinat hasil pemetaan. Lapisan tetap tidak digambar ulang, jadi identik dengan template.
@@ -41,7 +43,6 @@ export type DataFormulir = {
   jumlahSaudara?: number | null;
   asalSekolah?: string | null;
   tamatTahun?: string | null;
-  noIjazah?: string | null;
   noHp?: string | null;
   email?: string | null;
   rt?: string | null;
@@ -73,7 +74,6 @@ export type DataFormulir = {
   smpKecamatan?: string | null;
   smpKabupaten?: string | null;
   smpPropinsi?: string | null;
-  ijazahNomorTahun?: string | null;
   lamaBelajar?: string | null;
   /** Pas foto pendaftar (gambar apa pun); ditempel di kotak "Pas photo 3 x 4" halaman 2. */
   pasFoto?: Uint8Array | null;
@@ -107,9 +107,6 @@ const ttlOrangTua = (tempat: string | null | undefined, tanggal: Date | null | u
 
 /** Nilai teks tiap slot dari data pendaftar. String kosong = dilewati. */
 export function nilaiSlot(d: DataFormulir): Record<string, string> {
-  const u = d.nilaiUjian ?? {};
-  const angka = (n?: number) => (n === undefined ? "" : String(n).replace(".", ","));
-  const kata = (n?: number) => (n === undefined ? "" : terbilang(n));
   const s = (v: string | number | null | undefined) => (v === null || v === undefined ? "" : String(v));
   const ttl = [d.tempatLahir, d.tanggalLahir ? tanggalPanjang(d.tanggalLahir) : ""].filter(Boolean).join(", ");
   // Kolom jurusan di tanda terima sempit (182 pt), jadi cukup kode jurusan pilihan pertama.
@@ -141,7 +138,6 @@ export function nilaiSlot(d: DataFormulir): Record<string, string> {
     jumlahSaudara: s(d.jumlahSaudara),
     asalSekolah: s(d.asalSekolah),
     tamatTahun: s(d.tamatTahun),
-    noIjazah: s(d.noIjazah),
     noHp: s(d.noHp),
     email: s(d.email),
     ayahNama: s(d.namaAyah),
@@ -163,16 +159,7 @@ export function nilaiSlot(d: DataFormulir): Record<string, string> {
     smpKecamatan: s(d.smpKecamatan),
     smpKabupaten: s(d.smpKabupaten),
     smpPropinsi: s(d.smpPropinsi),
-    ijazahNomorTahun: s(d.ijazahNomorTahun),
     lamaBelajar: s(d.lamaBelajar),
-    nilaiIndonesia: angka(u.b_indonesia),
-    terbilangIndonesia: kata(u.b_indonesia),
-    nilaiInggris: angka(u.b_inggris),
-    terbilangInggris: kata(u.b_inggris),
-    nilaiMatematika: angka(u.matematika),
-    terbilangMatematika: kata(u.matematika),
-    nilaiIpa: angka(u.ipa),
-    terbilangIpa: kata(u.ipa),
     golonganDarah: s(d.golonganDarah),
     tinggiBadan: s(d.tinggiBadan),
     beratBadan: s(d.beratBadan),
@@ -212,8 +199,8 @@ export function pas(font: PDFFont, teks: string, ukuranAwal: number, maks: numbe
 
 const Y = (y: number) => TINGGI_HALAMAN - y;
 
-/** Kotak pas foto di template-dasar.pdf halaman 2 (koordinat PDF, sumbu Y dari bawah). */
-const KOTAK_PAS_FOTO = { x: 286, bawah: 273.57, w: 68.5, h: 75 };
+/** Kotak pas foto halaman 2 (koordinat PDF, sumbu Y dari bawah): bawah 273,57 di template asli, naik bersama pita yang dipotong. */
+const KOTAK_PAS_FOTO = { x: 286, bawah: TINGGI_HALAMAN - geserY(2, TINGGI_HALAMAN - 273.57), w: 68.5, h: 75 };
 
 /** Bagian dalam kotak pas foto (tanpa menimpa garis kotak template). */
 export const DALAM_PAS_FOTO = { x: KOTAK_PAS_FOTO.x + 0.8, y: KOTAK_PAS_FOTO.bawah + 0.8, w: KOTAK_PAS_FOTO.w - 1.6, h: KOTAK_PAS_FOTO.h - 1.6 };
@@ -250,9 +237,33 @@ function tandai(page: PDFPage, k: Kotak, teks?: string, font?: PDFFont) {
   page.drawLine({ start: { x: k.x0 + m, y: Y(k.y1 - m) }, end: { x: k.x1 - m, y: Y(k.y0 + m) }, ...garis });
 }
 
+/**
+ * Buang pita `POTONGAN` dari template (PRD 1.3 butir 77): halaman lama disalin utuh sebagai gambar vektor, lalu tiap
+ * pita yang dipertahankan digambar ulang di halaman baru, digeser naik sepanjang pita yang sudah dibuang di atasnya.
+ */
+async function potongTemplate(doc: PDFDocument) {
+  for (const h of [1, 2, 3] as const) {
+    const pita = POTONGAN[h];
+    if (pita.length === 0) continue;
+    const salinan = await doc.embedPage(doc.getPage(h - 1));
+    const baru = doc.insertPage(h - 1, [LEBAR_HALAMAN, TINGGI_HALAMAN]);
+    doc.removePage(h);
+    const batas = [0, ...pita.flat(), TINGGI_HALAMAN + 200];
+    let naik = 0;
+    for (let i = 0; i < batas.length; i += 2) {
+      const [atas, bawah] = [batas[i] - naik, batas[i + 1] - naik]; // posisi tujuan, atas-ke-bawah
+      baru.pushOperators(pushGraphicsState(), rectangle(0, Y(bawah), LEBAR_HALAMAN, bawah - atas), clip(), endPath());
+      baru.drawPage(salinan, { x: 0, y: naik });
+      baru.pushOperators(popGraphicsState());
+      if (i + 2 < batas.length) naik += batas[i + 2] - batas[i + 1];
+    }
+  }
+}
+
 export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Array; jejak: Jejak[] }> {
   const dasar = await readFile(path.join(process.cwd(), "src/server/services/pdf/template-dasar.pdf"));
   const doc = await PDFDocument.load(dasar);
+  await potongTemplate(doc);
   const halaman = doc.getPages();
   if (halaman.length !== 3) throw new Error("Template formulir harus 3 halaman.");
   for (const p of halaman) {
@@ -273,6 +284,12 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
       page.drawRectangle({ x: t.x0 - 0.6, y: Y(t.y) - 3.2, width: t.x1 - t.x0 + 1.4, height: t.ukuran + 3.5, color: rgb(1, 1, 1) });
       page.drawText(`${awal}${t.pemisah}${akhir}`, { x: t.x0, y: Y(t.y), size: t.ukuran, font: tebal, color: hitam });
     }
+  }
+
+  // Nomor urut sesudah baris yang dibuang ikut maju (12 jadi 11, c jadi b).
+  for (const n of NOMOR_BARU) {
+    halaman[n.h - 1].drawRectangle({ x: n.x - 0.3, y: Y(n.y) - 2.6, width: n.lebar + 0.6, height: 11.6, color: rgb(1, 1, 1) });
+    halaman[n.h - 1].drawText(n.teks, { x: n.x, y: Y(n.y), size: 12, font: biasa, color: hitam });
   }
 
   // Nomor dan jurusan tanda terima kini satu teks berukuran normal: tutup "/" bawaan template agar tidak tertimpa.
@@ -347,7 +364,6 @@ export function dataFormulirDari(p: BarisPendaftar, tanggalVerifikasi: string | 
     jumlahSaudara: p.jumlahSaudara,
     asalSekolah: p.asalSekolah,
     tamatTahun: p.tamatTahun,
-    noIjazah: p.noIjazah,
     noHp: buka(p.noHp),
     email: p.email,
     rt: p.rt,
@@ -379,7 +395,6 @@ export function dataFormulirDari(p: BarisPendaftar, tanggalVerifikasi: string | 
     smpKecamatan: p.smpKecamatan,
     smpKabupaten: p.smpKabupaten,
     smpPropinsi: p.smpPropinsi,
-    ijazahNomorTahun: p.ijazahNomorTahun,
     lamaBelajar: p.lamaBelajar,
     nilaiUjian: p.nilaiUjian as DataFormulir["nilaiUjian"],
     golonganDarah: p.golonganDarah,

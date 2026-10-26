@@ -5,7 +5,7 @@ import sharp from "sharp";
 import { PDFArray, PDFDocument, PDFRawStream, decodePDFRawStream } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { DALAM_PAS_FOTO, buatFormulirPdf, nilaiSlot, siapkanPasFoto, type DataFormulir } from "@/server/services/pdf/formulir";
-import { SLOT_TEKS } from "@/server/services/pdf/peta-formulir";
+import { SLOT_TEKS, geserY } from "@/server/services/pdf/peta-formulir";
 import { terbilang } from "@/server/services/pdf/terbilang";
 
 const contoh: DataFormulir = {
@@ -25,7 +25,6 @@ const contoh: DataFormulir = {
   jumlahSaudara: 3,
   asalSekolah: "SMP Negeri 1 Wangon",
   tamatTahun: "2027",
-  noIjazah: "DN-03/D-SMP/27/0012345",
   noHp: "081234567890",
   email: "ahmad@contoh.id",
   rt: "02",
@@ -57,7 +56,6 @@ const contoh: DataFormulir = {
   smpKecamatan: "Wangon",
   smpKabupaten: "Banyumas",
   smpPropinsi: "Jawa Tengah",
-  ijazahNomorTahun: "DN-03/D-SMP/27/0012345 / 2027",
   lamaBelajar: "3",
   nilaiUjian: { b_indonesia: 85, b_inggris: 78.5, matematika: 90, ipa: 100 },
   golonganDarah: "O",
@@ -122,6 +120,28 @@ describe("PDF formulir (PRD 15.1)", () => {
     const { jejak } = await buatFormulirPdf({ ...contoh, namaLengkap: "MUHAMMAD ABDURRAHMAN AL-FARUQ RADEN MAS SURYONINGRAT KUSUMA".repeat(2) });
     const nama = jejak.find((j) => j.id === "nama")!;
     expect(nama.ukuran).toBeLessThan(11);
+  });
+
+  it("nomor ijazah dan blok Nilai Ujian tidak diisi lagi walau data lama punya nilai ujian (PRD 1.3 butir 77)", async () => {
+    const { pdf, jejak } = await buatFormulirPdf(contoh); // contoh masih membawa nilaiUjian dari data lama
+    expect(jejak.some((j) => /^((nilai|terbilang)(Indonesia|Inggris|Matematika|Ipa)|noIjazah|ijazahNomorTahun)$/.test(j.id))).toBe(false);
+    expect(await isiHalaman(pdf, 2)).not.toContain(tampil("DELAPAN PULUH LIMA"));
+  });
+
+  it("baris ijazah dan Nilai Ujian dibuang dari template: isi di bawahnya naik, nomor urut maju (PRD 1.3 butir 77)", async () => {
+    // Halaman 1: baris 12 (No Telepon) naik 18 pt ke tempat baris 11 lama; di atasnya tetap.
+    expect(geserY(1, 423.3)).toBe(423.3);
+    expect(geserY(1, 459.3)).toBe(441.3);
+    // Halaman 2: "c. Lama belajar" naik ke tempat "b"; judul C naik 102,1 pt.
+    expect(geserY(2, 197.2)).toBe(180.1);
+    expect(geserY(2, 316.1)).toBe(214);
+    expect(geserY(3, 500)).toBe(500);
+    const { pdf, jejak } = await buatFormulirPdf(contoh);
+    expect((await PDFDocument.load(pdf)).getPageCount()).toBe(3);
+    expect(jejak.find((j) => j.id === "noHp")?.y).toBe(441.3);
+    const h1 = await isiHalaman(pdf, 1);
+    for (const n of ["11", "12", "13", "14", "15", "16"]) expect(h1).toContain(tampil(n));
+    expect(await isiHalaman(pdf, 2)).toContain(tampil("b."));
   });
 
   it("tanda terima: nomor dan jurusan satu teks, nomor dan RT/RW berukuran normal seperti isian lain", async () => {

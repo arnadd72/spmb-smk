@@ -8,6 +8,30 @@ export const TINGGI_HALAMAN = 936.12;
 
 export type Halaman = 1 | 2 | 3;
 
+/**
+ * Pita template yang dibuang (PRD 1.3 butir 77): [atas, bawah] atas-ke-bawah pada template asli. Isi di bawah pita
+ * digeser naik sepanjang pita, jadi tidak ada ruang kosong. Diukur pdf.js dari garis dasar baris (huruf 12 pt).
+ * Semua koordinat di berkas ini tetap ditulis dalam ukuran template asli lalu dipetakan lewat `geserY`.
+ */
+export const POTONGAN: Record<Halaman, [number, number][]> = {
+  // "11. No. Ijazah" (garis dasar 441,3; baris 10 di 423,3, baris 12 di 459,3): baris 12 dst. naik 18 pt.
+  1: [[432, 450]],
+  2: [
+    // "b. Nomor dan Tahun Ijazah" (garis dasar 180,1; baris c di 197,2 naik ke 180,1).
+    [171, 188.1],
+    // "d Nilai Ujian" sampai "4) IPA" (garis dasar 214,1 sampai 282,2). Judul C (316,1) naik ke 214, berjarak
+    // 33,9 pt dari baris terakhir seperti jarak antarbagian aslinya.
+    [204.6, 289.6],
+  ],
+  3: [],
+};
+
+/** Koordinat y template asli (atas-ke-bawah) setelah pita `POTONGAN` dibuang. */
+export function geserY(h: Halaman, y: number): number {
+  const naik = POTONGAN[h].filter(([, bawah]) => bawah <= y).reduce((a, [atas, bawah]) => a + bawah - atas, 0);
+  return Math.round((y - naik) * 100) / 100;
+}
+
 /** Isian teks di atas garis titik-titik. `x` awal, `maks` lebar tersedia. */
 export type SlotTeks = {
   id: string;
@@ -27,7 +51,7 @@ const T = (id: string, h: Halaman, x: number, y: number, maks: number, sisa: Par
   id,
   h,
   x,
-  y,
+  y: geserY(h, y),
   maks,
   ...sisa,
 });
@@ -46,7 +70,6 @@ export const SLOT_TEKS: SlotTeks[] = [
   T("jumlahSaudara", 1, 236, 387.3, 312),
   T("asalSekolah", 1, 236, 405.3, 312),
   T("tamatTahun", 1, 236, 423.3, 312),
-  T("noIjazah", 1, 236, 441.3, 312),
   T("noHp", 1, 236, 459.3, 312),
   T("email", 1, 236, 477.3, 312, { asli: true }),
   T("ayahNama", 1, 311, 513.3, 240),
@@ -70,16 +93,7 @@ export const SLOT_TEKS: SlotTeks[] = [
   T("smpKecamatan", 2, 292, 129.1, 255),
   T("smpKabupaten", 2, 292, 146.2, 255),
   T("smpPropinsi", 2, 292, 163.1, 255),
-  T("ijazahNomorTahun", 2, 292, 180.1, 255),
   T("lamaBelajar", 2, 293, 197.2, 14, { tengah: true }),
-  T("nilaiIndonesia", 2, 292, 231.1, 48, { tengah: true }),
-  T("terbilangIndonesia", 2, 353, 231.1, 177),
-  T("nilaiInggris", 2, 292, 248.2, 48, { tengah: true }),
-  T("terbilangInggris", 2, 353, 248.2, 177),
-  T("nilaiMatematika", 2, 292, 265.1, 48, { tengah: true }),
-  T("terbilangMatematika", 2, 353, 265.1, 177),
-  T("nilaiIpa", 2, 292, 282.2, 48, { tengah: true }),
-  T("terbilangIpa", 2, 353, 282.2, 177),
   T("golonganDarah", 2, 292, 333.2, 240),
   T("tinggiBadan", 2, 292, 350.2, 90, { tengah: true }),
   T("beratBadan", 2, 432, 350.2, 93, { tengah: true }),
@@ -119,37 +133,53 @@ export const SLOT_TEKS: SlotTeks[] = [
 
 /** Kotak yang ditandai. Koordinat: x0, y0 (atas), x1, y1 (bawah). */
 export type Kotak = { x0: number; y0: number; x1: number; y1: number };
+/** Kotak diukur pada template asli, dipetakan ke posisi setelah pita dipotong. */
+const K = (h: Halaman, k: Kotak): Kotak => ({ ...k, y0: geserY(h, k.y0), y1: geserY(h, k.y1) });
 export const KOTAK_GENDER: Record<"L" | "P", Kotak> = {
   L: { x0: 236.3, y0: 322.7, x1: 252.8, y1: 334.7 },
   P: { x0: 330.8, y0: 322.7, x1: 347.3, y1: 334.7 },
 };
 export const KOTAK_PENGHASILAN: [Kotak, Kotak] = [
-  { x0: 236.3, y0: 773.7, x1: 252.8, y1: 785.7 },
-  { x0: 254.8, y0: 773.7, x1: 271.3, y1: 785.7 },
+  K(1, { x0: 236.3, y0: 773.7, x1: 252.8, y1: 785.7 }),
+  K(1, { x0: 254.8, y0: 773.7, x1: 271.3, y1: 785.7 }),
 ];
 /** Kode jurusan sistem -> kotak. LPK3 memakai kotak jurusan kefarmasian pada template. */
 export const KOTAK_JURUSAN: Record<string, Kotak> = {
-  AKL: { x0: 236.3, y0: 808.7, x1: 252.8, y1: 820.7 },
-  MPLB: { x0: 236.3, y0: 826.7, x1: 252.8, y1: 838.7 },
-  LPK3: { x0: 236.3, y0: 844.7, x1: 252.8, y1: 856.7 },
-  TKR: { x0: 236.3, y0: 862.7, x1: 252.8, y1: 874.7 },
+  AKL: K(1, { x0: 236.3, y0: 808.7, x1: 252.8, y1: 820.7 }),
+  MPLB: K(1, { x0: 236.3, y0: 826.7, x1: 252.8, y1: 838.7 }),
+  LPK3: K(1, { x0: 236.3, y0: 844.7, x1: 252.8, y1: 856.7 }),
+  TKR: K(1, { x0: 236.3, y0: 862.7, x1: 252.8, y1: 874.7 }),
 };
 export const KOTAK_SERAGAM: Record<string, Kotak> = {
-  M: { x0: 261, y0: 517.5, x1: 277, y1: 531.5 },
-  L: { x0: 297, y0: 517.5, x1: 314, y1: 531.5 },
-  XL: { x0: 330, y0: 517.5, x1: 347, y1: 531.5 },
-  XXL: { x0: 369.5, y0: 517.5, x1: 386.5, y1: 531.5 },
-  XXXL: { x0: 415.5, y0: 517.5, x1: 432.5, y1: 531.5 },
-  Jumbo: { x0: 472.5, y0: 517.5, x1: 489.5, y1: 531.5 },
+  M: K(2, { x0: 261, y0: 517.5, x1: 277, y1: 531.5 }),
+  L: K(2, { x0: 297, y0: 517.5, x1: 314, y1: 531.5 }),
+  XL: K(2, { x0: 330, y0: 517.5, x1: 347, y1: 531.5 }),
+  XXL: K(2, { x0: 369.5, y0: 517.5, x1: 386.5, y1: 531.5 }),
+  XXXL: K(2, { x0: 415.5, y0: 517.5, x1: 432.5, y1: 531.5 }),
+  Jumbo: K(2, { x0: 472.5, y0: 517.5, x1: 489.5, y1: 531.5 }),
 };
+
+/**
+ * Nomor urut yang berubah setelah pita dipotong (template asli, atas-ke-bawah). Angka lama ditutup putih lalu
+ * digambar ulang dengan Times New Roman 12 pt. `lebar` = lebar teks lama yang ditutup.
+ */
+export const NOMOR_BARU = [
+  { h: 1 as Halaman, x: 56.6, y: 459.3, lebar: 12.1, teks: "11" },
+  { h: 1 as Halaman, x: 56.6, y: 477.3, lebar: 12.1, teks: "12" },
+  { h: 1 as Halaman, x: 56.6, y: 495.3, lebar: 12.1, teks: "13" },
+  { h: 1 as Halaman, x: 56.6, y: 693.3, lebar: 12.1, teks: "14" },
+  { h: 1 as Halaman, x: 56.6, y: 783.3, lebar: 12.1, teks: "15" },
+  { h: 1 as Halaman, x: 55.6, y: 819.4, lebar: 12.1, teks: "16" },
+  { h: 2 as Halaman, x: 75.4, y: 197.2, lebar: 8.4, teks: "b." },
+].map((n) => ({ ...n, y: geserY(n.h, n.y) }));
+
+/** Tanda "/" bawaan template di antara titik nomor dan jurusan tanda terima (diukur pdf.js: x 308,2, lebar 3,6, garis dasar y). */
+export const GARIS_MIRING_TT = [123.1, 558.9].map((y) => ({ x: 307.6, lebar: 4.8, y }));
 
 /**
  * Teks tahun pelajaran yang tercetak 2026/2027 di template: ditutup kotak putih lalu digambar ulang
  * dengan huruf yang sama (Times New Roman tebal). Posisi x0..x1 dan garis dasar y dari PDF template.
  */
-/** Tanda "/" bawaan template di antara titik nomor dan jurusan tanda terima (diukur pdf.js: x 308,2, lebar 3,6, garis dasar y). */
-export const GARIS_MIRING_TT = [123.1, 558.9].map((y) => ({ x: 307.6, lebar: 4.8, y }));
-
 export const TAHUN_TEMPLATE = [
   { h: 1 as Halaman, x0: 353.59, x1: 409.27, y: 167.5, ukuran: 12.96, pemisah: "/" },
   { h: 3 as Halaman, x0: 467.86, x1: 534.7, y: 92.4, ukuran: 14.04, pemisah: " / " },

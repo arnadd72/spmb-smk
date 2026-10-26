@@ -7,6 +7,7 @@ import { dekripsi, hashToken } from "@/server/services/kripto";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import {
+  GARIS_MIRING_TT,
   KOTAK_GENDER,
   KOTAK_JURUSAN,
   KOTAK_PENGHASILAN,
@@ -116,8 +117,7 @@ export function nilaiSlot(d: DataFormulir): Record<string, string> {
   const tanggal = tanggalPanjang(d.dikirimPada);
 
   const tt = {
-    Nomor: d.nomor,
-    Jurusan: jurusan,
+    Nomor: [d.nomor, jurusan].filter(Boolean).join(" / "),
     Nama: d.namaLengkap,
     Sekolah: s(d.asalSekolah),
     Rt: s(d.rt),
@@ -215,20 +215,25 @@ const Y = (y: number) => TINGGI_HALAMAN - y;
 /** Kotak pas foto di template-dasar.pdf halaman 2 (koordinat PDF, sumbu Y dari bawah). */
 const KOTAK_PAS_FOTO = { x: 286, bawah: 273.57, w: 68.5, h: 75 };
 
+/** Bagian dalam kotak pas foto (tanpa menimpa garis kotak template). */
+export const DALAM_PAS_FOTO = { x: KOTAK_PAS_FOTO.x + 0.8, y: KOTAK_PAS_FOTO.bawah + 0.8, w: KOTAK_PAS_FOTO.w - 1.6, h: KOTAK_PAS_FOTO.h - 1.6 };
+
 /**
- * Letak pas foto: bingkai 3:4 di tengah kotak template (kotaknya sendiri lebih lebar dari 3:4), lalu foto
- * diperkecil agar muat utuh di bingkai itu. Foto 3x4 mengisi bingkai penuh; foto berbentuk lain tidak terpotong.
+ * Pas foto memenuhi kotak tanpa dipotong dan tanpa ditarik: foto utuh diletakkan di tengah di atas versi buram dirinya
+ * sendiri yang diperbesar memenuhi kotak, jadi sisa ruang menyatu dengan latarnya (latar merah ikut merah, latar ruangan
+ * ikut samar). Kotak template lebih lebar dari 3:4: foto 3x4 diberi sisi kiri dan kanan, foto mendatar sisi atas dan bawah.
  */
-export function letakPasFoto(lebarGambar: number, tinggiGambar: number) {
-  const k = KOTAK_PAS_FOTO;
-  const dalamW = k.w - 1.6;
-  const dalamH = k.h - 1.6; // jangan menimpa garis kotak template
-  const bingkaiH = Math.min(dalamH, (dalamW * 4) / 3);
-  const bingkaiW = (bingkaiH * 3) / 4;
-  const skala = Math.min(bingkaiW / lebarGambar, bingkaiH / tinggiGambar);
-  const width = lebarGambar * skala;
-  const height = tinggiGambar * skala;
-  return { x: k.x + (k.w - width) / 2, y: k.bawah + (k.h - height) / 2, width, height };
+export async function siapkanPasFoto(isi: Buffer): Promise<Buffer> {
+  const { data, info } = await sharp(isi).rotate().resize({ height: 600, withoutEnlargement: true }).flatten({ background: "#ffffff" }).png().toBuffer({ resolveWithObject: true });
+  const rasio = DALAM_PAS_FOTO.w / DALAM_PAS_FOTO.h;
+  const kiriKanan = info.width / info.height < rasio;
+  const W = kiriKanan ? Math.round(info.height * rasio) : info.width;
+  const H = kiriKanan ? info.height : Math.round(info.width / rasio);
+  const latar = await sharp(data).resize(W, H, { fit: "cover" }).blur(Math.max(8, Math.round(W / 25))).toBuffer();
+  return sharp(latar)
+    .composite([{ input: data, left: Math.round((W - info.width) / 2), top: Math.round((H - info.height) / 2) }])
+    .jpeg({ quality: 88 })
+    .toBuffer();
 }
 
 function tandai(page: PDFPage, k: Kotak, teks?: string, font?: PDFFont) {
@@ -270,6 +275,9 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
     }
   }
 
+  // Nomor dan jurusan tanda terima kini satu teks berukuran normal: tutup "/" bawaan template agar tidak tertimpa.
+  for (const g of GARIS_MIRING_TT) halaman[2].drawRectangle({ x: g.x, y: Y(g.y) - 1.2, width: g.lebar, height: 11, color: rgb(1, 1, 1) });
+
   // Isian teks.
   const nilai = nilaiSlot(d);
   const isi = (s: SlotTeks) => {
@@ -301,11 +309,11 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
   if (d.ukuranSeragam && KOTAK_SERAGAM[d.ukuranSeragam]) tandai(p2, KOTAK_SERAGAM[d.ukuranSeragam]);
 
   // Pas foto: isi kotak "Pas photo 3 x 4" di template halaman 2 (kotak 68,5 x 75 pt; garis kotak tetap milik template).
-  // Foto utuh dalam bingkai 3:4 (letakPasFoto), tidak lagi diperbesar memenuhi kotak sehingga kepala terpotong.
+  // Memenuhi kotak tanpa memotong atau menarik foto (siapkanPasFoto).
   if (d.pasFoto && d.pasFoto.length > 0) {
-    const jpeg = await sharp(Buffer.from(d.pasFoto)).rotate().resize({ height: 600, withoutEnlargement: true }).jpeg({ quality: 88 }).toBuffer();
-    const gambar = await doc.embedJpg(jpeg);
-    p2.drawImage(gambar, letakPasFoto(gambar.width, gambar.height));
+    const gambar = await doc.embedJpg(await siapkanPasFoto(Buffer.from(d.pasFoto)));
+    const k = DALAM_PAS_FOTO;
+    p2.drawImage(gambar, { x: k.x, y: k.y, width: k.w, height: k.h });
   }
 
   return { pdf: await doc.save(), jejak };

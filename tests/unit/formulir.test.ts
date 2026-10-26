@@ -4,7 +4,7 @@ import path from "node:path";
 import sharp from "sharp";
 import { PDFArray, PDFDocument, PDFRawStream, decodePDFRawStream } from "pdf-lib";
 import { describe, expect, it } from "vitest";
-import { buatFormulirPdf, letakPasFoto, nilaiSlot, type DataFormulir } from "@/server/services/pdf/formulir";
+import { DALAM_PAS_FOTO, buatFormulirPdf, nilaiSlot, siapkanPasFoto, type DataFormulir } from "@/server/services/pdf/formulir";
 import { SLOT_TEKS } from "@/server/services/pdf/peta-formulir";
 import { terbilang } from "@/server/services/pdf/terbilang";
 
@@ -122,8 +122,13 @@ describe("PDF formulir (PRD 15.1)", () => {
     const { jejak } = await buatFormulirPdf({ ...contoh, namaLengkap: "MUHAMMAD ABDURRAHMAN AL-FARUQ RADEN MAS SURYONINGRAT KUSUMA".repeat(2) });
     const nama = jejak.find((j) => j.id === "nama")!;
     expect(nama.ukuran).toBeLessThan(11);
-    const tt = jejak.find((j) => j.id === "ttANomor")!;
-    expect(tt.ukuran).toBeLessThanOrEqual(8);
+  });
+
+  it("tanda terima: nomor dan jurusan satu teks, nomor dan RT/RW berukuran normal seperti isian lain", async () => {
+    const { jejak } = await buatFormulirPdf({ ...contoh, nomor: "SPMB-2027-0006", rt: "006", rw: "005" });
+    for (const id of ["ttANomor", "ttBNomor", "ttARt", "ttARw", "ttBRt", "ttBRw"]) expect(jejak.find((j) => j.id === id)?.ukuran, id).toBe(11);
+    expect(jejak.find((j) => j.id === "ttANomor")?.teks).toBe(`SPMB-2027-0006 / ${contoh.jurusan1?.kode}`);
+    expect(jejak.some((j) => j.id === "ttAJurusan")).toBe(false);
   });
 
   it("isian dan tahun pelajaran ada di konten halaman; tahun lama di template ditutup", async () => {
@@ -133,7 +138,7 @@ describe("PDF formulir (PRD 15.1)", () => {
     expect(h1).toContain(tampil("2027/2028"));
     const h3 = await isiHalaman(pdf, 3);
     expect(h3.split(tampil("2027 / 2028")).length - 1).toBe(2);
-    expect(h3).toContain(tampil("SPMB-2027-0001"));
+    expect(h3).toContain(tampil(`SPMB-2027-0001 / ${contoh.jurusan1?.kode}`));
   });
 
   it("pas foto ditempel di kotak halaman 2 tanpa mengubah jumlah halaman", async () => {
@@ -145,26 +150,31 @@ describe("PDF formulir (PRD 15.1)", () => {
     expect(pdf.length).toBeGreaterThan(tanpa.length);
   });
 
-  it("pas foto utuh dalam bingkai 3:4 di dalam kotak, tidak terpotong", () => {
-    const kotak = { x: 286, bawah: 273.57, w: 68.5, h: 75 };
-    const dalam = (l: ReturnType<typeof letakPasFoto>) => {
-      expect(l.x).toBeGreaterThanOrEqual(kotak.x + 0.8);
-      expect(l.y).toBeGreaterThanOrEqual(kotak.bawah + 0.8);
-      expect(l.x + l.width).toBeLessThanOrEqual(kotak.x + kotak.w - 0.8);
-      expect(l.y + l.height).toBeLessThanOrEqual(kotak.bawah + kotak.h - 0.8);
-    };
-    // Foto 3x4 mengisi bingkai 3:4 setinggi kotak, rasio tetap.
-    const pas = letakPasFoto(300, 400);
-    dalam(pas);
-    expect(pas.width / pas.height).toBeCloseTo(3 / 4, 5);
-    expect(pas.height).toBeCloseTo(kotak.h - 1.6, 5);
-    // Foto berbentuk lain tetap utuh (rasio aslinya) dan tidak keluar bingkai.
-    for (const [w, h] of [[1080, 1920], [1200, 800], [500, 500]]) {
-      const l = letakPasFoto(w, h);
-      dalam(l);
-      expect(l.width / l.height).toBeCloseTo(w / h, 5);
-      expect(l.width).toBeLessThanOrEqual(pas.width + 1e-9);
+  it("pas foto memenuhi kotak tanpa dipotong: sisa ruang diisi latar foto yang dikaburkan", async () => {
+    const rasio = DALAM_PAS_FOTO.w / DALAM_PAS_FOTO.h;
+    // Pas foto 3x4 berlatar merah dengan "wajah" putih di tengah: diperlebar ke kiri dan kanan dengan merah.
+    const wajah = await sharp({ create: { width: 100, height: 160, channels: 3, background: { r: 255, g: 255, b: 255 } } }).png().toBuffer();
+    const foto = await sharp({ create: { width: 300, height: 400, channels: 3, background: { r: 200, g: 20, b: 20 } } })
+      .composite([{ input: wajah, left: 100, top: 40 }])
+      .png()
+      .toBuffer();
+    const hasil = await sharp(await siapkanPasFoto(foto)).raw().toBuffer({ resolveWithObject: true });
+    expect(hasil.info.width / hasil.info.height).toBeCloseTo(rasio, 2);
+    expect(hasil.info.height).toBe(400); // tinggi utuh: tidak ada yang terpotong
+    const piksel = (x: number, y: number) => [...hasil.data.subarray((y * hasil.info.width + x) * 3, (y * hasil.info.width + x) * 3 + 3)];
+    for (const x of [0, hasil.info.width - 1]) {
+      const [r, g, b] = piksel(x, 200);
+      // Merah (kompresi JPEG sedikit menggeser warna).
+      expect(r).toBeGreaterThan(170);
+      expect(r - Math.max(g, b)).toBeGreaterThan(120);
     }
+    expect(Math.min(...piksel(Math.round(hasil.info.width / 2), 120))).toBeGreaterThan(240); // wajah tetap di tengah
+
+    // Foto mendatar: lebar utuh, diperpanjang ke atas dan bawah.
+    const datar = await sharp({ create: { width: 800, height: 500, channels: 3, background: { r: 30, g: 60, b: 200 } } }).png().toBuffer();
+    const h2 = await sharp(await siapkanPasFoto(datar)).metadata();
+    expect(h2.width).toBe(800);
+    expect((h2.width ?? 0) / (h2.height ?? 1)).toBeCloseTo(rasio, 2);
   });
 
   it("karakter di luar WinAnsi diganti aman, tidak melempar galat", async () => {

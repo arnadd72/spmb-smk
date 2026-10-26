@@ -98,12 +98,13 @@ export const SLOT_TEKS: SlotTeks[] = [
     const s = i === 0 ? "A" : "B";
     const y = (n: number) => Math.round((n + dy) * 10) / 10;
     return [
-      T(`tt${s}Nomor`, 3, 255, y(123.1), 52, { ukuran: 8 }),
-      T(`tt${s}Jurusan`, 3, 314, y(123.1), 182),
+      // Nomor dan jurusan satu teks ("SPMB-2027-0001 / AKL") berukuran normal; "/" bawaan template ditutup (GARIS_MIRING_TT).
+      T(`tt${s}Nomor`, 3, 255, y(123.1), 244),
       T(`tt${s}Nama`, 3, 255, y(138.1), 244),
       T(`tt${s}Sekolah`, 3, 255, y(153), 244),
-      T(`tt${s}Rt`, 3, 277, y(168), 12, { tengah: true }),
-      T(`tt${s}Rw`, 3, 328, y(168), 14, { tengah: true }),
+      // Sedikit lebih lebar dari titik-titik template agar RT/RW tiga digit (mis. 006) tetap berukuran normal.
+      T(`tt${s}Rt`, 3, 274, y(168), 18, { tengah: true }),
+      T(`tt${s}Rw`, 3, 326, y(168), 18, { tengah: true }),
       T(`tt${s}Desa`, 3, 377, y(168), 121),
       T(`tt${s}Kecamatan`, 3, 255, y(182.9), 244),
       T(`tt${s}Kabupaten`, 3, 255, y(197.9), 244),
@@ -146,6 +147,9 @@ export const KOTAK_SERAGAM: Record<string, Kotak> = {
  * Teks tahun pelajaran yang tercetak 2026/2027 di template: ditutup kotak putih lalu digambar ulang
  * dengan huruf yang sama (Times New Roman tebal). Posisi x0..x1 dan garis dasar y dari PDF template.
  */
+/** Tanda "/" bawaan template di antara titik nomor dan jurusan tanda terima (diukur pdf.js: x 308,2, lebar 3,6, garis dasar y). */
+export const GARIS_MIRING_TT = [123.1, 558.9].map((y) => ({ x: 307.6, lebar: 4.8, y }));
+
 export const TAHUN_TEMPLATE = [
   { h: 1 as Halaman, x0: 353.59, x1: 409.27, y: 167.5, ukuran: 12.96, pemisah: "/" },
   { h: 3 as Halaman, x0: 467.86, x1: 534.7, y: 92.4, ukuran: 14.04, pemisah: " / " },

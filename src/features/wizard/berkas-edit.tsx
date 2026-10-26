@@ -67,7 +67,7 @@ function Slot({ slot, awal, dipilih, galat: galatSimpan, onPilih }: PropsSlot) {
   const terima = slot.gambarSaja ? "image/jpeg,image/png,image/webp" : "image/jpeg,image/png,image/webp,application/pdf";
   const adaGambarTersimpan = awal?.mime.startsWith("image/");
   return (
-    <li className="flex flex-col gap-3 rounded-kartu border border-garis bg-latar/60 p-4" data-berkas-edit={slot.kunci}>
+    <li className="flex min-w-0 flex-col gap-3 rounded-kartu border border-garis bg-latar/60 p-4" data-berkas-edit={slot.kunci}>
       <div className="grid h-40 place-items-center overflow-hidden rounded-kontrol bg-permukaan-alt">
         {dipilih ? (
           pratinjau ? (
@@ -116,17 +116,17 @@ function Slot({ slot, awal, dipilih, galat: galatSimpan, onPilih }: PropsSlot) {
           <p className="mt-0.5 text-xs text-tinta-redup">{slot.bantuan}</p>
         )}
       </div>
-      <div className="mt-auto grid gap-2">
-        <Button type="button" varian="sekunder" memuat={sibuk} onClick={() => input.current?.click()} aria-label={`${awal || dipilih ? "Ganti" : "Unggah"} ${slot.label}`} className="w-full">
+      <div className="mt-auto grid min-w-0 grid-cols-1 gap-2">
+        <Button type="button" varian="sekunder" memuat={sibuk} onClick={() => input.current?.click()} aria-label={`${awal || dipilih ? "Ganti" : "Unggah"} ${slot.label}`} className="w-full min-w-0 whitespace-normal px-3 text-center">
           <UploadSimpleIcon aria-hidden className="size-5" />
           {awal || dipilih ? "Ganti berkas" : "Unggah berkas"}
         </Button>
-        <Button type="button" varian="hantu" disabled={sibuk} onClick={() => kamera.current?.click()} aria-label={`Ambil ${slot.label} dari kamera`} className="w-full">
+        <Button type="button" varian="hantu" disabled={sibuk} onClick={() => kamera.current?.click()} aria-label={`Ambil ${slot.label} dari kamera`} className="w-full min-w-0 whitespace-normal px-3 text-center">
           <CameraIcon aria-hidden className="size-5" />
           Ambil dari kamera
         </Button>
         {dipilih && (
-          <Button type="button" varian="hantu" onClick={() => onPilih(slot.kunci, undefined)} aria-label={`Batalkan penggantian ${slot.label}`} className="w-full">
+          <Button type="button" varian="hantu" onClick={() => onPilih(slot.kunci, undefined)} aria-label={`Batalkan penggantian ${slot.label}`} className="w-full min-w-0 whitespace-normal px-3 text-center">
             Batalkan penggantian
           </Button>
         )}

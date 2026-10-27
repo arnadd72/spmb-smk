@@ -144,6 +144,11 @@ describe("PDF formulir (PRD 15.1)", () => {
     expect(await isiHalaman(pdf, 2)).toContain(tampil("b."));
   });
 
+  it("judul halaman 1 menjadi FORMULIR SISTEM PENERIMAAN MURID BARU (PRD 1.3 butir 78)", async () => {
+    const { pdf } = await buatFormulirPdf(contoh);
+    expect(await isiHalaman(pdf, 1)).toContain(tampil("FORMULIR SISTEM PENERIMAAN MURID BARU"));
+  });
+
   it("tanda terima: nomor dan jurusan satu teks, nomor dan RT/RW berukuran normal seperti isian lain", async () => {
     const { jejak } = await buatFormulirPdf({ ...contoh, nomor: "SPMB-2027-0006", rt: "006", rw: "005" });
     for (const id of ["ttANomor", "ttBNomor", "ttARt", "ttARw", "ttBRt", "ttBRw"]) expect(jejak.find((j) => j.id === id)?.ukuran, id).toBe(11);

@@ -173,6 +173,13 @@ export const NOMOR_BARU = [
   { h: 2 as Halaman, x: 75.4, y: 197.2, lebar: 8.4, teks: "b." },
 ].map((n) => ({ ...n, y: geserY(n.h, n.y) }));
 
+/**
+ * Judul halaman 1 "FORMULIR PENDAFTARAN MURID BARU" diganti (PRD 1.3 butir 78): teks lama (x 193,8 sampai 436,9,
+ * garis dasar 134,3, Times tebal 12, diukur pdf.js) ditutup putih, teks baru digambar di titik tengah yang sama
+ * dengan baris "SMK MA'ARIF NU 1 WANGON" di bawahnya.
+ */
+export const JUDUL_FORMULIR = { h: 1 as Halaman, x0: 193.8, x1: 436.9, y: 134.3, ukuran: 12, teks: "FORMULIR SISTEM PENERIMAAN MURID BARU" };
+
 /** Tanda "/" bawaan template di antara titik nomor dan jurusan tanda terima (diukur pdf.js: x 308,2, lebar 3,6, garis dasar y). */
 export const GARIS_MIRING_TT = [123.1, 558.9].map((y) => ({ x: 307.6, lebar: 4.8, y }));
 

@@ -6,7 +6,7 @@ Alamat: Jl.Karangjengkol RT.02/RW.04 Wangon-Banyumas 🖂 53176 🕾 ( 0281 ) 51
 
 Email : [smk_maarifnu1wgn@yahoo.co.id](mailto:smk_maarifnu1wgn@yahoo.co.id) website: <www.smkmanu1wangon.sch.id>
 
-**FORMULIR PENDAFTARAN MURID BARU**
+**FORMULIR SISTEM PENERIMAAN MURID BARU**
 
 # SMK MA'ARIF NU 1 WANGON
 

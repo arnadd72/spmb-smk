@@ -12,6 +12,7 @@ import {
   KOTAK_JURUSAN,
   KOTAK_PENGHASILAN,
   KOTAK_SERAGAM,
+  JUDUL_FORMULIR,
   LEBAR_HALAMAN,
   NOMOR_BARU,
   POTONGAN,
@@ -284,6 +285,14 @@ export async function buatFormulirPdf(d: DataFormulir): Promise<{ pdf: Uint8Arra
       page.drawRectangle({ x: t.x0 - 0.6, y: Y(t.y) - 3.2, width: t.x1 - t.x0 + 1.4, height: t.ukuran + 3.5, color: rgb(1, 1, 1) });
       page.drawText(`${awal}${t.pemisah}${akhir}`, { x: t.x0, y: Y(t.y), size: t.ukuran, font: tebal, color: hitam });
     }
+  }
+
+  // Judul halaman 1 diganti (JUDUL_FORMULIR), tetap di tengah baris lama.
+  {
+    const j = JUDUL_FORMULIR;
+    const lebar = tebal.widthOfTextAtSize(j.teks, j.ukuran);
+    halaman[j.h - 1].drawRectangle({ x: j.x0 - 0.6, y: Y(j.y) - 3, width: j.x1 - j.x0 + 1.2, height: j.ukuran + 1.5, color: rgb(1, 1, 1) });
+    halaman[j.h - 1].drawText(j.teks, { x: (j.x0 + j.x1) / 2 - lebar / 2, y: Y(j.y), size: j.ukuran, font: tebal, color: hitam });
   }
 
   // Nomor urut sesudah baris yang dibuang ikut maju (12 jadi 11, c jadi b).

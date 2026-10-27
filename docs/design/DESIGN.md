@@ -139,7 +139,7 @@ Gradien ungu/biru/pink, latar mesh, glassmorphism massal, hero tengah template, 
 
 ## PDF formulir
 
-Digambar dari kode (`src/server/services/pdf/formulir.ts`, PRD 1.3 butir 79), memakai palet yang sama: gelombang `mint` dan `primer` di bawah halaman (atas polos), pita judul bagian `#EEF3E2` dengan lencana `primer`, kotak isian `#FBFAF6` bergaris `garis`, pil nomor pendaftaran `ink` dengan label `mint`. Huruf Helvetica (font standar PDF, tanpa pustaka tambahan). Isi formulir mengikuti `docs/template-formulir.md`.
+Digambar dari kode (`src/server/services/pdf/formulir.ts`, PRD 1.3 butir 79), memakai palet yang sama: gelombang `mint` dan `primer` di bawah halaman (atas polos), pita judul bagian `#EEF3E2` dengan lencana `primer`, kotak isian `#FBFAF6` bergaris `garis`, pil nomor pendaftaran `ink` dengan label `mint`. Tulisan di atas latar terang hitam (permintaan sekolah, 27 Okt 2026), kecuali kop halaman 1 yang tetap hijau; putih hanya di atas latar hijau. Huruf Helvetica (font standar PDF, tanpa pustaka tambahan). Isi formulir mengikuti `docs/template-formulir.md`.
 
 ## Verifikasi
 

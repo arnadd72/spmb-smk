@@ -215,6 +215,8 @@ const W = {
   isian: hex("#FBFAF6"),
   garis: hex("#D6D0BF"),
   redup: hex("#5B6B4A"),
+  /** Tulisan di atas latar terang hitam (permintaan sekolah), kecuali kop halaman 1; putih hanya di atas latar hijau. */
+  hitam: rgb(0, 0, 0),
   putih: rgb(1, 1, 1),
 };
 
@@ -260,7 +262,7 @@ class Kanvas {
     const x0 = o.tengah ? x - lebar / 2 : o.kanan ? x - lebar : x;
     // Jarak huruf lewat operator Tc agar teks tetap satu kata saat dicari atau disalin dari PDF.
     if (o.jarak) this.page.pushOperators(setCharacterSpacing(o.jarak));
-    this.page.drawText(aman, { x: x0, y: Y(y), size: ukuran, font, color: o.warna ?? W.ink });
+    this.page.drawText(aman, { x: x0, y: Y(y), size: ukuran, font, color: o.warna ?? W.hitam });
     if (o.jarak) this.page.pushOperators(setCharacterSpacing(0));
     return lebar;
   }
@@ -271,7 +273,7 @@ class Kanvas {
     let aman = amankan(t, font);
     while (u > 7 && font.widthOfTextAtSize(aman, u) > maks) u -= 0.25;
     while (aman.length > 1 && font.widthOfTextAtSize(aman, u) > maks) aman = aman.slice(0, -1);
-    this.page.drawText(aman, { x, y: Y(y), size: u, font, color: W.ink });
+    this.page.drawText(aman, { x, y: Y(y), size: u, font, color: W.hitam });
   }
 
   /** Kotak isian dengan nilai di dalamnya (nilai kosong = kotak kosong untuk ditulis tangan). */
@@ -310,13 +312,13 @@ class Kanvas {
     this.kotak(TEPI, y, KANAN - TEPI, 22, { isi: W.mintPucat, r: 6 });
     this.kotak(TEPI, y, 22, 22, { isi: W.primer, r: 6 });
     this.teks(huruf, TEPI + 11, y + 15.2, { ukuran: 11, font: this.f.tebal, warna: W.putih, tengah: true });
-    this.teks(judul, TEPI + 32, y + 15, { ukuran: 10.5, font: this.f.tebal, warna: W.ink, jarak: 0.6 });
+    this.teks(judul, TEPI + 32, y + 15, { ukuran: 10.5, font: this.f.tebal, warna: W.hitam, jarak: 0.6 });
   }
 
   /** Label baris bernomor di kolom kiri. */
   label(no: string, teks: string, y: number, x = TEPI + 6) {
-    if (no) this.teks(no, x, y, { ukuran: 9.5, font: this.f.tebal, warna: W.primer });
-    this.teks(teks, x + (no ? 16 : 0), y, { ukuran: 9.5, warna: W.ink });
+    if (no) this.teks(no, x, y, { ukuran: 9.5, font: this.f.tebal, warna: W.hitam });
+    this.teks(teks, x + (no ? 16 : 0), y, { ukuran: 9.5, warna: W.hitam });
   }
 }
 
@@ -363,7 +365,7 @@ const JURUSAN = [
 function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo: { nu: PDFImage; sekolah: PDFImage }, tahun: string) {
   let y = kop(k, logo) + 26;
   const tengah = LEBAR / 2;
-  k.teks("FORMULIR SISTEM PENERIMAAN MURID BARU", tengah, y, { ukuran: 14.5, font: k.f.tebal, warna: W.ink, tengah: true, jarak: 0.4 });
+  k.teks("FORMULIR SISTEM PENERIMAAN MURID BARU", tengah, y, { ukuran: 14.5, font: k.f.tebal, warna: W.hitam, tengah: true, jarak: 0.4 });
   y += 10;
 
   // Pil tahun pelajaran dan kartu nomor pendaftaran sejajar.
@@ -372,13 +374,13 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
   const lebarNomor = 186;
   const kiri = tengah - (lebarTahun + 10 + lebarNomor) / 2;
   k.kotak(kiri, y, lebarTahun, 22, { isi: W.mint, r: 11 });
-  k.teks(teksTahun, kiri + lebarTahun / 2, y + 14.5, { ukuran: 8.5, font: k.f.tebal, warna: W.ink, tengah: true });
+  k.teks(teksTahun, kiri + lebarTahun / 2, y + 14.5, { ukuran: 8.5, font: k.f.tebal, warna: W.hitam, tengah: true });
   const xNomor = kiri + lebarTahun + 10;
   k.kotak(xNomor, y, lebarNomor, 22, { isi: W.ink, r: 11 });
   k.teks("NO. PENDAFTARAN", xNomor + 12, y + 14.3, { ukuran: 7, font: k.f.tebal, warna: W.mint, jarak: 0.4 });
   k.teks(n.nomor, xNomor + lebarNomor - 12, y + 14.8, { ukuran: 10.5, font: k.f.tebal, warna: W.putih, kanan: true });
   y += 36;
-  k.teks("Harap diisi dengan huruf besar dan jelas", tengah, y, { ukuran: 8, font: k.f.miring, warna: W.redup, tengah: true });
+  k.teks("Harap diisi dengan huruf besar dan jelas", tengah, y, { ukuran: 8, font: k.f.miring, warna: W.hitam, tengah: true });
   y += 12;
 
   k.bagian("A", "KETERANGAN DIRI MURID BARU", y);
@@ -399,7 +401,7 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
   k.label("4.", "NIK & No KK", y + 12.5);
   const separuh = (lebarIsi - 18) / 2;
   k.isian(xIsi, y, separuh, n.nik);
-  k.teks("&", xIsi + separuh + 9, y + 12.5, { ukuran: 10, font: k.f.tebal, warna: W.redup, tengah: true });
+  k.teks("&", xIsi + separuh + 9, y + 12.5, { ukuran: 10, font: k.f.tebal, warna: W.hitam, tengah: true });
   k.isian(xIsi + separuh + 18, y, separuh, n.noKk);
   y += 23;
   // Jenis kelamin: dua pilihan.
@@ -424,7 +426,7 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
   for (const [i, [judul, awalan]] of ([["a. Ayah", "ayah"], ["b. Ibu", "ibu"]] as const).entries()) {
     const x = TEPI + i * (lebarKartu + 12);
     k.kotak(x, y, lebarKartu, 104, { garis: W.garis, r: 8 });
-    k.teks(judul, x + 10, y + 15, { ukuran: 9.5, font: k.f.tebal, warna: W.primer });
+    k.teks(judul, x + 10, y + 15, { ukuran: 9.5, font: k.f.tebal, warna: W.hitam });
     const isi: [string, string][] = [
       ["Nama", n[`${awalan}Nama`]],
       ["TTL", n[`${awalan}Ttl`]],
@@ -433,7 +435,7 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
     ];
     isi.forEach(([lbl, v], j) => {
       const yb = y + 22 + j * 20;
-      k.teks(lbl, x + 10, yb + 11.5, { ukuran: 8.5, warna: W.redup });
+      k.teks(lbl, x + 10, yb + 11.5, { ukuran: 8.5, warna: W.hitam });
       k.isian(x + 66, yb, lebarKartu - 76, v, { tinggi: 16 });
     });
   }
@@ -441,11 +443,11 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
 
   // Alamat orang tua / wali.
   k.label("14.", "Alamat Orangtua / Wali", y + 12.5);
-  k.teks("RT", xIsi, y + 12.5, { ukuran: 8.5, warna: W.redup });
+  k.teks("RT", xIsi, y + 12.5, { ukuran: 8.5, warna: W.hitam });
   k.isian(xIsi + 16, y, 36, n.ortuRt, { tengah: true });
-  k.teks("RW", xIsi + 60, y + 12.5, { ukuran: 8.5, warna: W.redup });
+  k.teks("RW", xIsi + 60, y + 12.5, { ukuran: 8.5, warna: W.hitam });
   k.isian(xIsi + 78, y, 36, n.ortuRw, { tengah: true });
-  k.teks("Desa", xIsi + 124, y + 12.5, { ukuran: 8.5, warna: W.redup });
+  k.teks("Desa", xIsi + 124, y + 12.5, { ukuran: 8.5, warna: W.hitam });
   k.isian(xIsi + 148, y, lebarIsi - 148, n.ortuDesa);
   y += 22;
   const xLbl = xIsi;
@@ -455,7 +457,7 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
     ["Propinsi", n.ortuPropinsi],
     ["No. Telepon Wali", n.ortuNoHp],
   ] as const) {
-    k.teks(lbl, xLbl, y + 12.5, { ukuran: 8.5, warna: W.redup });
+    k.teks(lbl, xLbl, y + 12.5, { ukuran: 8.5, warna: W.hitam });
     k.isian(xLbl + 76, y, lebarIsi - 76, v);
     y += 22;
   }
@@ -470,7 +472,7 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
     const x = xIsi + kol * (lebarIsi / 3);
     const yb = y + brs * 19;
     k.centang(x, yb + 3, kode === kd);
-    k.teks(`${kd}).`, x + 16, yb + 12.5, { ukuran: 8, font: k.f.tebal, warna: W.primer });
+    k.teks(`${kd}).`, x + 16, yb + 12.5, { ukuran: 8, font: k.f.tebal, warna: W.hitam });
     k.teks(teks, x + 33, yb + 12.5, { ukuran: 8 });
   });
   y += 44;
@@ -481,7 +483,7 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
     const pilihan = d.jurusan1?.kode === kd ? "1" : d.jurusan2?.kode === kd ? "2" : "";
     const yb = y + i * 19;
     k.centang(xIsi, yb + 2, pilihan, 13);
-    k.teks(teks, xIsi + 20, yb + 12.5, { ukuran: 8.8, font: k.f.tebal, warna: pilihan ? W.ink : W.redup });
+    k.teks(teks, xIsi + 20, yb + 12.5, { ukuran: 8.8, font: k.f.tebal, warna: W.hitam });
   });
 }
 
@@ -489,8 +491,8 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
 function kepalaRingkas(k: Kanvas, n: Record<string, string>, logo: PDFImage) {
   const l = logo.scaleToFit(30, 30);
   k.page.drawImage(logo, { x: TEPI, y: Y(62 - NAIK + l.height), width: l.width, height: l.height });
-  k.teks("FORMULIR SISTEM PENERIMAAN MURID BARU", TEPI + 40, 76 - NAIK, { ukuran: 9.5, font: k.f.tebal, warna: W.ink, jarak: 0.3 });
-  k.teks("SMK MA’ARIF NU 1 WANGON", TEPI + 40, 88 - NAIK, { ukuran: 8, warna: W.redup });
+  k.teks("FORMULIR SISTEM PENERIMAAN MURID BARU", TEPI + 40, 76 - NAIK, { ukuran: 9.5, font: k.f.tebal, warna: W.hitam, jarak: 0.3 });
+  k.teks("SMK MA’ARIF NU 1 WANGON", TEPI + 40, 88 - NAIK, { ukuran: 8, warna: W.hitam });
   const lebar = 196;
   k.kotak(KANAN - lebar, 66 - NAIK, lebar, 22, { isi: W.ink, r: 11 });
   k.teks("NO. PENDAFTARAN", KANAN - lebar + 12, 80.3 - NAIK, { ukuran: 7, font: k.f.tebal, warna: W.mint, jarak: 0.4 });
@@ -551,7 +553,7 @@ function halamanDua(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo:
   let x = xIsi;
   for (const u of SERAGAM) {
     k.centang(x, y + 3, d.ukuranSeragam === u);
-    const w = k.teks(u, x + 17, y + 13, { ukuran: 9.5, font: k.f.tebal, warna: d.ukuranSeragam === u ? W.ink : W.redup });
+    const w = k.teks(u, x + 17, y + 13, { ukuran: 9.5, font: k.f.tebal, warna: W.hitam });
     x += 17 + w + 16;
   }
   y += 40;
@@ -563,8 +565,8 @@ function halamanDua(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo:
   if (pasFoto) {
     k.page.drawImage(pasFoto, { x: xFoto + 0.8, y: Y(y + foto.h - 0.8), width: foto.w - 1.6, height: foto.h - 1.6 });
   } else {
-    k.teks("Pas photo", xFoto + foto.w / 2, y + foto.h / 2 - 2, { ukuran: 8.5, warna: W.redup, tengah: true });
-    k.teks("3 x 4", xFoto + foto.w / 2, y + foto.h / 2 + 10, { ukuran: 8.5, warna: W.redup, tengah: true });
+    k.teks("Pas photo", xFoto + foto.w / 2, y + foto.h / 2 - 2, { ukuran: 8.5, warna: W.hitam, tengah: true });
+    k.teks("3 x 4", xFoto + foto.w / 2, y + foto.h / 2 + 10, { ukuran: 8.5, warna: W.hitam, tengah: true });
   }
   const xTtd = 360;
   const tengahTtd = xTtd + (KANAN - xTtd) / 2;
@@ -585,7 +587,7 @@ function halamanDua(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo:
   k.teks("(Dari siapa / dari mana informasi pendaftaran yang di dapatkan oleh calon murid baru)", xr, y + 42, {
     ukuran: 7.5,
     font: k.f.miring,
-    warna: W.redup,
+    warna: W.hitam,
   });
   k.teks("Petugas Pendaftaran", xr, y + 66, { ukuran: 9.5 });
   k.isian(xv, y + 53, lv, "");
@@ -609,11 +611,11 @@ function tandaTerima(k: Kanvas, n: Record<string, string>, s: "A" | "B", atas: n
   let y = atas;
   const l = logo.scaleToFit(34, 34);
   k.page.drawImage(logo, { x: TEPI, y: Y(y + l.height), width: l.width, height: l.height });
-  k.teks("TANDA TERIMA", TEPI + 44, y + 14, { ukuran: 13, font: k.f.tebal, warna: W.ink, jarak: 0.6 });
+  k.teks("TANDA TERIMA", TEPI + 44, y + 14, { ukuran: 13, font: k.f.tebal, warna: W.hitam, jarak: 0.6 });
   k.teks(`BERKAS PERSYARATAN MURID BARU  ·  SMK MA’ARIF NU 1 WANGON TAHUN PELAJARAN ${tahun.replace("/", " / ")}`, TEPI + 44, y + 28, {
     ukuran: 7.8,
     font: k.f.tebal,
-    warna: W.primer,
+    warna: W.hitam,
   });
   y += 46;
 
@@ -628,11 +630,11 @@ function tandaTerima(k: Kanvas, n: Record<string, string>, s: "A" | "B", atas: n
   baris("Nama Murid Baru", n[`tt${s}Nama`]);
   baris("Asal Sekolah", n[`tt${s}Sekolah`]);
   k.teks("Alamat Murid Baru", TEPI + 6, y + 12.5, { ukuran: 9 });
-  k.teks("RT", xIsi, y + 12.5, { ukuran: 8.5, warna: W.redup });
+  k.teks("RT", xIsi, y + 12.5, { ukuran: 8.5, warna: W.hitam });
   k.isian(xIsi + 16, y, 36, n[`tt${s}Rt`], { tinggi: 17, tengah: true });
-  k.teks("RW", xIsi + 60, y + 12.5, { ukuran: 8.5, warna: W.redup });
+  k.teks("RW", xIsi + 60, y + 12.5, { ukuran: 8.5, warna: W.hitam });
   k.isian(xIsi + 78, y, 36, n[`tt${s}Rw`], { tinggi: 17, tengah: true });
-  k.teks("Desa", xIsi + 124, y + 12.5, { ukuran: 8.5, warna: W.redup });
+  k.teks("Desa", xIsi + 124, y + 12.5, { ukuran: 8.5, warna: W.hitam });
   k.isian(xIsi + 148, y, lebarIsi - 148, n[`tt${s}Desa`], { tinggi: 17 });
   y += 21;
   baris("Kecamatan", n[`tt${s}Kecamatan`]);
@@ -646,7 +648,7 @@ function tandaTerima(k: Kanvas, n: Record<string, string>, s: "A" | "B", atas: n
     const yb = y + Math.floor(i / 2) * 18;
     k.centang(x + 6, yb + 2, false, 11);
     k.teks(`${i + 1}. ${nama}`, x + 23, yb + 11, { ukuran: 8.3 });
-    k.teks(jumlah, x + lebarKol - 14, yb + 11, { ukuran: 8.3, font: k.f.tebal, warna: W.primer, kanan: true });
+    k.teks(jumlah, x + lebarKol - 14, yb + 11, { ukuran: 8.3, font: k.f.tebal, warna: W.hitam, kanan: true });
   });
   y += 80;
 
@@ -668,7 +670,7 @@ function halamanTiga(k: Kanvas, n: Record<string, string>, tahun: string, logo: 
   const potong = 436;
   k.page.drawLine({ start: { x: TEPI - 10, y: Y(potong) }, end: { x: KANAN + 10, y: Y(potong) }, thickness: 0.8, color: W.redup, dashArray: [5, 4] });
   k.kotak(LEBAR / 2 - 54, potong - 8, 108, 16, { isi: W.putih, r: 8 });
-  k.teks("gunting di sini", LEBAR / 2, potong + 3.5, { ukuran: 7.5, font: k.f.miring, warna: W.redup, tengah: true });
+  k.teks("gunting di sini", LEBAR / 2, potong + 3.5, { ukuran: 7.5, font: k.f.miring, warna: W.hitam, tengah: true });
   tandaTerima(k, n, "B", potong + 22, tahun, logo);
 }
 

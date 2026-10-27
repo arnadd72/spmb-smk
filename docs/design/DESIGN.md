@@ -137,6 +137,10 @@ Gradien ungu/biru/pink, latar mesh, glassmorphism massal, hero tengah template, 
 - Nilai tema gelap (`data-tema="gelap"`) belum disesuaikan.
 - `favicon.ico` belum memakai logo baru.
 
+## PDF formulir
+
+Digambar dari kode (`src/server/services/pdf/formulir.ts`, PRD 1.3 butir 79), memakai palet yang sama: gelombang `mint` dan `primer` di bawah halaman (atas polos), pita judul bagian `#EEF3E2` dengan lencana `primer`, kotak isian `#FBFAF6` bergaris `garis`, pil nomor pendaftaran `ink` dengan label `mint`. Huruf Helvetica (font standar PDF, tanpa pustaka tambahan). Isi formulir mengikuti `docs/template-formulir.md`.
+
 ## Verifikasi
 
 `tests/e2e/katalog.spec.ts` memeriksa katalog di 360 dan 1440 px: tanpa gulir horizontal, nol pelanggaran axe WCAG 2.1 AA, dan menghasilkan tangkapan layar ke `docs/design/`.

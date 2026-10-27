@@ -16,7 +16,7 @@ Satu aplikasi Next.js full-stack (Vercel, Prisma, Postgres). Tidak ada lagi Lara
   Kerjakan satu milestone, commit saat selesai dengan pesan yang menyebut milestone dan alasannya.
 - Untuk tugas besar: buat rencana, tunggu persetujuan, baru eksekusi.
 - Setiap fitur wajib punya test (Bagian 19) dan test harus hijau sebelum milestone dinyatakan selesai.
-- Bagian 15.1 (PDF formulir) sudah selesai (`src/server/services/pdf`). Hasil harus tetap identik dengan `docs/template-formulir.docx`, kecuali penyesuaian yang tercatat di PRD 1.3 butir 77 (baris ijazah dan Nilai Ujian dibuang lewat `POTONGAN` di `peta-formulir.ts`); jangan menggambar ulang lapisan tetapnya di luar itu.
+- Bagian 15.1 (PDF formulir): sejak PRD 1.3 butir 79 formulir digambar langsung dari kode dengan tampilan baru (`src/server/services/pdf/formulir.ts`), tanpa template Word. Isi dan urutan isian tetap mengikuti `docs/template-formulir.md` (dikurangi baris ijazah dan Nilai Ujian, butir 77); jangan menambah atau membuang isian tanpa keputusan baru di PRD.
 - Kerja lama ada di `_archive/` (Laravel, OCR Python, Docker). Hanya acuan konsep, bukan kode aktif.
   Jangan diubah, jangan diimpor.
 

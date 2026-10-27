@@ -5,7 +5,6 @@ import sharp from "sharp";
 import { PDFArray, PDFDocument, PDFRawStream, decodePDFRawStream } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { DALAM_PAS_FOTO, buatFormulirPdf, nilaiSlot, siapkanPasFoto, type DataFormulir } from "@/server/services/pdf/formulir";
-import { SLOT_TEKS, geserY } from "@/server/services/pdf/peta-formulir";
 import { terbilang } from "@/server/services/pdf/terbilang";
 
 const contoh: DataFormulir = {
@@ -100,70 +99,41 @@ describe("PDF formulir (PRD 15.1)", () => {
     }
   });
 
-  it("setiap isian terisi pada koordinat hasil pemetaan, di halaman yang benar", async () => {
+  it("semua isian tergambar di halaman yang benar, huruf besar kecuali email (tampilan baru, PRD 1.3 butir 79)", async () => {
     const { jejak } = await buatFormulirPdf(contoh);
     const nilai = nilaiSlot(contoh);
-    for (const s of SLOT_TEKS) {
-      if (!nilai[s.id]) continue;
-      const j = jejak.find((x) => x.id === s.id);
-      expect(j, `slot ${s.id} tidak tergambar`).toBeDefined();
-      expect(j?.h).toBe(s.h);
-      expect(j?.y).toBe(s.y);
-      expect(j!.x).toBeGreaterThanOrEqual(s.x - 0.01);
-      expect(j!.x).toBeLessThanOrEqual(s.x + s.maks);
+    const di = (h: number, teks: string) => jejak.some((j) => j.h === h && j.teks === teks);
+    for (const k of ["nama", "ttl", "nisn", "nik", "noKk", "agama", "asalSekolah", "noHp", "ayahNama", "ibuNama", "ortuDesa", "ortuNoHp"]) {
+      expect(di(1, nilai[k].toUpperCase()), k).toBe(true);
     }
-    // contoh: nomor tampil di halaman 1 dan di dua lembar tanda terima
-    expect(jejak.filter((j) => /^(nomor|ttANomor|ttBNomor)$/.test(j.id)).map((j) => j.h).sort()).toEqual([1, 3, 3]);
+    expect(di(1, "ahmad@contoh.id")).toBe(true);
+    for (const k of ["smpNama", "smpKecamatan", "lamaBelajar", "golonganDarah", "tinggiBadan", "hobiOlahraga", "referensi", "tanggalSurat"]) {
+      expect(di(2, nilai[k].toUpperCase()), k).toBe(true);
+    }
+    // Dua lembar tanda terima di halaman 3.
+    expect(jejak.filter((j) => j.h === 3 && j.teks === `SPMB-2027-0001 / ${contoh.jurusan1?.kode}`)).toHaveLength(2);
   });
 
-  it("teks panjang mengecil agar tetap muat di lebar garis, tidak keluar dari kolom", async () => {
-    const { jejak } = await buatFormulirPdf({ ...contoh, namaLengkap: "MUHAMMAD ABDURRAHMAN AL-FARUQ RADEN MAS SURYONINGRAT KUSUMA".repeat(2) });
-    const nama = jejak.find((j) => j.id === "nama")!;
-    expect(nama.ukuran).toBeLessThan(11);
-  });
-
-  it("nomor ijazah dan blok Nilai Ujian tidak diisi lagi walau data lama punya nilai ujian (PRD 1.3 butir 77)", async () => {
-    const { pdf, jejak } = await buatFormulirPdf(contoh); // contoh masih membawa nilaiUjian dari data lama
-    expect(jejak.some((j) => /^((nilai|terbilang)(Indonesia|Inggris|Matematika|Ipa)|noIjazah|ijazahNomorTahun)$/.test(j.id))).toBe(false);
-    expect(await isiHalaman(pdf, 2)).not.toContain(tampil("DELAPAN PULUH LIMA"));
-  });
-
-  it("baris ijazah dan Nilai Ujian dibuang dari template: isi di bawahnya naik, nomor urut maju (PRD 1.3 butir 77)", async () => {
-    // Halaman 1: baris 12 (No Telepon) naik 18 pt ke tempat baris 11 lama; di atasnya tetap.
-    expect(geserY(1, 423.3)).toBe(423.3);
-    expect(geserY(1, 459.3)).toBe(441.3);
-    // Halaman 2: "c. Lama belajar" naik ke tempat "b"; judul C naik 102,1 pt.
-    expect(geserY(2, 197.2)).toBe(180.1);
-    expect(geserY(2, 316.1)).toBe(214);
-    expect(geserY(3, 500)).toBe(500);
-    const { pdf, jejak } = await buatFormulirPdf(contoh);
-    expect((await PDFDocument.load(pdf)).getPageCount()).toBe(3);
-    expect(jejak.find((j) => j.id === "noHp")?.y).toBe(441.3);
-    const h1 = await isiHalaman(pdf, 1);
-    for (const n of ["11", "12", "13", "14", "15", "16"]) expect(h1).toContain(tampil(n));
-    expect(await isiHalaman(pdf, 2)).toContain(tampil("b."));
-  });
-
-  it("judul halaman 1 menjadi FORMULIR SISTEM PENERIMAAN MURID BARU (PRD 1.3 butir 78)", async () => {
-    const { pdf } = await buatFormulirPdf(contoh);
-    expect(await isiHalaman(pdf, 1)).toContain(tampil("FORMULIR SISTEM PENERIMAAN MURID BARU"));
-  });
-
-  it("tanda terima: nomor dan jurusan satu teks, nomor dan RT/RW berukuran normal seperti isian lain", async () => {
-    const { jejak } = await buatFormulirPdf({ ...contoh, nomor: "SPMB-2027-0006", rt: "006", rw: "005" });
-    for (const id of ["ttANomor", "ttBNomor", "ttARt", "ttARw", "ttBRt", "ttBRw"]) expect(jejak.find((j) => j.id === id)?.ukuran, id).toBe(11);
-    expect(jejak.find((j) => j.id === "ttANomor")?.teks).toBe(`SPMB-2027-0006 / ${contoh.jurusan1?.kode}`);
-    expect(jejak.some((j) => j.id === "ttAJurusan")).toBe(false);
-  });
-
-  it("isian dan tahun pelajaran ada di konten halaman; tahun lama di template ditutup", async () => {
+  it("judul, tahun pelajaran, dan judul tanda terima tetap satu teks di konten halaman", async () => {
     const { pdf } = await buatFormulirPdf(contoh);
     const h1 = await isiHalaman(pdf, 1);
+    expect(h1).toContain(tampil("FORMULIR SISTEM PENERIMAAN MURID BARU"));
+    expect(h1).toContain(tampil("TAHUN PELAJARAN 2027/2028"));
     expect(h1).toContain(tampil("AHMAD FAUZI RAHMAN"));
-    expect(h1).toContain(tampil("2027/2028"));
     const h3 = await isiHalaman(pdf, 3);
-    expect(h3.split(tampil("2027 / 2028")).length - 1).toBe(2);
-    expect(h3).toContain(tampil(`SPMB-2027-0001 / ${contoh.jurusan1?.kode}`));
+    expect(h3.split(tampil("TANDA TERIMA")).length - 1).toBe(2);
+  });
+
+  it("nomor ijazah dan Nilai Ujian tidak ada lagi walau data lama punya nilai ujian (PRD 1.3 butir 77)", async () => {
+    const { pdf } = await buatFormulirPdf(contoh); // contoh masih membawa nilaiUjian dari data lama
+    const semua = (await isiHalaman(pdf, 1)) + (await isiHalaman(pdf, 2));
+    for (const t of ["No. Ijazah", "Nomor dan Tahun Ijazah", "Nilai Ujian", "DELAPAN PULUH LIMA"]) expect(semua).not.toContain(tampil(t));
+  });
+
+  it("isian kosong tetap digambar sebagai kotak kosong untuk ditulis tangan", async () => {
+    const { pdf, jejak } = await buatFormulirPdf({ ...contoh, agama: null, hobiLain: null });
+    expect(jejak.some((j) => j.teks === "ISLAM")).toBe(false);
+    expect((await PDFDocument.load(pdf)).getPageCount()).toBe(3);
   });
 
   it("pas foto ditempel di kotak halaman 2 tanpa mengubah jumlah halaman", async () => {
@@ -177,18 +147,24 @@ describe("PDF formulir (PRD 15.1)", () => {
 
   it("pas foto memenuhi kotak tanpa dipotong: sisa ruang diisi latar foto yang dikaburkan", async () => {
     const rasio = DALAM_PAS_FOTO.w / DALAM_PAS_FOTO.h;
-    // Pas foto 3x4 berlatar merah dengan "wajah" putih di tengah: diperlebar ke kiri dan kanan dengan merah.
+    // Foto 3x4 hampir pas dengan kotak 3x4: tidak ada yang terpotong, lebar dan tinggi asli tetap.
+    const pas34 = await sharp(await siapkanPasFoto(await sharp({ create: { width: 300, height: 400, channels: 3, background: "#cc1414" } }).png().toBuffer())).metadata();
+    expect(pas34.width).toBe(300);
+    expect(pas34.height).toBeGreaterThanOrEqual(400);
+    expect(pas34.height).toBeLessThanOrEqual(404);
+
+    // Foto ramping (HP) berlatar merah dengan "wajah" putih di tengah: diperlebar ke kiri dan kanan dengan merah.
     const wajah = await sharp({ create: { width: 100, height: 160, channels: 3, background: { r: 255, g: 255, b: 255 } } }).png().toBuffer();
-    const foto = await sharp({ create: { width: 300, height: 400, channels: 3, background: { r: 200, g: 20, b: 20 } } })
+    const foto = await sharp({ create: { width: 300, height: 500, channels: 3, background: { r: 200, g: 20, b: 20 } } })
       .composite([{ input: wajah, left: 100, top: 40 }])
       .png()
       .toBuffer();
     const hasil = await sharp(await siapkanPasFoto(foto)).raw().toBuffer({ resolveWithObject: true });
     expect(hasil.info.width / hasil.info.height).toBeCloseTo(rasio, 2);
-    expect(hasil.info.height).toBe(400); // tinggi utuh: tidak ada yang terpotong
+    expect(hasil.info.height).toBe(500); // tinggi utuh: tidak ada yang terpotong
     const piksel = (x: number, y: number) => [...hasil.data.subarray((y * hasil.info.width + x) * 3, (y * hasil.info.width + x) * 3 + 3)];
     for (const x of [0, hasil.info.width - 1]) {
-      const [r, g, b] = piksel(x, 200);
+      const [r, g, b] = piksel(x, 250);
       // Merah (kompresi JPEG sedikit menggeser warna).
       expect(r).toBeGreaterThan(170);
       expect(r - Math.max(g, b)).toBeGreaterThan(120);

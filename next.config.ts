@@ -16,11 +16,13 @@ const nextConfig: NextConfig = {
   // Dipakai tes e2e (playwright.config.ts) agar servernya tidak berbenturan dengan `npm run dev` di folder .next.
   ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   images: hostSupabase ? { remotePatterns: [{ protocol: "https", hostname: hostSupabase, pathname: "/storage/v1/object/public/**" }] } : undefined,
-  // PDF template formulir dibaca lewat fs saat runtime: pastikan ikut terbawa ke fungsi serverless Vercel.
-  outputFileTracingIncludes: {
-    "/api/v1/pendaftar/[token]/formulir": ["./src/server/services/pdf/template-dasar.pdf"],
-    "/api/v1/admin/peserta/[id]/formulir": ["./src/server/services/pdf/template-dasar.pdf"],
-  },
+  // Logo untuk PDF formulir dibaca lewat fs saat runtime: pastikan ikut terbawa ke fungsi serverless Vercel.
+  outputFileTracingIncludes: Object.fromEntries(
+    ["/api/v1/pendaftar/[token]/formulir", "/api/v1/admin/peserta/[id]/formulir", "/api/v1/edit-formulir/formulir"].map((rute) => [
+      rute,
+      ["./src/server/services/pdf/logo-nu.png", "./public/images/sekolah/logo-sekolah.png"],
+    ]),
+  ),
   // Hanya berlaku di `next dev`: izinkan akses lewat terowongan ngrok untuk uji bersama teman. Tanpa ini
   // aset dev (/_next/...) diblokir dari origin selain localhost, sehingga JS klien (GSAP, Lenis) tidak jalan.
   // Build produksi tidak membutuhkannya.

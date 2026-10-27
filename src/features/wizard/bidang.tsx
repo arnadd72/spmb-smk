@@ -204,13 +204,14 @@ export function Bidang({ f, nilai, onChange, galat, disabled, dariDokumen }: Pro
       type={f.tipe === "date" ? "date" : f.tipe === "email" ? "email" : f.tipe === "tel" ? "tel" : "text"}
       inputMode={angkaSaja ? "numeric" : undefined}
       autoComplete={AUTOFILL[f.kunci]}
+      autoCapitalize={f.tipe === "email" ? "none" : undefined}
       {...isianAngka.propsInput}
       value={teks(nilai)}
       maxLength={batasPanjang(f)}
       onChange={(e) =>
         aturan
           ? isianAngka.saatUbah(e.target.value)
-          : onChange(f.kunci, angkaSaja ? e.target.value.replace(/\D/g, "") : f.tipe === "text" || f.tipe === "email" ? kapitalSemua(e.target.value) : e.target.value)
+          : onChange(f.kunci, angkaSaja ? e.target.value.replace(/\D/g, "") : f.tipe === "text" ? kapitalSemua(e.target.value) : e.target.value)
       }
       disabled={disabled}
       placeholder={f.kunci === "lama_belajar" ? undefined : f.placeholder ?? undefined}

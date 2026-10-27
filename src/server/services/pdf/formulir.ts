@@ -368,8 +368,8 @@ function halamanSatu(k: Kanvas, d: DataFormulir, n: Record<string, string>, logo
   k.teks("FORMULIR SISTEM PENERIMAAN MURID BARU", tengah, y, { ukuran: 14.5, font: k.f.tebal, warna: W.hitam, tengah: true, jarak: 0.4 });
   y += 10;
 
-  // Pil tahun pelajaran dan kartu nomor pendaftaran sejajar.
-  const teksTahun = `TAHUN PELAJARAN ${tahun}`;
+  // Pil tahun ajaran dan kartu nomor pendaftaran sejajar.
+  const teksTahun = `TAHUN AJARAN ${tahun}`;
   const lebarTahun = k.f.tebal.widthOfTextAtSize(teksTahun, 8.5) + 22;
   const lebarNomor = 186;
   const kiri = tengah - (lebarTahun + 10 + lebarNomor) / 2;
@@ -612,7 +612,7 @@ function tandaTerima(k: Kanvas, n: Record<string, string>, s: "A" | "B", atas: n
   const l = logo.scaleToFit(34, 34);
   k.page.drawImage(logo, { x: TEPI, y: Y(y + l.height), width: l.width, height: l.height });
   k.teks("TANDA TERIMA", TEPI + 44, y + 14, { ukuran: 13, font: k.f.tebal, warna: W.hitam, jarak: 0.6 });
-  k.teks(`BERKAS PERSYARATAN MURID BARU  ·  SMK MA’ARIF NU 1 WANGON TAHUN PELAJARAN ${tahun.replace("/", " / ")}`, TEPI + 44, y + 28, {
+  k.teks(`BERKAS PERSYARATAN MURID BARU  ·  SMK MA’ARIF NU 1 WANGON TAHUN AJARAN ${tahun.replace("/", " / ")}`, TEPI + 44, y + 28, {
     ukuran: 7.8,
     font: k.f.tebal,
     warna: W.hitam,

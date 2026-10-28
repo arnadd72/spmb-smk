@@ -51,7 +51,6 @@ function RingkasanKonten({ nama }: { nama: string }) {
           ["Galeri", "/admin/galeri"],
           ["Testimoni", "/admin/testimoni"],
           ["FAQ", "/admin/faq"],
-          ["Tes Minat Bakat", "/admin/tes-minat"],
         ].map(([label, href]) => (
           <li key={href}>
             <Link

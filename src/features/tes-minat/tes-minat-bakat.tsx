@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-import { HURUF_MINAT, JURUSAN_MINAT, poinMinat, type JawabanMinat, type SoalMinat } from "./schema-client";
+import { HURUF_MINAT, JURUSAN_MINAT, SOAL_MINAT, poinMinat, type JawabanMinat } from "./schema-client";
 
 const TAMPILAN: Record<(typeof JURUSAN_MINAT)[number], { nama: string; warna: string }> = {
   MPLB: { nama: "Manajemen Perkantoran dan Layanan Bisnis", warna: "bg-mint" },
@@ -11,17 +11,16 @@ const TAMPILAN: Record<(typeof JURUSAN_MINAT)[number], { nama: string; warna: st
   LPK3: { nama: "Farmasi", warna: "bg-jurusan-lpk3" },
   TKR: { nama: "Teknik Kendaraan Ringan", warna: "bg-jurusan-tkr" },
 };
+const PERTANYAAN = SOAL_MINAT;
 const HURUF = HURUF_MINAT;
+const kosong = (): JawabanMinat => Array(PERTANYAAN.length).fill(null);
 
 /**
- * Tes minat bakat satu soal per layar. `soal` dimuat server dari soal yang diatur admin (PRD 1.3 butir 80). Di halaman
- * publik berdiri sendiri; di langkah 3 wizard diberi `awal` (jawaban tersimpan di draf) dan `onUbah` agar jawaban ikut
- * disimpan untuk saran jurusan di langkah 4.
+ * Tes minat bakat satu soal per layar. Di halaman publik berdiri sendiri; di langkah 3 wizard diberi `awal` (jawaban
+ * tersimpan di draf) dan `onUbah` agar jawaban ikut disimpan untuk saran jurusan di langkah 4.
  */
-export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalMinat[]; awal?: JawabanMinat; onUbah?: (jawaban: JawabanMinat) => void }) {
-  const kosong = (): JawabanMinat => Array(soal.length).fill(null);
-  // Jawaban draf disesuaikan dengan jumlah soal sekarang (soal bisa ditambah atau dikurangi admin).
-  const [jawaban, setJawabanLokal] = useState<JawabanMinat>(() => (awal ? soal.map((_, i) => awal[i] ?? null) : kosong()));
+export function TesMinatBakat({ awal, onUbah }: { awal?: JawabanMinat; onUbah?: (jawaban: JawabanMinat) => void } = {}) {
+  const [jawaban, setJawabanLokal] = useState<JawabanMinat>(() => (awal && awal.length === PERTANYAAN.length ? awal : kosong()));
   // Draf yang sudah berisi jawaban dibuka di soal pertama yang belum dijawab, atau langsung di hasil bila lengkap.
   const [langkah, setLangkah] = useState(() => Math.max(0, jawaban.findIndex((x) => x === null)));
   const [lihatHasil, setLihatHasil] = useState(() => jawaban.every((x) => x !== null));
@@ -41,7 +40,7 @@ export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalMinat[]; awal?
 
   function lanjut() {
     if (jawaban[langkah] === null) return;
-    if (langkah === soal.length - 1) setLihatHasil(true);
+    if (langkah === PERTANYAAN.length - 1) setLihatHasil(true);
     else setLangkah((sebelumnya) => sebelumnya + 1);
   }
 
@@ -49,14 +48,6 @@ export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalMinat[]; awal?
     setJawaban(kosong());
     setLangkah(0);
     setLihatHasil(false);
-  }
-
-  if (soal.length === 0) {
-    return (
-      <div id="tes-minat-bakat" className="rounded-kartu bg-permukaan p-5 text-ink shadow-kartu sm:p-8">
-        <p className="font-semibold">Soal tes minat bakat belum tersedia. Silakan coba lagi nanti.</p>
-      </div>
-    );
   }
 
   return (
@@ -78,7 +69,7 @@ export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalMinat[]; awal?
                         <p className="angka shrink-0 font-bold">{jurusan.poin} poin</p>
                       </div>
                       <div className="mt-2 h-3 overflow-hidden rounded-full bg-permukaan-alt">
-                        <div className={cn("h-full rounded-full", jurusan.warna)} style={{ width: `${(jurusan.poin / soal.length) * 100}%` }} />
+                        <div className={cn("h-full rounded-full", jurusan.warna)} style={{ width: `${(jurusan.poin / PERTANYAAN.length) * 100}%` }} />
                       </div>
                       <p className={cn("mt-1 text-sm font-semibold", utama ? "text-primer-tua" : "text-tinta-redup")}>
                         {utama ? (jumlahTertinggi > 1 ? "Rekomendasi setara" : "Minat paling banyak") : "Alternatif"}
@@ -99,25 +90,25 @@ export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalMinat[]; awal?
           ) : (
             <>
               <div className="flex items-center justify-between gap-4">
-                <p className="text-sm font-semibold text-tinta">Pertanyaan {langkah + 1} dari {soal.length}</p>
-                <p className="text-sm text-tinta-redup">{Math.round(((langkah + 1) / soal.length) * 100)}%</p>
+                <p className="text-sm font-semibold text-tinta">Pertanyaan {langkah + 1} dari {PERTANYAAN.length}</p>
+                <p className="text-sm text-tinta-redup">{Math.round(((langkah + 1) / PERTANYAAN.length) * 100)}%</p>
               </div>
               <div
                 className="mt-2 h-2 overflow-hidden rounded-full bg-permukaan-alt"
                 role="progressbar"
                 aria-label="Kemajuan tes"
                 aria-valuemin={0}
-                aria-valuemax={soal.length}
+                aria-valuemax={PERTANYAAN.length}
                 aria-valuenow={langkah + 1}
               >
-                <div className="h-full rounded-full bg-primer transition-[width]" style={{ width: `${((langkah + 1) / soal.length) * 100}%` }} />
+                <div className="h-full rounded-full bg-primer transition-[width]" style={{ width: `${((langkah + 1) / PERTANYAAN.length) * 100}%` }} />
               </div>
               <fieldset className="mt-6">
-                <legend className="text-lg font-bold leading-snug text-ink sm:text-xl">{soal[langkah].teks}</legend>
+                <legend className="text-lg font-bold leading-snug text-ink sm:text-xl">{PERTANYAAN[langkah].teks}</legend>
                 <div className="mt-4 flex flex-col gap-2">
-                  {soal[langkah].opsi.map((opsi, indeks) => (
+                  {PERTANYAAN[langkah].opsi.map((opsi, indeks) => (
                     <label
-                      key={indeks}
+                      key={opsi}
                       className={cn(
                         "flex min-h-12 cursor-pointer items-start gap-3 rounded-kontrol border px-3 py-3 text-sm transition-colors",
                         jawaban[langkah] === indeks ? "border-primer bg-mint/50" : "border-garis bg-permukaan hover:bg-permukaan-alt",
@@ -144,7 +135,7 @@ export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalMinat[]; awal?
                   Sebelumnya
                 </Button>
                 <Button type="button" onClick={lanjut} disabled={jawaban[langkah] === null}>
-                  {langkah === soal.length - 1 ? "Lihat hasil" : "Lanjut"}
+                  {langkah === PERTANYAAN.length - 1 ? "Lihat hasil" : "Lanjut"}
                 </Button>
               </div>
             </>

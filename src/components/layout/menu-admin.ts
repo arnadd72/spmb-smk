@@ -18,7 +18,6 @@ export type IkonMenu =
   | "galeri"
   | "testimoni"
   | "faq"
-  | "tesMinat"
   | "jurusan"
   | "formulir"
   | "pengaturan"
@@ -74,7 +73,6 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
       { label: "Galeri", href: "/admin/galeri", ket: "Foto kegiatan sekolah", ikon: "galeri", peran: KONTEN, siap: true },
       { label: "Testimoni", href: "/admin/testimoni", ket: "Kesan dari alumni", ikon: "testimoni", peran: KONTEN, siap: true },
       { label: "FAQ", href: "/admin/faq", ket: "Pertanyaan yang sering diajukan", ikon: "faq", peran: KONTEN, siap: true },
-      { label: "Tes Minat Bakat", href: "/admin/tes-minat", ket: "Tambah, ubah, atau hapus soal tes", ikon: "tesMinat", peran: KONTEN, siap: true },
     ],
   },
   {

@@ -1,11 +1,9 @@
 // @vitest-environment node
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
-import type { ZodError } from "zod";
 import { BATAS_FOTO_HERO, ambilJurusanAdmin, buatKonten, daftarKonten, hapusKonten, ubahJurusan, ubahKonten } from "@/server/actions/konten";
 import { ambilSemuaPengaturan, simpanPengaturanAdmin } from "@/server/actions/pengaturan";
 import { ambilBerita, ambilDaftarBerita, ambilJurusanPublik } from "@/server/actions/ambilPublik";
 import { prisma } from "@/server/db/client";
-import { muatSoalMinat } from "@/server/services/soalMinat";
 import { GalatApi } from "@/server/types/galat";
 import { seedReferensi } from "../../prisma/seed-lib";
 
@@ -131,24 +129,6 @@ describe("entitas lain", () => {
     const galatBatas = (await galat(buatKonten("hero", { gambar: "/images/lagi.webp" }, ctx))) as GalatApi;
     expect(galatBatas.errors?.gambar?.[0]).toMatch(/maksimal 6/);
     expect((await daftarKonten("hero")).total).toBe(BATAS_FOTO_HERO);
-  });
-
-  it("soal tes minat bakat (PRD 1.3 butir 80): keempat pilihan wajib, bisa ditambah, diubah, disembunyikan, dan dihapus", async () => {
-    const opsi = { opsiMplb: "Menata arsip.", opsiAkl: "Menghitung kas.", opsiLpk3: "Meracik obat.", opsiTkr: "Memperbaiki mesin." };
-    const kurang = (await galat(buatKonten("soalMinat", { pertanyaan: "Soal tanpa pilihan D?", ...opsi, opsiTkr: "" }, ctx))) as ZodError;
-    expect(kurang.issues.map((i) => [i.path.join("."), i.message])).toEqual([["opsiTkr", "Pilihan D wajib diisi."]]);
-
-    // Tabel berisi 15 soal bawaan dari migrasi: soal uji dibuat dan dihapus sendiri tanpa menyentuh soal bawaan.
-    const baru = (await buatKonten("soalMinat", { pertanyaan: "Soal uji tambahan?", ...opsi, urutan: 99 }, ctx)) as { id: string };
-    try {
-      expect((await muatSoalMinat()).at(-1)).toEqual({ teks: "Soal uji tambahan?", opsi: Object.values(opsi) });
-      await ubahKonten("soalMinat", baru.id, { pertanyaan: "Soal uji diubah?", ...opsi, urutan: 99, isActive: false }, ctx);
-      expect((await muatSoalMinat()).map((s) => s.teks)).not.toContain("Soal uji diubah?");
-      expect((await prisma.auditLog.findMany({ where: { entitasTipe: "soal_minat" } })).map((a) => a.aksi)).toEqual(["soal_minat.buat", "soal_minat.ubah"]);
-    } finally {
-      await hapusKonten("soalMinat", baru.id, ctx);
-    }
-    expect(await muatSoalMinat()).toHaveLength(15);
   });
 
   it("daftar mendukung pencarian tanpa peka huruf dan paginasi", async () => {

@@ -136,7 +136,7 @@ describe("jawabPertanyaan: fitur situs yang sering ditanyakan", () => {
     for (const q of ["tes minat bakat tuh apa aja", "apa itu tes minat dan bakat?", "ada tes bakat nggak?"]) {
       const r = await jawabPertanyaan(q, "ip-minat");
       expect(r.sumber).toBe("aturan");
-      expect(r.jawaban).toMatch(/pertanyaan pilihan/);
+      expect(r.jawaban).toMatch(/15 pertanyaan/);
       expect(r.jawaban).toMatch(/tidak disimpan/);
       expect(r.tautan?.[0].href).toBe("/tes-minat-bakat");
     }

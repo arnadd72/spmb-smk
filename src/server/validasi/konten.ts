@@ -91,17 +91,6 @@ export const skemaFaq = z.object({
   isActive: aktif,
 });
 
-/** Soal tes minat bakat (PRD 1.3 butir 80): satu pilihan per jurusan, A = MPLB, B = AKL, C = LPK3, D = TKR. */
-export const skemaSoalMinat = z.object({
-  pertanyaan: teks("Pertanyaan", 5, 300),
-  opsiMplb: teks("Pilihan A", 2, 300),
-  opsiAkl: teks("Pilihan B", 2, 300),
-  opsiLpk3: teks("Pilihan C", 2, 300),
-  opsiTkr: teks("Pilihan D", 2, 300),
-  urutan,
-  isActive: aktif,
-});
-
 const daftarTeks = z
   .union([z.array(z.string()), z.string()])
   .transform((v) => (Array.isArray(v) ? v : v.split("\n")).map((k) => k.trim()).filter(Boolean))

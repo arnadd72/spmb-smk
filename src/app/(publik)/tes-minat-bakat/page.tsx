@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { TesMinatBakat } from "@/features/tes-minat/tes-minat-bakat";
-import { muatSoalMinat } from "@/server/services/soalMinat";
 
 export const metadata = {
   title: "Tes minat dan bakat",
-  description: "Tes singkat pilihan ganda untuk membantu calon siswa mengenali jurusan SMK yang sesuai dengan minatnya.",
+  description: "Tes singkat 15 pertanyaan untuk membantu calon siswa mengenali jurusan SMK yang sesuai dengan minatnya.",
 };
 
-// Soal diatur admin di Isi Situs (PRD 1.3 butir 80); disegarkan lewat revalidatePath saat admin menyimpan.
-export const revalidate = 300;
-
-export default async function HalamanTesMinatBakat() {
+export default function HalamanTesMinatBakat() {
   return (
     <div className="bg-mint py-12 text-ink lg:py-20">
       <div className="wadah grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
@@ -26,7 +22,7 @@ export default async function HalamanTesMinatBakat() {
             Lihat penjelasan tiap jurusan
           </Link>
         </div>
-        <TesMinatBakat soal={await muatSoalMinat()} />
+        <TesMinatBakat />
       </div>
     </div>
   );

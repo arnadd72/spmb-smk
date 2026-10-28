@@ -118,7 +118,7 @@ describe("PDF formulir (PRD 15.1)", () => {
     const { pdf } = await buatFormulirPdf(contoh);
     const h1 = await isiHalaman(pdf, 1);
     expect(h1).toContain(tampil("FORMULIR SISTEM PENERIMAAN MURID BARU"));
-    expect(h1).toContain(tampil("TAHUN AJARAN 2027/2028"));
+    expect(h1).toContain(tampil("TAHUN PELAJARAN 2027/2028"));
     expect(h1).toContain(tampil("AHMAD FAUZI RAHMAN"));
     const h3 = await isiHalaman(pdf, 3);
     expect(h3.split(tampil("TANDA TERIMA")).length - 1).toBe(2);

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRightIcon, CheckCircleIcon, ListChecksIcon, LockSimpleIcon } from "@phosphor-icons/react/dist/ssr";
 
 const POIN = [
-  { Ikon: ListChecksIcon, judul: "Pertanyaan pilihan ganda", isi: "Pilih satu dari empat jawaban (A sampai D) yang paling sesuai dengan dirimu." },
+  { Ikon: ListChecksIcon, judul: "15 pertanyaan pilihan", isi: "Pilih satu dari empat jawaban (A sampai D) yang paling sesuai dengan dirimu." },
   { Ikon: CheckCircleIcon, judul: "Tidak ada jawaban benar atau salah", isi: "Jawab sesuai minat dan kebiasaanmu, bukan sesuai tebakan." },
   { Ikon: LockSimpleIcon, judul: "Hasil tidak disimpan", isi: "Hasil dihitung di HP kamu dan tidak dikirim ke panitia." },
 ];

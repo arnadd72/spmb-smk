@@ -20,6 +20,8 @@
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",
     "db:seed": "prisma db seed",
+    "db:backup": "node scripts/db-backup.mjs",
+    "db:pulihkan": "node scripts/db-pulihkan.mjs",
     "db:generate": "prisma generate"
   },
   "dependencies": {

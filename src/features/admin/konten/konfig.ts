@@ -20,7 +20,7 @@ export type DefKolom = { kunci: string; label: string; tipe?: "teks" | "tanggal"
 
 export type KonfigKonten = {
   /** Segmen API: /api/v1/admin/{api} */
-  api: "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq";
+  api: "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq" | "soal-minat";
   judul: string;
   tunggal: string;
   kolom: DefKolom[];
@@ -144,5 +144,26 @@ export const KONFIG_KONTEN: Record<string, KonfigKonten> = {
       aktif,
     ],
     kosong: { judul: "Belum ada pertanyaan", deskripsi: "Tambahkan pertanyaan yang sering ditanyakan calon murid." },
+  },
+  soalMinat: {
+    api: "soal-minat",
+    judul: "Soal Tes Minat Bakat",
+    tunggal: "soal",
+    kolom: [
+      { kunci: "pertanyaan", label: "Pertanyaan", tipe: "potong" },
+      { kunci: "urutan", label: "Urutan", tipe: "angka" },
+      { kunci: "isActive", label: "Status", tipe: "status" },
+    ],
+    // Pilihan A sampai D selalu mengarah ke jurusan yang sama (JURUSAN_MINAT), jadi tiap pilihan diberi label jurusannya.
+    field: [
+      { kunci: "pertanyaan", label: "Pertanyaan", tipe: "area", wajib: true },
+      { kunci: "opsiMplb", label: "Pilihan A (mengarah ke MPLB)", tipe: "area", wajib: true },
+      { kunci: "opsiAkl", label: "Pilihan B (mengarah ke AKL)", tipe: "area", wajib: true },
+      { kunci: "opsiLpk3", label: "Pilihan C (mengarah ke LPK3)", tipe: "area", wajib: true },
+      { kunci: "opsiTkr", label: "Pilihan D (mengarah ke TKR)", tipe: "area", wajib: true },
+      { kunci: "urutan", label: "Urutan", tipe: "angka", awal: 0, bantuan: "Angka kecil tampil lebih dulu." },
+      { ...aktif, label: "Tampilkan di tes", bantuan: "Matikan untuk menyembunyikan soal tanpa menghapusnya." },
+    ],
+    kosong: { judul: "Belum ada soal", deskripsi: "Tambahkan soal agar tes minat bakat bisa dikerjakan calon murid." },
   },
 };

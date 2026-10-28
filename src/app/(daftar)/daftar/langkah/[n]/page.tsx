@@ -11,8 +11,9 @@ import { NAMA_LANGKAH, TOTAL_LANGKAH, type DefinisiField, type JawabanMinat } fr
 import { Transisi } from "@/features/wizard/transisi";
 import { formatTanggal } from "@/lib/format";
 import { NAMA_COOKIE_DRAF, ambilDraf, ambilKonfigWizard, muatDefinisiField, rekomendasiDraf, type Berkas } from "@/server/services/draf";
-import { SOAL_MINAT, jumlahTerjawab, peringkatMinat } from "@/server/validasi/minat";
 import { muatJurusanAktif } from "@/server/services/rekomendasi";
+import { muatSoalMinat } from "@/server/services/soalMinat";
+import { jumlahTerjawab, peringkatMinat } from "@/server/validasi/minat";
 
 export const metadata = { title: "Pendaftaran", robots: { index: false } };
 
@@ -82,7 +83,7 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
       />
     );
   } else if (n === 3) {
-    isi = <LangkahMinat awal={awal.minat as JawabanMinat | undefined} />;
+    isi = <LangkahMinat soal={await muatSoalMinat()} awal={awal.minat as JawabanMinat | undefined} />;
   } else if (n === 4) {
     const rekom = await rekomendasiDraf(token);
     const opsi = doLangkah.find((f) => f.kunci === "jurusan_1")?.opsi ?? [];
@@ -111,7 +112,7 @@ export default async function Langkah({ params }: PageProps<"/daftar/langkah/[n]
         { label: "Akta kelahiran", nilai: draf.berkas.akta ? "Terunggah" : "Tidak diunggah" },
         { label: "Kartu keluarga", nilai: draf.berkas.kk ? "Terunggah" : "Tidak diunggah" },
         { label: "Pas foto", nilai: draf.berkas.pas_foto ? "Terunggah" : "Tidak diunggah" },
-        { label: "Tes minat bakat", nilai: jumlahTerjawab(minat) > 0 ? `${jumlahTerjawab(minat)} dari ${SOAL_MINAT.length} soal dijawab` : "Tidak ikut" },
+        { label: "Tes minat bakat", nilai: jumlahTerjawab(minat) > 0 ? `${jumlahTerjawab(minat)} dari ${(await muatSoalMinat()).length} soal dijawab` : "Tidak ikut" },
         { label: "Saran dari tes", nilai: saran.map((p) => p.kode).join(", ") },
       ],
     });

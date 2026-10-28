@@ -7,13 +7,14 @@ import { TesMinatBakat } from "@/features/tes-minat/tes-minat-bakat";
 import { PesanGalat } from "./bidang";
 import { pecahGalat, simpanLangkahKlien } from "./api";
 import { Navigasi } from "./langkah-berkas";
-import type { JawabanMinat } from "./schema-client";
+import type { JawabanMinat, SoalMinat } from "./schema-client";
 
 /**
- * Langkah 3: tes minat bakat (opsional, PRD 1.3 butir 65). Soal sama dengan halaman Tes Minat Bakat publik.
+ * Langkah 3: tes minat bakat (opsional, PRD 1.3 butir 65). Soal sama dengan halaman Tes Minat Bakat publik, diatur
+ * admin di Isi Situs (butir 80).
  * Jawaban disimpan di draf dan dipakai untuk saran jurusan di langkah 4; tanpa tes, tidak ada saran.
  */
-export function LangkahMinat({ awal }: { awal?: JawabanMinat }) {
+export function LangkahMinat({ soal, awal }: { soal: SoalMinat[]; awal?: JawabanMinat }) {
   const router = useRouter();
   const [jawaban, setJawaban] = useState<JawabanMinat | undefined>(awal);
   // Draf yang sudah berisi jawaban langsung membuka tesnya.
@@ -48,7 +49,7 @@ export function LangkahMinat({ awal }: { awal?: JawabanMinat }) {
       <fieldset className="flex flex-col gap-3">
         <legend className="mb-1 text-sm font-semibold text-tinta">Apakah Anda ingin mendapat saran jurusan dari tes minat bakat?</legend>
         {[
-          { nilai: true, judul: "Ya, saya ikut tes minat bakat", isi: "15 pertanyaan pilihan, sekitar 5 menit. Tidak ada jawaban benar atau salah." },
+          { nilai: true, judul: "Ya, saya ikut tes minat bakat", isi: `${soal.length} pertanyaan pilihan, sekitar ${Math.max(1, Math.round(soal.length / 3))} menit. Tidak ada jawaban benar atau salah.` },
           { nilai: false, judul: "Tidak, saya akan memilih jurusan sendiri", isi: "Lewati langkah ini; tidak perlu mengerjakan tes." },
         ].map((o) => (
           <label
@@ -76,7 +77,7 @@ export function LangkahMinat({ awal }: { awal?: JawabanMinat }) {
       {ikut && (
         <>
           <p className="text-sm text-tinta-redup">Jawab sesuai minat dan kebiasaanmu. Boleh berhenti di tengah; soal yang sudah dijawab tetap dihitung.</p>
-          <TesMinatBakat awal={jawaban} onUbah={setJawaban} />
+          <TesMinatBakat soal={soal} awal={jawaban} onUbah={setJawaban} />
         </>
       )}
 

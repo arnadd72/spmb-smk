@@ -7,12 +7,14 @@ import { serialisasi } from "@/server/services/serialisasi";
 import { slugUnik } from "@/server/services/slug";
 import { BATAS_FOTO_HERO } from "@/server/types/aset";
 import { GalatApi } from "@/server/types/galat";
-import { skemaBerita, skemaEvent, skemaFaq, skemaFotoHero, skemaGaleri, skemaJurusan, skemaTestimoni } from "@/server/validasi/konten";
+import { skemaBerita, skemaEvent, skemaFaq, skemaFotoHero, skemaGaleri, skemaJurusan, skemaSoalMinat, skemaTestimoni } from "@/server/validasi/konten";
+import { BATAS_SOAL_MINAT } from "@/server/validasi/minat";
 
-// CRUD konten admin (PRD v3.1 13.8). Satu implementasi untuk lima entitas yang bentuknya sama.
+// CRUD konten admin (PRD v3.1 13.8, soal tes minat bakat PRD 1.3 butir 80). Satu implementasi untuk entitas yang
+// bentuknya sama.
 
-export type Entitas = "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq";
-export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "hero", "testimoni", "faq"];
+export type Entitas = "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq" | "soalMinat";
+export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "hero", "testimoni", "faq", "soalMinat"];
 
 export { BATAS_FOTO_HERO };
 
@@ -47,6 +49,7 @@ const KONFIG: Record<Entitas, Konfig> = {
   hero: { delegate: prisma.fotoHero as unknown as Delegate, skema: skemaFotoHero, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["judul"], tipeAudit: "hero" },
   testimoni: { delegate: prisma.testimoni as unknown as Delegate, skema: skemaTestimoni, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["nama", "isi"], tipeAudit: "testimoni" },
   faq: { delegate: prisma.faq as unknown as Delegate, skema: skemaFaq, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["pertanyaan"], tipeAudit: "faq" },
+  soalMinat: { delegate: prisma.soalMinat as unknown as Delegate, skema: skemaSoalMinat, urut: [{ urutan: "asc" }, { id: "asc" }], cari: ["pertanyaan"], tipeAudit: "soal_minat" },
 };
 
 export type KonteksAksi = { userId: string; ip?: string };
@@ -109,6 +112,9 @@ export async function buatKonten(entitas: Entitas, mentah: unknown, ctx: Konteks
   if (entitas === "berita" && input.isActive && !input.publishedAt) input.publishedAt = new Date();
   if (entitas === "hero" && (await k.delegate.count()) >= BATAS_FOTO_HERO) {
     throw GalatApi.validasi({ gambar: [`Foto tambahan beranda maksimal ${BATAS_FOTO_HERO}. Hapus salah satu dulu.`] });
+  }
+  if (entitas === "soalMinat" && (await k.delegate.count()) >= BATAS_SOAL_MINAT) {
+    throw GalatApi.validasi({ pertanyaan: [`Soal tes minat bakat maksimal ${BATAS_SOAL_MINAT}. Hapus salah satu dulu.`] });
   }
 
   const baru = await k.delegate.create({ data: input });

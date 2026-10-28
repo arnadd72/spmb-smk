@@ -11,6 +11,6 @@ export {
   type InputCekStatus,
   type OpsiField,
 } from "@/server/validasi/wizard";
-export type { JawabanMinat } from "@/server/validasi/minat";
+export type { JawabanMinat, SoalMinat } from "@/server/validasi/minat";
 export { ANGKA_OCR, galatAngkaOcr, saringAngkaOcr } from "@/server/validasi/ocr";
 export { aturanAngka, periksaAngka, saringAngka, type AturanAngka } from "@/server/validasi/angka";

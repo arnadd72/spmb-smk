@@ -79,7 +79,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
         <Reveal tunda={0.06} className="rounded-kartu border border-garis bg-permukaan p-6 lg:p-8">
           <h2 className="text-2xl font-bold text-ink">Cocok dengan minatmu?</h2>
           <p className="mt-4 text-tinta-redup">
-            Coba tes minat bakat: 15 pertanyaan singkat untuk melihat jurusan yang paling sesuai dengan minatmu. Tes yang sama juga ada di
+            Coba tes minat bakat: pertanyaan pilihan singkat untuk melihat jurusan yang paling sesuai dengan minatmu. Tes yang sama juga ada di
             langkah 3 pendaftaran.
           </p>
           <Link href="/tes-minat-bakat" className="mt-5 inline-flex min-h-11 items-center font-semibold text-primer-tua underline underline-offset-4">

@@ -13,6 +13,7 @@ export function segarkanHalamanPublik() {
   revalidatePath("/berita/[slug]", "page");
   revalidatePath("/jurusan");
   revalidatePath("/jurusan/[kode]", "page");
+  revalidatePath("/tes-minat-bakat");
 }
 
 const ipDari = (req: Request) => req.headers.get("x-forwarded-for")?.split(",")[0]?.trim();

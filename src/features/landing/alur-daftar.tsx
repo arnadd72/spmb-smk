@@ -41,21 +41,25 @@ export function AlurDaftar() {
         });
       }
 
-      const kartu = window.matchMedia("(min-width: 1024px)").matches ? gsap.utils.toArray<HTMLElement>("[data-kartu]", el) : [];
-      kartu.forEach((k, i) => {
-        const berikut = kartu[i + 1];
-        if (!berikut) return;
-        // Nilai awal filter wajib eksplisit: dari "none" GSAP menginterpolasi mulai brightness(0) dan kartu menghitam.
-        gsap.fromTo(
-          k,
-          { scale: 1, filter: "brightness(1)" },
-          {
-            scale: 0.93 - (kartu.length - i) * 0.004,
-            filter: "brightness(0.8)",
-            ease: "none",
-            scrollTrigger: { trigger: berikut, start: "top 92%", end: "top 18%", scrub: true },
-          },
-        );
+      // matchMedia mengembalikan ukuran kartu bila layar mengecil di bawah 1024 px tanpa muat ulang.
+      const mm = gsap.matchMedia();
+      mm.add("(min-width: 1024px)", () => {
+        const kartu = gsap.utils.toArray<HTMLElement>("[data-kartu]", el);
+        kartu.forEach((k, i) => {
+          const berikut = kartu[i + 1];
+          if (!berikut) return;
+          // Nilai awal filter wajib eksplisit: dari "none" GSAP menginterpolasi mulai brightness(0) dan kartu menghitam.
+          gsap.fromTo(
+            k,
+            { scale: 1, filter: "brightness(1)" },
+            {
+              scale: 0.93 - (kartu.length - i) * 0.004,
+              filter: "brightness(0.8)",
+              ease: "none",
+              scrollTrigger: { trigger: berikut, start: "top 92%", end: "top 18%", scrub: true },
+            },
+          );
+        });
       });
 
       // Angka besar berputar sedikit saat kartu masuk (gerak bermakna: urutan tahap).
@@ -63,7 +67,10 @@ export function AlurDaftar() {
         gsap.from(a, { yPercent: 40, rotate: -8, opacity: 0, duration: 0.8, ease: "expo.out", scrollTrigger: { trigger: a, start: "top 90%", once: true } });
       });
 
-      return () => split?.revert();
+      return () => {
+        mm.revert();
+        split?.revert();
+      };
     },
   });
 

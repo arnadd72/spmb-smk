@@ -89,6 +89,8 @@ export function Hero({
 
   // Foto dimulai tepat di bawah blok teks (jarak tetap), berapa pun tinggi layar dan panjang judul.
   // Diukur lewat ResizeObserver dan ditulis ke variabel CSS, tanpa state React.
+  // Desktop: `--fa` = jarak atas dan bawah kotak akhir foto. Kotak itu selebar wadah dengan rasio foto pertama dan
+  // berada di tengah tinggi hero, jadi saat membesar penuh foto tampil utuh (tidak terpotong kiri-kanan).
   useEffect(() => {
     const el = akar.current;
     const blok = el?.querySelector<HTMLElement>("[data-teks]");
@@ -96,12 +98,23 @@ export function Hero({
     const ukur = () => {
       const bawah = Math.max(...Array.from(blok.children).map((c) => (c as HTMLElement).offsetTop + (c as HTMLElement).offsetHeight));
       el.style.setProperty("--teks", `${bawah}px`);
+      const samping = blok.getBoundingClientRect().left - el.getBoundingClientRect().left + parseFloat(getComputedStyle(blok).paddingLeft);
+      const img = el.querySelector<HTMLImageElement>('[data-hero-slide="0"] img');
+      const rasio = img?.naturalWidth ? img.naturalWidth / img.naturalHeight : 1.5;
+      const tinggi = Math.min(el.clientHeight - 56, (el.clientWidth - 2 * samping) / rasio);
+      el.style.setProperty("--fa", `${Math.max(28, (el.clientHeight - tinggi) / 2)}px`);
     };
     ukur();
     const ro = new ResizeObserver(ukur);
+    ro.observe(el);
     ro.observe(blok);
     Array.from(blok.children).forEach((c) => ro.observe(c));
-    return () => ro.disconnect();
+    // Rasio baru diketahui setelah foto termuat. Fase capture: jalan sebelum penyegaran ScrollTrigger di bawah.
+    el.addEventListener("load", ukur, true);
+    return () => {
+      ro.disconnect();
+      el.removeEventListener("load", ukur, true);
+    };
   }, []);
 
   useGsapPublik(akar, {
@@ -125,30 +138,39 @@ export function Hero({
         const atas = parseFloat(el.style.getPropertyValue("--teks") || "0") + (besar ? 40 : 32);
         const blok = el.querySelector<HTMLElement>("[data-teks]");
         const samping = blok ? blok.getBoundingClientRect().left + parseFloat(getComputedStyle(blok).paddingLeft) : 20;
-        return `inset(${atas}px ${samping}px ${besar ? 40 : 24}px ${samping}px round ${besar ? 22 : 18}px)`;
+        // Banner tidak boleh turun melewati dasar kotak foto (`--fa`), supaya tidak ada pita kosong di bawahnya.
+        const bawah = Math.max(besar ? 40 : 24, parseFloat(el.style.getPropertyValue("--fa") || "0"));
+        return `inset(${atas}px ${samping}px ${bawah}px ${samping}px round ${besar ? 22 : 18}px)`;
       };
 
-      // Akhir gulir: foto membesar ke tengah area layar tetapi tetap memakai margin samping yang sama
-      // dengan teks (tidak sampai tepi layar). Atas dan bawah sama besar supaya tepat di tengah.
+      // Akhir gulir: jendela potongan tepat sebesar kotak foto (`--fa`, margin samping sama dengan teks), jadi foto
+      // tampil utuh di tengah layar.
       const akhir = () => {
-        const besar = window.innerWidth >= 1024;
         const blok = el.querySelector<HTMLElement>("[data-teks]");
         const samping = blok ? blok.getBoundingClientRect().left + parseFloat(getComputedStyle(blok).paddingLeft) : 20;
-        const tepi = besar ? 28 : 16;
-        return `inset(${tepi}px ${samping}px ${tepi}px ${samping}px round ${besar ? 22 : 18}px)`;
+        const tepi = parseFloat(el.style.getPropertyValue("--fa") || "28");
+        return `inset(${tepi}px ${samping}px ${tepi}px ${samping}px round 22px)`;
       };
 
       // Gulir (desktop): foto mengembang dari banner ke tengah layar, teks terangkat dan memudar. Di HP tidak di-pin:
-      // pin membuat layar kedua kosong di atas foto dan gulir terasa tersendat.
-      if (!window.matchMedia("(min-width: 1024px)").matches) return () => split?.revert();
-      const tl = gsap.timeline({
-        defaults: { ease: "none" },
-        scrollTrigger: { trigger: el, start: "top 64px", end: "+=110%", pin: true, scrub: 0.6, invalidateOnRefresh: true },
+      // pin membuat layar kedua kosong di atas foto dan gulir terasa tersendat. matchMedia mencabut clip-path inline
+      // dan pin saat layar mengecil di bawah 1024 px tanpa muat ulang, agar foto HP tidak ikut terpotong habis.
+      const mm = gsap.matchMedia();
+      mm.add("(min-width: 1024px)", () => {
+        const tl = gsap.timeline({
+          defaults: { ease: "none" },
+          scrollTrigger: { trigger: el, start: "top 64px", end: "+=110%", pin: true, scrub: 0.6, invalidateOnRefresh: true },
+        });
+        tl.fromTo(foto, { clipPath: awal }, { clipPath: akhir, duration: 1 }, 0)
+          .to(teks, { yPercent: -14, opacity: 0, duration: 0.2, ease: "power1.in" }, 0);
+        // Rasio foto (`--fa`) baru pasti setelah foto pertama termuat: hitung ulang awal dan akhir clip-path.
+        const segarkan = () => ScrollTrigger.refresh();
+        el.addEventListener("load", segarkan, true);
+        return () => el.removeEventListener("load", segarkan, true);
       });
-      tl.fromTo(foto, { clipPath: awal }, { clipPath: akhir, duration: 1 }, 0)
-        .to(teks, { yPercent: -14, opacity: 0, duration: 0.2, ease: "power1.in" }, 0);
 
       return () => {
+        mm.revert();
         split?.revert();
         ScrollTrigger.getAll().forEach((t) => t.trigger === el && t.kill());
       };
@@ -156,13 +178,19 @@ export function Hero({
   });
 
   return (
-    <section ref={akar} className="relative h-[calc(100dvh-4rem)] min-h-[36rem] overflow-hidden bg-latar">
-      {/* Foto sekolah warna asli. Dipotong jadi banner di bawah, mengembang saat digulir. */}
+    // HP dan tablet: tinggi = blok teks + kotak foto mendatar 16:10 selebar wadah. Desktop: setinggi layar.
+    <section
+      ref={akar}
+      className="relative h-[calc(var(--teks,20rem)+3.5rem+(100vw-2*var(--pad))*0.625)] overflow-hidden bg-latar lg:h-[calc(100dvh-4rem)] lg:min-h-[36rem]"
+    >
+      {/* Foto sekolah warna asli. HP: kotak mendatar di bawah teks, foto utuh tanpa terpotong tegak. Desktop: banner
+          di bawah yang mengembang saat digulir (clip-path diatur GSAP). */}
       <div
         data-foto-layer
-        className="absolute inset-0 [--m:max(var(--pad),calc((100vw-84rem)/2+var(--pad)))] [clip-path:inset(calc(var(--teks,20rem)+2rem)_var(--m)_1.5rem_var(--m)_round_18px)] lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_2.5rem_var(--m)_round_22px)]"
+        className="absolute inset-x-[var(--m)] bottom-6 top-[calc(var(--teks,20rem)+2rem)] overflow-hidden rounded-[18px] [--m:max(var(--pad),calc((100vw-84rem)/2+var(--pad)))] lg:inset-0 lg:overflow-visible lg:rounded-none lg:[clip-path:inset(calc(var(--teks,20rem)+2.5rem)_var(--m)_max(2.5rem,var(--fa,0px))_var(--m)_round_22px)]"
       >
-        <div data-foto-gambar className="absolute inset-0">
+        {/* Desktop: kotak foto = kotak akhir (rasio foto, di tengah), jadi object-cover tidak memotong saat membesar penuh. */}
+        <div data-foto-gambar className="absolute inset-0 lg:inset-x-[var(--m)] lg:inset-y-[var(--fa,0px)] lg:overflow-hidden">
           {slide.map((s, i) => (
             <div
               key={s.id}
@@ -215,7 +243,7 @@ export function Hero({
         )}
       </div>
 
-      <div className="pointer-events-none absolute bottom-[3.25rem] right-[calc(max(var(--pad),calc((100vw-84rem)/2+var(--pad)))+1rem)] z-10 hidden items-center gap-3 rounded-kartu bg-permukaan/95 px-3 py-2.5 shadow-kartu lg:flex">
+      <div className="pointer-events-none absolute bottom-[calc(max(2.5rem,var(--fa,0px))+0.75rem)] right-[calc(max(var(--pad),calc((100vw-84rem)/2+var(--pad)))+1rem)] z-10 hidden items-center gap-3 rounded-kartu bg-permukaan/95 px-3 py-2.5 shadow-kartu lg:flex">
         <GambarLogo src={logo} width={40} height={40} className="size-10 object-contain" />
         <p className="text-sm font-bold leading-tight text-ink">
           SMK Pusat

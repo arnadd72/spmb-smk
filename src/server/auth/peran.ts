@@ -4,7 +4,7 @@ import type { PeranAdmin } from "@/server/auth/sesi";
 export const PERAN = {
   /** Data pendaftar, verifikasi, kuota, ekspor, input manual. */
   pendaftar: ["panitia", "superadmin"] as PeranAdmin[],
-  /** Berita, agenda, galeri, testimoni, FAQ. */
+  /** Berita, agenda, galeri, testimoni, FAQ, soal tes minat bakat. */
   konten: ["konten", "superadmin"] as PeranAdmin[],
   /** Jurusan, mapel, bobot, form builder, pengaturan, akun admin, audit log. */
   sistem: ["superadmin"] as PeranAdmin[],

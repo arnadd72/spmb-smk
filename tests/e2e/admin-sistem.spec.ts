@@ -89,6 +89,54 @@ test.describe("admin sistem: akun admin", () => {
     const { username } = await masukSebagai(page, "superadmin");
     await page.goto("/admin/akun-admin");
     await expect(page.getByRole("button", { name: `Nonaktifkan ${username}` })).toBeDisabled();
+    // Akun sendiri tidak punya tombol hapus.
+    await expect(page.getByRole("button", { name: `Hapus akun ${username}` })).toHaveCount(0);
+  });
+
+  test("hapus akun: wajib password superadmin, salah ditolak, benar menghapus permanen dan sesinya berakhir; superadmin tidak bisa ditambah (PRD 1.3 butir 81)", async ({ page, browser }) => {
+    test.setTimeout(120_000);
+    const { password: passwordSaya } = await masukSebagai(page, "superadmin");
+    await page.goto("/admin/akun-admin");
+
+    // Pilihan peran tidak memuat Superadmin untuk akun baru.
+    await page.getByRole("button", { name: "Tambah akun" }).click();
+    await expect(page.getByLabel("Peran").locator("option", { hasText: "Superadmin" })).toHaveCount(0);
+    const username = `uji-hapus-${Date.now().toString(36)}`;
+    await page.getByLabel(/^Nama/).fill("Uji E2E Hapus Akun");
+    await page.getByLabel(/^Username/).fill(username);
+    await page.getByLabel("Peran").selectOption("panitia");
+    await page.getByRole("button", { name: "Simpan" }).click();
+    const sementara = (await page.locator("[data-password-sementara]").innerText()).trim();
+    await page.getByRole("button", { name: "Sudah saya catat" }).click();
+
+    // Akun itu masuk di konteks lain supaya sesinya bisa diuji.
+    const konteks = await browser.newContext();
+    const baru = await konteks.newPage();
+    await baru.goto("/admin/login");
+    await baru.getByLabel("Username").fill(username);
+    await baru.getByLabel("Password").fill(sementara);
+    await baru.getByRole("button", { name: "Masuk" }).click();
+    await expect(baru).toHaveURL(/\/admin$/);
+
+    // Password salah: akun tetap ada.
+    await page.getByRole("button", { name: `Hapus akun ${username}` }).click();
+    await page.getByLabel(/Password Anda/).fill("password-yang-salah");
+    await page.getByRole("button", { name: "Hapus permanen" }).click();
+    await expect(page.getByText("Password salah.")).toBeVisible();
+    // Kotak konfirmasi masih terbuka dan akunnya masih bisa masuk (sesi belum berakhir).
+    expect((await baru.request.get("/api/v1/admin/me")).status()).toBe(200);
+
+    // Password benar: akun hilang dan sesinya langsung berakhir.
+    await page.getByLabel(/Password Anda/).fill(passwordSaya);
+    await page.getByRole("button", { name: "Hapus permanen" }).click();
+    await expect(page.getByText(new RegExp(`Akun ${username} dihapus permanen`))).toBeVisible();
+    await expect(page.getByRole("row", { name: new RegExp(username) })).toHaveCount(0);
+    expect((await baru.request.get("/api/v1/admin/me")).status()).toBe(401);
+    await konteks.close();
+
+    // Tercatat di audit log, dengan akun saya sebagai pelaku.
+    await page.goto("/admin/audit-log?aksi=akun.hapus");
+    await expect(page.getByRole("cell", { name: /Akun dihapus/ }).first()).toBeVisible();
   });
 });
 

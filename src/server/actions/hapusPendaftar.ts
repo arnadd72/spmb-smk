@@ -1,8 +1,8 @@
-import bcrypt from "bcryptjs";
 import type { ZodType } from "zod";
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/server/db/client";
 import type { Berkas, BerkasDraf } from "@/server/services/draf";
+import { pastikanPasswordSuperadmin } from "@/server/services/konfirmasiPassword";
 import { penyimpananDokumen, penyimpananTemp } from "@/server/services/penyimpanan";
 import { statusDrive } from "@/server/services/penyimpanan/driveOAuth";
 import { semuaIdDrive } from "@/server/services/pendaftaran";
@@ -16,8 +16,6 @@ import { MAKS_HAPUS, skemaHapus, skemaPilihanHapus, type PilihanHapus } from "@/
 
 export type { BarisHapus, HasilHapus, HasilPratinjau };
 
-const BATAS_SALAH = 5;
-const JENDELA_MENIT = 15;
 const WIB = 7 * 3600_000;
 const SELECT_BARIS = { id: true, nomorPendaftaran: true, namaLengkap: true, createdAt: true, sumber: true } as const;
 
@@ -87,26 +85,6 @@ export async function pratinjauHapus(mentah: unknown): Promise<HasilPratinjau> {
   return { total: ids.length, ids: ids.map((i) => i.toString()), contoh: contoh.map(baris) };
 }
 
-/** Periksa password superadmin yang sedang masuk. 5 kali salah dalam 15 menit mengunci, sama seperti login. */
-async function pastikanPassword(userId: string, password: string, ip?: string): Promise<void> {
-  const penanda = `hapus:${userId}`;
-  const sejak = new Date(Date.now() - JENDELA_MENIT * 60_000);
-  // Periksa batas dan catat percobaan dalam satu langkah yang dikunci per pengguna: permintaan paralel tidak bisa lolos
-  // bersamaan karena masing-masing melihat hitungan sebelum percobaannya sendiri dicatat. Berhasil = catatan dihapus.
-  await prisma.$transaction(async (tx) => {
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${penanda}))`;
-    const salah = await tx.percobaanLogin.count({ where: { username: penanda, berhasil: false, createdAt: { gte: sejak } } });
-    if (salah >= BATAS_SALAH) throw GalatApi.terlaluBanyak();
-    await tx.percobaanLogin.create({ data: { username: penanda, ip, berhasil: false } });
-  });
-
-  const user = await prisma.user.findUnique({ where: { id: BigInt(userId) } });
-  if (!user || !user.isActive) throw GalatApi.tidakTerautentikasi();
-  if (user.peran !== "superadmin") throw GalatApi.dilarang();
-  if (!(await bcrypt.compare(password, user.passwordHash))) throw GalatApi.validasi({ password: ["Password salah."] });
-  await prisma.percobaanLogin.deleteMany({ where: { username: penanda } });
-}
-
 function refSementara(meta: unknown): string[] {
   return Object.values((meta ?? {}) as BerkasDraf)
     .flatMap((v) => (Array.isArray(v) ? v : v ? [v] : []))
@@ -116,7 +94,7 @@ function refSementara(meta: unknown): string[] {
 /** Hapus satu per satu. Yang gagal dilaporkan dan dibiarkan utuh; yang sudah tidak ada dilewati. */
 export async function hapusPendaftar(sesi: { sub: string }, mentah: unknown, ip?: string): Promise<HasilHapus> {
   const input = urai(skemaHapus, mentah);
-  await pastikanPassword(sesi.sub, input.password, ip);
+  await pastikanPasswordSuperadmin(sesi.sub, input.password, `hapus:${sesi.sub}`, ip);
 
   const hasil: HasilHapus = { terhapus: 0, dilewati: 0, gagal: [], folderHilang: [] };
   for (const idTeks of input.ids) {

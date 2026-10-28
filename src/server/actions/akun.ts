@@ -2,8 +2,9 @@ import { randomInt } from "node:crypto";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/server/db/client";
 import { catatAudit } from "@/server/services/audit";
+import { pastikanPasswordSuperadmin } from "@/server/services/konfirmasiPassword";
 import { GalatApi } from "@/server/types/galat";
-import { skemaAkunBaru, skemaUbahAkun } from "@/server/validasi/akun";
+import { skemaAkunBaru, skemaHapusAkun, skemaUbahAkun } from "@/server/validasi/akun";
 import type { KonteksAksi } from "./konten";
 
 // Manajemen akun admin oleh superadmin. Password sementara hanya ditampilkan sekali dan wajib diganti saat masuk pertama.
@@ -64,6 +65,11 @@ export async function ubahAkun(id: string, mentah: unknown, ctx: KonteksAksi) {
   const lama = await prisma.user.findUnique({ where: { id: BigInt(id) } });
   if (!lama) throw GalatApi.tidakDitemukan("Akun tidak ditemukan.");
 
+  // Superadmin hanya satu akun: tidak ada akun lain yang boleh dinaikkan jadi superadmin.
+  if (input.peran === "superadmin" && lama.peran !== "superadmin") {
+    throw GalatApi.validasi({ peran: ["Superadmin hanya satu akun dan tidak bisa ditambah."] });
+  }
+
   const diriSendiri = id === ctx.userId;
   if (diriSendiri && (input.isActive === false || (input.peran !== undefined && input.peran !== lama.peran))) {
     throw GalatApi.validasi({ _: ["Anda tidak bisa menonaktifkan atau mengubah peran akun Anda sendiri."] });
@@ -91,4 +97,38 @@ export async function ubahAkun(id: string, mentah: unknown, ctx: KonteksAksi) {
   const dataBaru = { nama: input.nama ?? lama.name, peran: input.peran ?? lama.peran, isActive: input.isActive ?? lama.isActive, ...(passwordSementara ? { passwordDireset: true } : {}) };
   await catatAudit({ userId: ctx.userId, aksi: passwordSementara ? "akun.reset_password" : "akun.ubah", entitasTipe: "user", entitasId: id, dataLama, dataBaru, ip: ctx.ip });
   return { id, ...(passwordSementara ? { passwordSementara } : {}) };
+}
+
+/**
+ * Hapus akun panitia atau operator konten secara permanen (PRD 1.3 butir 81). Hanya superadmin (dijaga rute API) dan wajib
+ * memasukkan password-nya sendiri. Superadmin dan akun sendiri tidak bisa dihapus. Riwayat Audit Log dan data verifikasi
+ * pendaftar yang menunjuk ke akun itu tetap ada, hanya pelakunya dikosongkan; identitas akun yang dihapus dicatat di
+ * entri audit penghapusan.
+ */
+export async function hapusAkun(id: string, mentah: unknown, ctx: KonteksAksi) {
+  if (!/^\d{1,18}$/.test(id)) throw GalatApi.tidakDitemukan("Akun tidak ditemukan.");
+  const { password } = skemaHapusAkun.parse(mentah);
+  const lama = await prisma.user.findUnique({ where: { id: BigInt(id) } });
+  if (!lama) throw GalatApi.tidakDitemukan("Akun tidak ditemukan.");
+  if (id === ctx.userId) throw GalatApi.validasi({ _: ["Anda tidak bisa menghapus akun Anda sendiri."] });
+  if (lama.peran === "superadmin") throw GalatApi.validasi({ _: ["Akun superadmin tidak bisa dihapus."] });
+
+  await pastikanPasswordSuperadmin(ctx.userId, password, `hapus-akun:${ctx.userId}`, ctx.ip);
+
+  await prisma.$transaction([
+    prisma.auditLog.updateMany({ where: { userId: lama.id }, data: { userId: null } }),
+    prisma.pendaftar.updateMany({ where: { diverifikasiOlehId: lama.id }, data: { diverifikasiOlehId: null } }),
+    prisma.user.delete({ where: { id: lama.id } }),
+  ]);
+  await prisma.percobaanLogin.deleteMany({ where: { username: lama.username } });
+
+  await catatAudit({
+    userId: ctx.userId,
+    aksi: "akun.hapus",
+    entitasTipe: "user",
+    entitasId: id,
+    dataLama: { nama: lama.name, username: lama.username, peran: lama.peran, isActive: lama.isActive },
+    ip: ctx.ip,
+  });
+  return { id, username: lama.username };
 }

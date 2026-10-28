@@ -2,7 +2,7 @@
 
 import { useState, type SyntheticEvent } from "react";
 import { useRouter } from "next/navigation";
-import { CheckIcon, CopyIcon, KeyIcon, PencilSimpleIcon, PlusIcon } from "@phosphor-icons/react";
+import { CheckIcon, CopyIcon, KeyIcon, PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
@@ -27,6 +27,9 @@ export function PanelAkun({ akun, saya }: { akun: Akun[]; saya: string }) {
   const [rahasia, setRahasia] = useState<{ username: string; password: string }>();
   const [tersalin, setTersalin] = useState(false);
   const [reset, setReset] = useState<Akun>();
+  const [hapus, setHapus] = useState<Akun>();
+  const [passwordHapus, setPasswordHapus] = useState("");
+  const [galatHapus, setGalatHapus] = useState<string>();
   const [pesan, setPesan] = useState<{ ok: boolean; teks: string }>();
 
   const pesanGalat = (e: unknown) => (e instanceof ApiError ? (e.errors ? Object.values(e.errors)[0][0] : e.message) : "Tidak dapat terhubung ke server.");
@@ -103,6 +106,30 @@ export function PanelAkun({ akun, saya }: { akun: Akun[]; saya: string }) {
     }
   }
 
+  function bukaHapus(a: Akun) {
+    setPasswordHapus("");
+    setGalatHapus(undefined);
+    setHapus(a);
+  }
+
+  async function konfirmasiHapus(e: SyntheticEvent) {
+    e.preventDefault();
+    if (!hapus) return;
+    setSibuk("hapus");
+    setGalatHapus(undefined);
+    try {
+      await apiFetch(`/admin/akun/${hapus.id}`, { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ password: passwordHapus }) });
+      setPesan({ ok: true, teks: `Akun ${hapus.username} dihapus permanen.` });
+      setHapus(undefined);
+      router.refresh();
+    } catch (err) {
+      setGalatHapus(pesanGalat(err));
+    } finally {
+      setSibuk(undefined);
+      setPasswordHapus("");
+    }
+  }
+
   async function salin() {
     if (!rahasia) return;
     try {
@@ -163,6 +190,11 @@ export function PanelAkun({ akun, saya }: { akun: Akun[]; saya: string }) {
                   <Button varian="hantu" disabled={a.id === saya || sibuk === a.id} onClick={() => ubahStatus(a)} aria-label={`${a.isActive ? "Nonaktifkan" : "Aktifkan"} ${a.username}`}>
                     {a.isActive ? "Nonaktifkan" : "Aktifkan"}
                   </Button>
+                  {a.peran !== "superadmin" && a.id !== saya && (
+                    <Button varian="hantu" aria-label={`Hapus akun ${a.username}`} onClick={() => bukaHapus(a)}>
+                      <TrashIcon aria-hidden className="size-5 text-bahaya" />
+                    </Button>
+                  )}
                 </td>
               </tr>
             ))}
@@ -182,13 +214,16 @@ export function PanelAkun({ akun, saya }: { akun: Akun[]; saya: string }) {
             <label className="flex flex-col gap-1.5 text-sm font-semibold text-tinta">
               Peran
               <select value={form.peran} disabled={form.id === saya} onChange={(e) => setForm({ ...form, peran: e.target.value as Akun["peran"] })} className={cn(kontrolDasar, "font-normal")}>
-                {Object.entries(PERAN).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
+                {Object.entries(PERAN)
+                  .filter(([v]) => v !== "superadmin" || form.peran === "superadmin")
+                  .map(([v, l]) => (
+                    <option key={v} value={v}>
+                      {l}
+                    </option>
+                  ))}
               </select>
               {form.id === saya && <span className="text-xs font-normal text-tinta-redup">Anda tidak bisa mengubah peran akun sendiri.</span>}
+              {form.peran !== "superadmin" && <span className="text-xs font-normal text-tinta-redup">Superadmin hanya satu akun dan tidak bisa ditambah.</span>}
             </label>
             {!form.id && <p className="rounded-kontrol bg-info-latar px-3 py-2 text-sm text-info">Password sementara dibuat otomatis dan ditampilkan sekali. Akun wajib menggantinya saat masuk pertama.</p>}
             {galatUmum && (
@@ -224,6 +259,27 @@ export function PanelAkun({ akun, saya }: { akun: Akun[]; saya: string }) {
           </>
         }
       />
+
+      <Dialog buka={Boolean(hapus)} onBukaChange={(b) => !b && setHapus(undefined)} judul="Hapus akun permanen?">
+        {hapus && (
+          <form onSubmit={konfirmasiHapus} noValidate className="flex flex-col gap-4">
+            <p className="text-sm text-tinta-redup">
+              Akun <span className="font-semibold text-tinta">{hapus.username}</span> ({PERAN[hapus.peran]}) dihapus permanen dan tidak bisa dikembalikan. Riwayat di Audit Log tetap ada, hanya nama pelakunya dikosongkan.
+            </p>
+            <Field label="Password Anda (superadmin)" wajib bantuan="Masukkan password akun Anda sendiri untuk mengonfirmasi." galat={galatHapus}>
+              <Input type="password" autoComplete="current-password" value={passwordHapus} onChange={(e) => setPasswordHapus(e.target.value)} />
+            </Field>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button type="button" varian="sekunder" onClick={() => setHapus(undefined)}>
+                Batal
+              </Button>
+              <Button type="submit" varian="bahaya" memuat={sibuk === "hapus"} disabled={passwordHapus === ""}>
+                Hapus permanen
+              </Button>
+            </div>
+          </form>
+        )}
+      </Dialog>
 
       <Dialog
         buka={Boolean(rahasia)}

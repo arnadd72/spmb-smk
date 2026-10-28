@@ -30,6 +30,7 @@ export const LABEL_AKSI: Record<string, string> = {
   "akun.buat": "Akun dibuat",
   "akun.ubah": "Akun diubah",
   "akun.reset_password": "Password akun direset",
+  "akun.hapus": "Akun dihapus",
   "pengaturan.ubah": "Pengaturan diubah",
 };
 

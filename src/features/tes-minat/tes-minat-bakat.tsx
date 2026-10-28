@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
-import { HURUF_MINAT, JURUSAN_MINAT, SOAL_MINAT, poinMinat, type JawabanMinat } from "./schema-client";
+import { HURUF_MINAT, JURUSAN_MINAT, poinMinat, type JawabanMinat, type SoalTes } from "./schema-client";
 
 const TAMPILAN: Record<(typeof JURUSAN_MINAT)[number], { nama: string; warna: string }> = {
   MPLB: { nama: "Manajemen Perkantoran dan Layanan Bisnis", warna: "bg-mint" },
@@ -11,15 +11,16 @@ const TAMPILAN: Record<(typeof JURUSAN_MINAT)[number], { nama: string; warna: st
   LPK3: { nama: "Farmasi", warna: "bg-jurusan-lpk3" },
   TKR: { nama: "Teknik Kendaraan Ringan", warna: "bg-jurusan-tkr" },
 };
-const PERTANYAAN = SOAL_MINAT;
 const HURUF = HURUF_MINAT;
-const kosong = (): JawabanMinat => Array(PERTANYAAN.length).fill(null);
 
 /**
  * Tes minat bakat satu soal per layar. Di halaman publik berdiri sendiri; di langkah 3 wizard diberi `awal` (jawaban
- * tersimpan di draf) dan `onUbah` agar jawaban ikut disimpan untuk saran jurusan di langkah 4.
+ * tersimpan di draf) dan `onUbah` agar jawaban ikut disimpan untuk saran jurusan di langkah 4. `soal` = soal aktif dari database
+ * (diatur admin, PRD 1.3 butir 80); pemanggil tidak menampilkan komponen ini bila daftarnya kosong.
  */
-export function TesMinatBakat({ awal, onUbah }: { awal?: JawabanMinat; onUbah?: (jawaban: JawabanMinat) => void } = {}) {
+export function TesMinatBakat({ soal, awal, onUbah }: { soal: SoalTes[]; awal?: JawabanMinat; onUbah?: (jawaban: JawabanMinat) => void }) {
+  const PERTANYAAN = soal;
+  const kosong = (): JawabanMinat => Array(PERTANYAAN.length).fill(null);
   const [jawaban, setJawabanLokal] = useState<JawabanMinat>(() => (awal && awal.length === PERTANYAAN.length ? awal : kosong()));
   // Draf yang sudah berisi jawaban dibuka di soal pertama yang belum dijawab, atau langsung di hasil bila lengkap.
   const [langkah, setLangkah] = useState(() => Math.max(0, jawaban.findIndex((x) => x === null)));

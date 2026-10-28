@@ -1,12 +1,17 @@
 import Link from "next/link";
 import { TesMinatBakat } from "@/features/tes-minat/tes-minat-bakat";
+import { muatSoalMinat } from "@/server/services/soalMinat";
+
+// Soal diatur admin; admin menyimpan menyegarkan halaman ini lewat revalidatePath (api/_lib/konten.ts).
+export const revalidate = 300;
 
 export const metadata = {
   title: "Tes minat dan bakat",
-  description: "Tes singkat 15 pertanyaan untuk membantu calon siswa mengenali jurusan SMK yang sesuai dengan minatnya.",
+  description: "Tes singkat pilihan ganda untuk membantu calon siswa mengenali jurusan SMK yang sesuai dengan minatnya.",
 };
 
-export default function HalamanTesMinatBakat() {
+export default async function HalamanTesMinatBakat() {
+  const soal = await muatSoalMinat().catch(() => []);
   return (
     <div className="bg-mint py-12 text-ink lg:py-20">
       <div className="wadah grid items-start gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-16">
@@ -22,7 +27,14 @@ export default function HalamanTesMinatBakat() {
             Lihat penjelasan tiap jurusan
           </Link>
         </div>
-        <TesMinatBakat />
+        {soal.length > 0 ? (
+          <TesMinatBakat soal={soal.map(({ teks, opsi }) => ({ teks, opsi }))} />
+        ) : (
+          <div className="rounded-kartu bg-permukaan p-5 text-ink shadow-kartu sm:p-8">
+            <h2 className="text-lg font-bold">Tes belum tersedia</h2>
+            <p className="mt-2 text-sm text-tinta-redup">Soal tes minat bakat sedang disiapkan panitia. Silakan coba lagi nanti.</p>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -24,7 +24,8 @@ export type IkonMenu =
   | "ocr"
   | "akun"
   | "audit"
-  | "hapus";
+  | "hapus"
+  | "tes";
 
 export type ItemMenu = {
   label: string;
@@ -73,6 +74,7 @@ export const GRUP_MENU: { nama: string; item: ItemMenu[] }[] = [
       { label: "Galeri", href: "/admin/galeri", ket: "Foto kegiatan sekolah", ikon: "galeri", peran: KONTEN, siap: true },
       { label: "Testimoni", href: "/admin/testimoni", ket: "Kesan dari alumni", ikon: "testimoni", peran: KONTEN, siap: true },
       { label: "FAQ", href: "/admin/faq", ket: "Pertanyaan yang sering diajukan", ikon: "faq", peran: KONTEN, siap: true },
+      { label: "Tes Minat Bakat", href: "/admin/tes-minat-bakat", ket: "Atur soal tes untuk calon siswa", ikon: "tes", peran: KONTEN, siap: true },
     ],
   },
   {

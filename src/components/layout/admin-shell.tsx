@@ -57,6 +57,7 @@ const IKON: Record<IkonMenu, Icon> = {
   akun: ShieldCheckIcon,
   audit: ClockCounterClockwiseIcon,
   hapus: TrashIcon,
+  tes: ListChecksIcon,
 };
 
 function Merek({ logo }: { logo: string }) {

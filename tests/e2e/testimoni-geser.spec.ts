@@ -12,17 +12,17 @@ async function bersihkan(api: APIRequestContext) {
   for (const t of data.filter((x) => x.nama.startsWith(AWALAN))) await api.delete(`/api/v1/admin/testimoni/${t.id}`, { headers: sama });
 }
 
-async function buat(page: Page, jumlah: number) {
+async function buat(page: Page, jumlah: number, opsi: { lebar?: number; isi?: (i: number) => string } = {}) {
   await masukSebagai(page, "konten");
   await bersihkan(page.request);
   for (let i = 1; i <= jumlah; i++) {
     const res = await page.request.post("/api/v1/admin/testimoni", {
       headers: sama,
-      data: { nama: `${AWALAN} ${i}`, keterangan: "Alumni", isi: `Isi testimoni nomor ${i}.`, urutan: i, isActive: true },
+      data: { nama: `${AWALAN} ${i}`, keterangan: "Alumni", isi: opsi.isi?.(i) ?? `Isi testimoni nomor ${i}.`, urutan: i, isActive: true },
     });
     expect(res.status()).toBe(201);
   }
-  await page.setViewportSize({ width: 360, height: 780 });
+  await page.setViewportSize({ width: opsi.lebar ?? 360, height: 780 });
   await page.goto("/");
   const jalur = page.locator("[data-slider-testimoni]");
   await jalur.scrollIntoViewIfNeeded();
@@ -73,5 +73,29 @@ test.describe("testimoni landing", () => {
     await buat(page, 1);
     await expect(page.getByText(`${AWALAN} 1`).first()).toBeVisible();
     await expect(page.locator("[data-titik-testimoni]")).toHaveCount(0);
+  });
+
+  test("kolom menyesuaikan jumlah: dua testimoni di desktop tampil berdampingan tanpa geser dan tanpa titik", async ({ page }) => {
+    const jalur = await buat(page, 2, { lebar: 1440 });
+    const kartu = jalur.locator("li:not([inert])");
+    await expect(kartu).toHaveCount(2);
+    const [a, b] = await kartu.evaluateAll((li) => li.map((l) => l.getBoundingClientRect()));
+    expect(Math.abs(a.top - b.top)).toBeLessThan(2);
+    expect(b.left).toBeGreaterThan(a.right);
+    await expect(page.locator("[data-titik-testimoni]")).toHaveCount(0);
+  });
+
+  test("testimoni panjang dipotong dengan Baca selengkapnya, yang pendek tanpa tombol", async ({ page }) => {
+    const panjang = "Guru-gurunya sabar dan praktiknya banyak sehingga saya cepat paham dan percaya diri. ".repeat(6).trim(); // di bawah batas 600 karakter
+    await buat(page, 2, { lebar: 1440, isi: (i) => (i === 1 ? panjang : "Singkat saja, mantap.") });
+    const tombol = page.locator("#testimoni [data-baca-testimoni]");
+    await expect(tombol).toHaveCount(1);
+    await expect(tombol).toHaveText("Baca selengkapnya");
+    const kutipan = page.locator("#testimoni blockquote").first();
+    const tinggiAwal = await kutipan.evaluate((el) => el.getBoundingClientRect().height);
+    await tombol.click();
+    await expect(tombol).toHaveText("Tutup");
+    await expect(tombol).toHaveAttribute("aria-expanded", "true");
+    expect(await kutipan.evaluate((el) => el.getBoundingClientRect().height)).toBeGreaterThan(tinggiAwal + 40);
   });
 });

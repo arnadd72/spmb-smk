@@ -13,16 +13,84 @@ const TUNDA_AWAL_MS = 700;
 const SELANG_OTOMATIS_MS = 4000;
 const JEDA_SETELAH_INTERAKSI_MS = 5000;
 
+/** Kutipan yang dipotong 5 baris; tombol "Baca selengkapnya" hanya muncul bila teksnya memang terpotong. */
+function Kutipan({ isi, terbuka, onUbah, besar }: { isi: string; terbuka: boolean; onUbah: () => void; besar: boolean }) {
+  const ref = useRef<HTMLQuoteElement>(null);
+  const [terpotong, setTerpotong] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const cek = () => setTerpotong(terbuka || el.scrollHeight > el.clientHeight + 1);
+    cek();
+    const ro = new ResizeObserver(cek);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [terbuka]);
+
+  return (
+    <div>
+      <blockquote
+        ref={ref}
+        className={cn("font-medium leading-relaxed text-ink", besar ? "text-lg lg:text-xl" : "text-lg", !terbuka && "line-clamp-5")}
+      >
+        &ldquo;{isi}&rdquo;
+      </blockquote>
+      {terpotong && (
+        <button
+          type="button"
+          onClick={onUbah}
+          aria-expanded={terbuka}
+          data-baca-testimoni
+          className="mt-1 inline-flex min-h-11 items-center text-sm font-semibold text-primer-tua underline underline-offset-4 hover:text-primer"
+        >
+          {terbuka ? "Tutup" : "Baca selengkapnya"}
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** Lebar kartu per jumlah testimoni: sedikit testimoni = kartu lebih lebar, banyak = sampai 3 kolom di desktop. */
+function lebarKartu(n: number) {
+  if (n === 1) return "w-full";
+  if (n === 2) return "w-full md:w-[calc((100%-1.25rem)/2)]";
+  return "w-full md:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]";
+}
+
 /**
- * Satu baris testimoni yang bergeser otomatis dan berputar tanpa ujung (tiga salinan, posisi dirapikan diam-diam
- * ke salinan tengah, sama seperti galeri foto). Tanpa tombol panah: titik di bawah kartu menandai testimoni
- * aktif, dan mengkliknya langsung membawa ke testimoni itu.
+ * Baris testimoni. Kolom menyesuaikan jumlah testimoni (HP 1, tablet sampai 2, desktop sampai 3). Bila semuanya
+ * muat di layar, kartu diam tanpa titik. Bila lebih banyak, baris bergeser otomatis dan berputar tanpa ujung (tiga
+ * salinan, posisi dirapikan diam-diam ke salinan tengah, sama seperti galeri foto); titik di bawah kartu menandai
+ * testimoni aktif dan mengkliknya membawa ke testimoni itu. Teks panjang dipotong dengan "Baca selengkapnya".
  */
 export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
   const jalur = useRef<HTMLDivElement>(null);
   const [aktif, setAktif] = useState(0);
+  const [terbuka, setTerbuka] = useState<string | null>(null);
+  const terbukaRef = useRef<string | null>(null);
+  /** Waktu interaksi terakhir (geser, sentuh, atau klik titik): geser otomatis menunggu sebentar setelahnya. */
+  const interaksiRef = useRef(0);
+  useEffect(() => {
+    terbukaRef.current = terbuka;
+  }, [terbuka]);
   const n = testimoni.length;
-  const banyak = n > 1;
+
+  // Kolom yang muat di layar sekarang (sama dengan breakpoint lebarKartu). Awal 1 agar sama dengan render server.
+  const [kolom, setKolom] = useState(1);
+  useEffect(() => {
+    const md = window.matchMedia("(min-width: 768px)");
+    const lg = window.matchMedia("(min-width: 1024px)");
+    const hitung = () => setKolom(lg.matches ? 3 : md.matches ? 2 : 1);
+    hitung();
+    md.addEventListener("change", hitung);
+    lg.addEventListener("change", hitung);
+    return () => {
+      md.removeEventListener("change", hitung);
+      lg.removeEventListener("change", hitung);
+    };
+  }, []);
+  const banyak = n > Math.min(n, kolom);
 
   useEffect(() => {
     const el = jalur.current;
@@ -60,12 +128,11 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
     saatGulir();
 
     const kurangiGerak = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let terakhirInteraksi = 0;
     let terlihat = false;
     let timer: number | undefined;
     let tundaAwal: number | undefined;
     const ambilAlih = () => {
-      terakhirInteraksi = Date.now();
+      interaksiRef.current = performance.now();
       batalkanGulir(el);
     };
     const pengamat = new IntersectionObserver(([e]) => {
@@ -89,8 +156,9 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
     for (const [nama, fn] of peristiwa) el.addEventListener(nama, fn, { passive: true });
 
     const langkahOtomatis = () => {
-      if (!terlihat || document.hidden) return;
-      if (Date.now() - terakhirInteraksi < JEDA_SETELAH_INTERAKSI_MS) return;
+      // Berhenti selama pengunjung membaca testimoni yang dibuka penuh.
+      if (!terlihat || document.hidden || terbukaRef.current) return;
+      if (performance.now() - interaksiRef.current < JEDA_SETELAH_INTERAKSI_MS) return;
       const berikut = item().find((li) => posisi(li) > el.scrollLeft + 8);
       if (berikut) gulirHalus(el, posisi(berikut), kurangiGerak.matches);
     };
@@ -107,10 +175,12 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
     };
   }, [n, banyak]);
 
-  /** Ke salinan testimoni ke-`i` yang terdekat dari posisi sekarang, supaya gerakannya pendek. */
-  function keTestimoni(i: number) {
+  /** Ke salinan testimoni ke-`i` yang terdekat dari posisi sekarang, supaya gerakannya pendek. `waktu` = e.timeStamp klik. */
+  function keTestimoni(i: number, waktu: number) {
     const el = jalur.current;
     if (!el) return;
+    // Titik berada di luar jalur: tanpa ini geser otomatis bisa langsung memindahkan lagi testimoni yang dipilih.
+    interaksiRef.current = waktu;
     const li = Array.from(el.querySelectorAll<HTMLElement>("li"));
     const awal = li[0].offsetLeft;
     const kandidat = [i, i + n, i + 2 * n].map((k) => li[k].offsetLeft - awal);
@@ -129,16 +199,18 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
         tabIndex={banyak ? 0 : undefined}
         className="overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] snap-x snap-mandatory focus-visible:outline-offset-4 [&::-webkit-scrollbar]:hidden"
       >
-        <ul className="flex w-full gap-5">
+        {/* Satu testimoni: kartu di tengah dengan lebar baca yang nyaman, tidak membentang selebar layar. */}
+        <ul className={cn("flex w-full gap-5", n === 1 && "mx-auto max-w-3xl")}>
           {(banyak ? [0, 1, 2] : [0]).flatMap((salinan) =>
             testimoni.map((t) => (
               <li
                 key={`${salinan}-${t.id}`}
                 aria-hidden={salinan === (banyak ? 1 : 0) ? undefined : true}
-                className="w-full shrink-0 snap-start"
+                inert={salinan !== (banyak ? 1 : 0)}
+                className={cn("shrink-0 snap-start", lebarKartu(n))}
               >
                 <figure className="flex h-full flex-col justify-between gap-6 rounded-kartu bg-latar p-6 lg:p-8">
-                  <blockquote className="text-lg font-medium leading-relaxed text-ink lg:text-xl">&ldquo;{t.isi}&rdquo;</blockquote>
+                  <Kutipan isi={t.isi} besar={n <= 2} terbuka={terbuka === t.id} onUbah={() => setTerbuka((x) => (x === t.id ? null : t.id))} />
                   <figcaption className="flex items-center gap-3">
                     {t.foto ? (
                       <span className="relative size-12 shrink-0 overflow-hidden rounded-full bg-permukaan-alt">
@@ -167,7 +239,7 @@ export function TestimoniGeser({ testimoni }: { testimoni: Testimoni[] }) {
             <button
               key={t.id}
               type="button"
-              onClick={() => keTestimoni(i)}
+              onClick={(e) => keTestimoni(i, e.timeStamp)}
               aria-label={`Testimoni ${i + 1} dari ${n}: ${t.nama}`}
               aria-current={i === aktif ? "true" : undefined}
               data-titik-testimoni={i}

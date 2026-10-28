@@ -25,8 +25,8 @@ const TAHAP: Tahap[] = [
 export function AlurDaftar() {
   const akar = useRef<HTMLElement>(null);
 
-  // Kartu bertumpuk (desktop): tiap kartu menempel di atas, kartu berikutnya menimpanya, kartu di bawah mengecil dan
-  // meredup. Di HP kartu tersusun biasa karena layar terlalu pendek untuk tumpukan dan teksnya jadi tertutup.
+  // Kartu bertumpuk (HP dan desktop): tiap kartu menempel di atas, kartu berikutnya menimpanya, kartu di bawah
+  // mengecil dan meredup.
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-alur]");
@@ -41,25 +41,21 @@ export function AlurDaftar() {
         });
       }
 
-      // matchMedia mengembalikan ukuran kartu bila layar mengecil di bawah 1024 px tanpa muat ulang.
-      const mm = gsap.matchMedia();
-      mm.add("(min-width: 1024px)", () => {
-        const kartu = gsap.utils.toArray<HTMLElement>("[data-kartu]", el);
-        kartu.forEach((k, i) => {
-          const berikut = kartu[i + 1];
-          if (!berikut) return;
-          // Nilai awal filter wajib eksplisit: dari "none" GSAP menginterpolasi mulai brightness(0) dan kartu menghitam.
-          gsap.fromTo(
-            k,
-            { scale: 1, filter: "brightness(1)" },
-            {
-              scale: 0.93 - (kartu.length - i) * 0.004,
-              filter: "brightness(0.8)",
-              ease: "none",
-              scrollTrigger: { trigger: berikut, start: "top 92%", end: "top 18%", scrub: true },
-            },
-          );
-        });
+      const kartu = gsap.utils.toArray<HTMLElement>("[data-kartu]", el);
+      kartu.forEach((k, i) => {
+        const berikut = kartu[i + 1];
+        if (!berikut) return;
+        // Nilai awal filter wajib eksplisit: dari "none" GSAP menginterpolasi mulai brightness(0) dan kartu menghitam.
+        gsap.fromTo(
+          k,
+          { scale: 1, filter: "brightness(1)" },
+          {
+            scale: 0.93 - (kartu.length - i) * 0.004,
+            filter: "brightness(0.8)",
+            ease: "none",
+            scrollTrigger: { trigger: berikut, start: "top 92%", end: "top 18%", scrub: true },
+          },
+        );
       });
 
       // Angka besar berputar sedikit saat kartu masuk (gerak bermakna: urutan tahap).
@@ -67,10 +63,7 @@ export function AlurDaftar() {
         gsap.from(a, { yPercent: 40, rotate: -8, opacity: 0, duration: 0.8, ease: "expo.out", scrollTrigger: { trigger: a, start: "top 90%", once: true } });
       });
 
-      return () => {
-        mm.revert();
-        split?.revert();
-      };
+      return () => split?.revert();
     },
   });
 
@@ -92,7 +85,7 @@ export function AlurDaftar() {
               data-kartu
               style={{ top: `calc(4.75rem + ${i} * 0.7rem)` }}
               className={cn(
-                "mb-4 grid min-h-[11rem] origin-top gap-4 overflow-hidden rounded-kartu p-5 will-change-transform sm:p-7 lg:sticky lg:mb-6 lg:min-h-[13.5rem] lg:grid-cols-[1fr_auto] lg:items-end lg:p-8",
+                "sticky mb-4 grid min-h-[11rem] origin-top gap-4 overflow-hidden rounded-kartu p-5 will-change-transform sm:p-7 lg:mb-6 lg:min-h-[13.5rem] lg:grid-cols-[1fr_auto] lg:items-end lg:p-8",
                 t.warna,
               )}
             >

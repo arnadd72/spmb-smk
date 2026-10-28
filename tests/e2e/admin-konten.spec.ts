@@ -61,7 +61,11 @@ test.describe("admin: kelola berita", () => {
   test("halaman jurusan publik: kode tidak peka huruf, kode tak dikenal 404", async ({ page }) => {
     await page.goto("/jurusan/tkr");
     await expect(page.getByRole("heading", { level: 1 })).toHaveText("TKR");
-    expect((await page.goto("/jurusan/xyz"))?.status()).toBe(404);
+    // Halaman ini punya kerangka (loading.tsx), jadi Next men-streaming dan status HTTP sudah 200 sebelum notFound().
+    // Yang dijamin: halaman 404 tampil dan ditandai noindex agar tidak diindeks mesin pencari.
+    await page.goto("/jurusan/xyz");
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
+    await expect(page.locator('meta[name="robots"][content*="noindex"]').first()).toBeAttached();
   });
 
   test("superadmin bisa membuka halaman pengaturan", async ({ page }) => {

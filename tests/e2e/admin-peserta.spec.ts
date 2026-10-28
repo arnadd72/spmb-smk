@@ -89,7 +89,8 @@ test.describe("admin: data peserta", () => {
 
   test("pendaftar tidak ada menampilkan halaman 404", async ({ page }) => {
     await masukSebagai(page, "panitia");
-    const res = await page.goto("/admin/peserta/99999999");
-    expect(res?.status()).toBe(404);
+    // Panel admin punya kerangka (loading.tsx): status HTTP sudah 200 sebelum notFound(), jadi yang diperiksa isinya.
+    await page.goto("/admin/peserta/99999999");
+    await expect(page.getByText("This page could not be found.")).toBeVisible();
   });
 });

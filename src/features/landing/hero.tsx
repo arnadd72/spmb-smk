@@ -138,7 +138,9 @@ export function Hero({
         return `inset(${tepi}px ${samping}px ${tepi}px ${samping}px round ${besar ? 22 : 18}px)`;
       };
 
-      // Gulir: foto mengembang dari banner ke tengah layar, teks terangkat dan memudar.
+      // Gulir (desktop): foto mengembang dari banner ke tengah layar, teks terangkat dan memudar. Di HP tidak di-pin:
+      // pin membuat layar kedua kosong di atas foto dan gulir terasa tersendat.
+      if (!window.matchMedia("(min-width: 1024px)").matches) return () => split?.revert();
       const tl = gsap.timeline({
         defaults: { ease: "none" },
         scrollTrigger: { trigger: el, start: "top 64px", end: "+=110%", pin: true, scrub: 0.6, invalidateOnRefresh: true },

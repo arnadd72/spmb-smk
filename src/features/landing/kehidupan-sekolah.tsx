@@ -157,7 +157,7 @@ export function KehidupanSekolah({ galeri = [] }: { galeri?: FotoDb[] }) {
         <h2
           id="judul-kehidupan"
           data-judul-hidup
-          className="max-w-[18ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.96] tracking-[-0.015em] text-ink"
+          className="max-w-[18ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[1.12] tracking-[-0.015em] text-ink lg:leading-[0.96]"
         >
           Belajar, berkarya, dan beribadah bersama.
         </h2>

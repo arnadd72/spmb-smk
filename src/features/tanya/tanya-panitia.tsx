@@ -82,12 +82,13 @@ export function TanyaPanitia() {
         <button
           type="button"
           className={cn(
-            "fixed bottom-4 right-4 z-40 inline-flex min-h-12 items-center gap-2 rounded-full bg-primer px-4 text-sm font-bold text-primer-tinta shadow-kartu hover:bg-primer-tua print:hidden sm:bottom-6 sm:right-6 sm:px-5",
+            "fixed bottom-4 right-4 z-40 inline-flex size-14 items-center justify-center gap-2 rounded-full bg-primer text-sm font-bold text-primer-tinta shadow-kartu hover:bg-primer-tua print:hidden sm:bottom-6 sm:right-6 sm:size-auto sm:min-h-12 sm:px-5",
             buka && "invisible",
           )}
         >
-          <ChatCircleDotsIcon aria-hidden weight="fill" className="size-6" />
-          Tanya Sunan
+          <ChatCircleDotsIcon aria-hidden weight="fill" className="size-7 sm:size-6" />
+          {/* Di HP hanya ikon agar tidak menutupi isi halaman. */}
+          <span className="sr-only sm:not-sr-only">Tanya Sunan</span>
         </button>
       </Dialog.Trigger>
 

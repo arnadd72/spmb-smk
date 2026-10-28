@@ -215,8 +215,9 @@ export function FormEditPublik({ fields, nilaiAwal, berkas: berkasAwal }: Props)
           Jawaban tes minat bakat tidak diubah di halaman ini.
         </p>
 
-        {/* Menempel di atas tombol Tanya Sunan (pojok kanan bawah) agar tombol simpan tidak tertutup. */}
-        <div className="sticky bottom-24 z-20 flex items-center justify-between gap-3 rounded-kartu border border-garis bg-permukaan/95 px-4 py-3 shadow-kartu backdrop-blur-sm xl:bottom-3">
+        {/* Desktop: menempel di atas tombol Tanya Sunan (pojok kanan bawah) agar tombol simpan tidak tertutup. HP: diam di
+            akhir formulir, karena bilah yang menempel menutupi isian dan berkas di layar sempit. */}
+        <div className="z-20 flex items-center justify-between gap-3 rounded-kartu border border-garis bg-permukaan/95 px-4 py-3 shadow-kartu backdrop-blur-sm lg:sticky lg:bottom-24 xl:bottom-3">
           <div className="min-h-6 min-w-0 text-sm" aria-live="polite">
             {galatUmum ? (
               <p role="alert" className="font-semibold text-bahaya">

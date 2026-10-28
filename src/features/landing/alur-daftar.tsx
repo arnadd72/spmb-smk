@@ -25,7 +25,8 @@ const TAHAP: Tahap[] = [
 export function AlurDaftar() {
   const akar = useRef<HTMLElement>(null);
 
-  // Kartu bertumpuk: tiap kartu menempel di atas, kartu berikutnya menimpanya, kartu di bawah mengecil dan meredup.
+  // Kartu bertumpuk (desktop): tiap kartu menempel di atas, kartu berikutnya menimpanya, kartu di bawah mengecil dan
+  // meredup. Di HP kartu tersusun biasa karena layar terlalu pendek untuk tumpukan dan teksnya jadi tertutup.
   useGsapPublik(akar, {
     animasi: ({ gsap, SplitText, akar: el }) => {
       const judul = el.querySelector<HTMLElement>("[data-judul-alur]");
@@ -40,7 +41,7 @@ export function AlurDaftar() {
         });
       }
 
-      const kartu = gsap.utils.toArray<HTMLElement>("[data-kartu]", el);
+      const kartu = window.matchMedia("(min-width: 1024px)").matches ? gsap.utils.toArray<HTMLElement>("[data-kartu]", el) : [];
       kartu.forEach((k, i) => {
         const berikut = kartu[i + 1];
         if (!berikut) return;
@@ -67,12 +68,12 @@ export function AlurDaftar() {
   });
 
   return (
-    <section ref={akar} id="alur-daftar" aria-labelledby="judul-alur" className="bg-latar pb-20 pt-16 lg:pb-28 lg:pt-24">
+    <section ref={akar} id="alur-daftar" aria-labelledby="judul-alur" className="bg-latar pb-16 pt-8 lg:pb-28 lg:pt-24">
       <div className="wadah ">
         <h2
           id="judul-alur"
           data-judul-alur
-          className="max-w-[16ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.96] tracking-[-0.015em] text-ink"
+          className="max-w-[16ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[1.12] tracking-[-0.015em] text-ink lg:leading-[0.96]"
         >
           Daftar dari HP, selesai dalam satu sore.
         </h2>
@@ -84,7 +85,7 @@ export function AlurDaftar() {
               data-kartu
               style={{ top: `calc(4.75rem + ${i} * 0.7rem)` }}
               className={cn(
-                "sticky mb-4 grid min-h-[11rem] origin-top gap-4 overflow-hidden rounded-kartu p-5 will-change-transform sm:p-7 lg:mb-6 lg:min-h-[13.5rem] lg:grid-cols-[1fr_auto] lg:items-end lg:p-8",
+                "mb-4 grid min-h-[11rem] origin-top gap-4 overflow-hidden rounded-kartu p-5 will-change-transform sm:p-7 lg:sticky lg:mb-6 lg:min-h-[13.5rem] lg:grid-cols-[1fr_auto] lg:items-end lg:p-8",
                 t.warna,
               )}
             >

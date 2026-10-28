@@ -139,7 +139,7 @@ export function ProgramKeahlian({ jurusan }: { jurusan: JurusanLanding[] }) {
       ref={akar}
       id="jurusan"
       aria-labelledby="judul-jurusan"
-      className="overflow-hidden bg-latar pt-6 pb-16 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:justify-start lg:pt-6 lg:pb-0"
+      className="overflow-hidden bg-latar pt-6 pb-8 lg:flex lg:h-[calc(100dvh-4rem)] lg:flex-col lg:justify-start lg:pt-6 lg:pb-0"
     >
       <div className="wadah w-full">
         <h2

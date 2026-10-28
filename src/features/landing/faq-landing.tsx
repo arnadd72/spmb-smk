@@ -47,7 +47,7 @@ export function FaqLanding({ faq }: { faq: FaqData[] }) {
         <h2
           id="judul-faq"
           data-judul-faq
-          className="max-w-[12ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.96] tracking-[-0.015em] text-ink"
+          className="text-[clamp(1.9rem,3.8vw,3.5rem)] sm:max-w-[12ch] font-bold leading-[1.12] tracking-[-0.015em] text-ink lg:leading-[0.96]"
         >
           Pertanyaan yang sering muncul.
         </h2>

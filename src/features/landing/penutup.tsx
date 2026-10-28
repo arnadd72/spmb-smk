@@ -52,7 +52,7 @@ export function Penutup({ logo }: { logo: string }) {
         <h2
           id="judul-penutup"
           data-judul-penutup
-          className="max-w-[14ch] text-[clamp(2.1rem,5.4vw,4.75rem)] font-bold leading-[0.92] tracking-[-0.02em]"
+          className="max-w-[14ch] text-[clamp(2.1rem,5.4vw,4.75rem)] font-bold leading-[1.08] tracking-[-0.02em] lg:leading-[0.92]"
         >
           Siapkan data diri, <span className="text-kuning">mulai</span> hari ini.
         </h2>

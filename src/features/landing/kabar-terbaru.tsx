@@ -13,7 +13,7 @@ export function KabarTerbaru({ berita, agenda }: { berita: BeritaRingkas[]; agen
     <section id="kabar" aria-labelledby="judul-kabar" className="py-16 lg:py-24">
       <div className="wadah">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <h2 id="judul-kabar" className="max-w-[16ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.96] tracking-[-0.015em] text-ink">
+          <h2 id="judul-kabar" className="max-w-[16ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[1.12] tracking-[-0.015em] text-ink lg:leading-[0.96]">
             Kabar dari sekolah.
           </h2>
           <Link href="/berita" className="inline-flex min-h-11 items-center gap-2 font-bold text-primer-tua underline decoration-2 underline-offset-4">

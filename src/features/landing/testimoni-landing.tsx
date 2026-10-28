@@ -9,7 +9,7 @@ export function TestimoniLanding({ testimoni }: { testimoni: Testimoni[] }) {
   return (
     <section id="testimoni" aria-labelledby="judul-testimoni" className="bg-permukaan py-16 lg:py-24">
       <div className="wadah">
-        <h2 id="judul-testimoni" className="max-w-[18ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[0.96] tracking-[-0.015em] text-ink">
+        <h2 id="judul-testimoni" className="max-w-[18ch] text-[clamp(1.9rem,3.8vw,3.5rem)] font-bold leading-[1.12] tracking-[-0.015em] text-ink lg:leading-[0.96]">
           Kata mereka yang sudah belajar di sini.
         </h2>
         <Reveal>

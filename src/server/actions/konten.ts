@@ -7,12 +7,13 @@ import { serialisasi } from "@/server/services/serialisasi";
 import { slugUnik } from "@/server/services/slug";
 import { BATAS_FOTO_HERO } from "@/server/types/aset";
 import { GalatApi } from "@/server/types/galat";
+import { MAKS_SOAL_MINAT, skemaGeserSoalMinat, skemaSoalMinat } from "@/server/validasi/minat";
 import { skemaBerita, skemaEvent, skemaFaq, skemaFotoHero, skemaGaleri, skemaJurusan, skemaTestimoni } from "@/server/validasi/konten";
 
 // CRUD konten admin (PRD v3.1 13.8). Satu implementasi untuk lima entitas yang bentuknya sama.
 
-export type Entitas = "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq";
-export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "hero", "testimoni", "faq"];
+export type Entitas = "berita" | "event" | "galeri" | "hero" | "testimoni" | "faq" | "soalMinat";
+export const DAFTAR_ENTITAS: Entitas[] = ["berita", "event", "galeri", "hero", "testimoni", "faq", "soalMinat"];
 
 export { BATAS_FOTO_HERO };
 
@@ -47,6 +48,7 @@ const KONFIG: Record<Entitas, Konfig> = {
   hero: { delegate: prisma.fotoHero as unknown as Delegate, skema: skemaFotoHero, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["judul"], tipeAudit: "hero" },
   testimoni: { delegate: prisma.testimoni as unknown as Delegate, skema: skemaTestimoni, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["nama", "isi"], tipeAudit: "testimoni" },
   faq: { delegate: prisma.faq as unknown as Delegate, skema: skemaFaq, urut: [{ urutan: "asc" }, { id: "desc" }], cari: ["pertanyaan"], tipeAudit: "faq" },
+  soalMinat: { delegate: prisma.soalMinat as unknown as Delegate, skema: skemaSoalMinat, urut: [{ urutan: "asc" }, { id: "asc" }], cari: ["teks"], tipeAudit: "soalMinat" },
 };
 
 export type KonteksAksi = { userId: string; ip?: string };
@@ -111,6 +113,11 @@ export async function buatKonten(entitas: Entitas, mentah: unknown, ctx: Konteks
     throw GalatApi.validasi({ gambar: [`Foto tambahan beranda maksimal ${BATAS_FOTO_HERO}. Hapus salah satu dulu.`] });
   }
 
+  if (entitas === "soalMinat") {
+    if ((await k.delegate.count()) >= MAKS_SOAL_MINAT) throw GalatApi.validasi({ teks: [`Soal tes maksimal ${MAKS_SOAL_MINAT}. Hapus salah satu dulu.`] });
+    if (input.urutan === undefined) input.urutan = ((await prisma.soalMinat.aggregate({ _max: { urutan: true } }))._max.urutan ?? 0) + 1;
+  }
+
   const baru = await k.delegate.create({ data: input });
   await catatAudit({ userId: ctx.userId, aksi: `${k.tipeAudit}.buat`, entitasTipe: k.tipeAudit, entitasId: String(baru.id), dataBaru: input, ip: ctx.ip });
   return serialisasi(baru);
@@ -159,4 +166,19 @@ export async function ambilJurusanAdmin(kode: string) {
   const j = await prisma.jurusan.findUnique({ where: { kode: kode.toUpperCase() } });
   if (!j) throw GalatApi.tidakDitemukan();
   return serialisasi(j);
+}
+
+// ---------------------------------------------------------------- Soal tes minat
+
+/** Tukar posisi satu soal dengan tetangganya. Seluruh urutan dinomori ulang 1..n sehingga nomor kembar dan lubang ikut rapi. */
+export async function geserSoalMinat(id: string, mentah: unknown, ctx: KonteksAksi) {
+  const { arah } = skemaGeserSoalMinat.parse(mentah);
+  const semua = await prisma.soalMinat.findMany({ orderBy: [{ urutan: "asc" }, { id: "asc" }], select: { id: true, urutan: true } });
+  const dari = semua.findIndex((x) => x.id === idDariString(id));
+  if (dari < 0) throw GalatApi.tidakDitemukan();
+  const ke = arah === "naik" ? dari - 1 : dari + 1;
+  if (ke >= 0 && ke < semua.length) [semua[dari], semua[ke]] = [semua[ke], semua[dari]];
+
+  await prisma.$transaction(semua.map((x, i) => prisma.soalMinat.update({ where: { id: x.id }, data: { urutan: i + 1 } })));
+  await catatAudit({ userId: ctx.userId, aksi: "soalMinat.geser", entitasTipe: "soalMinat", entitasId: id, dataBaru: { arah }, ip: ctx.ip });
 }

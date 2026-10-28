@@ -148,6 +148,25 @@ export const SOAL_MINAT = [
   },
 ] as const;
 
+/** Satu soal tes yang diatur admin (tabel SoalMinat, PRD 1.3 butir 80). `opsi` selalu empat teks, urutannya sama dengan JURUSAN_MINAT. */
+export type SoalMinat = { id: string; urutan: number; teks: string; opsi: string[]; isActive: boolean };
+export const MAKS_SOAL_MINAT = 50;
+
+const teksMinat = (label: string, min: number, max: number) =>
+  z.string({ error: `${label} wajib diisi.` }).trim().min(min, `${label} wajib diisi.`).max(max, `${label} maksimal ${max} karakter.`);
+
+export const skemaSoalMinat = z.object({
+  teks: teksMinat("Teks soal", 5, 300),
+  opsi: z
+    .array(teksMinat("Pilihan jawaban", 2, 300), { error: "Pilihan jawaban tidak valid." })
+    .length(JURUSAN_MINAT.length, "Soal harus punya tepat 4 pilihan jawaban (A sampai D)."),
+  /** Kosong saat membuat = ditaruh di urutan terakhir. */
+  urutan: z.coerce.number().int("Urutan harus bilangan bulat.").min(0).max(10000).optional(),
+  isActive: z.boolean().default(true),
+});
+
+export const skemaGeserSoalMinat = z.object({ arah: z.enum(["naik", "turun"], { error: "Arah geser tidak valid." }) });
+
 /** Satu jawaban per soal: indeks pilihan (0 = A) atau null bila dilewati. Selalu sepanjang SOAL_MINAT. */
 export type JawabanMinat = (number | null)[];
 

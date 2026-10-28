@@ -13,6 +13,9 @@ const hostSupabase = (() => {
 })();
 
 const nextConfig: NextConfig = {
+  // Hanya untuk paket hosting cPanel (workflow rilis-hosting): hasil build mandiri yang dijalankan `node server.js`.
+  // Tanpa variabel ini (Vercel, dev, tes) keluarannya tidak berubah.
+  ...(process.env.NEXT_OUTPUT === "standalone" ? { output: "standalone" as const } : {}),
   // Dipakai tes e2e (playwright.config.ts) agar servernya tidak berbenturan dengan `npm run dev` di folder .next.
   ...(process.env.NEXT_DIST_DIR ? { distDir: process.env.NEXT_DIST_DIR } : {}),
   images: hostSupabase ? { remotePatterns: [{ protocol: "https", hostname: hostSupabase, pathname: "/storage/v1/object/public/**" }] } : undefined,

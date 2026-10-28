@@ -104,6 +104,8 @@ function siapkan(k: Konfig, input: Baris): Baris {
 export async function buatKonten(entitas: Entitas, mentah: unknown, ctx: KonteksAksi) {
   const k = konfig(entitas);
   const input = siapkan(k, k.skema.parse(mentah) as Baris);
+  const posisi = entitas === "soalMinat" ? (input.posisi as number | undefined) : undefined;
+  delete input.posisi;
 
   if (k.slugDari) {
     input.slug = await slugUnik(String(input[k.slugDari]), async (s) => (await k.delegate.findUnique({ where: { slug: s } })) === null);
@@ -119,6 +121,7 @@ export async function buatKonten(entitas: Entitas, mentah: unknown, ctx: Konteks
   }
 
   const baru = await k.delegate.create({ data: input });
+  if (posisi !== undefined) await tempatkanSoalMinat(baru.id as bigint, posisi);
   await catatAudit({ userId: ctx.userId, aksi: `${k.tipeAudit}.buat`, entitasTipe: k.tipeAudit, entitasId: String(baru.id), dataBaru: input, ip: ctx.ip });
   return serialisasi(baru);
 }
@@ -129,10 +132,13 @@ export async function ubahKonten(entitas: Entitas, id: string, mentah: unknown, 
   if (!lama) throw GalatApi.tidakDitemukan();
 
   const input = siapkan(k, k.skema.parse(mentah) as Baris);
+  const posisi = entitas === "soalMinat" ? (input.posisi as number | undefined) : undefined;
+  delete input.posisi;
   if (entitas === "berita" && input.isActive && !input.publishedAt && !lama.publishedAt) input.publishedAt = new Date();
   // Slug tidak berubah saat judul diedit, supaya tautan lama tetap hidup.
 
   const baru = await k.delegate.update({ where: { id: lama.id }, data: input });
+  if (posisi !== undefined) await tempatkanSoalMinat(lama.id as bigint, posisi);
   await bersihkanGambarLama(lama, input);
   await catatAudit({ userId: ctx.userId, aksi: `${k.tipeAudit}.ubah`, entitasTipe: k.tipeAudit, entitasId: String(lama.id), dataLama: lama, dataBaru: input, ip: ctx.ip });
   return serialisasi(baru);
@@ -169,6 +175,14 @@ export async function ambilJurusanAdmin(kode: string) {
 }
 
 // ---------------------------------------------------------------- Soal tes minat
+
+/** Taruh satu soal di nomor `posisi` (1 = pertama; di luar rentang dipotong), soal lain bergeser, urutan dinomori ulang 1..n. */
+async function tempatkanSoalMinat(id: bigint, posisi: number) {
+  const semua = await prisma.soalMinat.findMany({ orderBy: [{ urutan: "asc" }, { id: "asc" }], select: { id: true } });
+  const lain = semua.map((x) => x.id).filter((x) => x !== id);
+  lain.splice(Math.min(Math.max(posisi, 1), lain.length + 1) - 1, 0, id);
+  await prisma.$transaction(lain.map((x, i) => prisma.soalMinat.update({ where: { id: x }, data: { urutan: i + 1 } })));
+}
 
 /** Tukar posisi satu soal dengan tetangganya. Seluruh urutan dinomori ulang 1..n sehingga nomor kembar dan lubang ikut rapi. */
 export async function geserSoalMinat(id: string, mentah: unknown, ctx: KonteksAksi) {

@@ -103,6 +103,28 @@ describe("soal tes minat bakat (PRD 1.3 butir 80)", () => {
     expect(await galat(geserSoalMinat("999999", { arah: "naik" }, ctx))).toMatchObject({ status: 404 });
   });
 
+  it("posisi: soal baru dan soal yang diubah ditaruh di nomor pilihan admin, soal lain bergeser, nomor di luar rentang dipotong", async () => {
+    const teks = async () => (await muatSoalMinat({ semua: true })).map((x) => x.teks);
+    await buatKonten("soalMinat", soal("Soal A"), ctx);
+    await buatKonten("soalMinat", soal("Soal B"), ctx);
+    await buatKonten("soalMinat", soal("Soal C"), ctx);
+    await buatKonten("soalMinat", soal("Soal D baru", { posisi: 1 }), ctx);
+    expect(await teks()).toEqual(["Soal D baru", "Soal A", "Soal B", "Soal C"]);
+    await buatKonten("soalMinat", soal("Soal E baru", { posisi: 3 }), ctx);
+    expect(await teks()).toEqual(["Soal D baru", "Soal A", "Soal E baru", "Soal B", "Soal C"]);
+    await buatKonten("soalMinat", soal("Soal F baru", { posisi: 50 }), ctx);
+    expect((await teks()).at(-1)).toBe("Soal F baru");
+
+    const c = (await muatSoalMinat({ semua: true })).find((x) => x.teks === "Soal C")!;
+    await ubahKonten("soalMinat", c.id, soal("Soal C", { posisi: 1 }), ctx);
+    expect((await teks()).slice(0, 3)).toEqual(["Soal C", "Soal D baru", "Soal A"]);
+    // Tanpa posisi, ubah teks tidak memindahkan.
+    await ubahKonten("soalMinat", c.id, soal("Soal C diubah"), ctx);
+    expect((await teks())[0]).toBe("Soal C diubah");
+    expect((await muatSoalMinat({ semua: true })).map((x) => x.urutan)).toEqual([1, 2, 3, 4, 5, 6]);
+    expect(await galat(buatKonten("soalMinat", soal("Soal G", { posisi: 0 }), ctx))).toBeInstanceOf(ZodError);
+  });
+
   it("geser merapikan urutan kembar", async () => {
     await prisma.soalMinat.createMany({
       data: [

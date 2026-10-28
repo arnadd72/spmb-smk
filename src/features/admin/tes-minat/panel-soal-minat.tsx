@@ -7,13 +7,13 @@ import { Button } from "@/components/ui/button";
 import { Dialog } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field } from "@/components/ui/field";
-import { Textarea } from "@/components/ui/input";
+import { Input, Textarea } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import { HURUF_MINAT, JURUSAN_MINAT, MAKS_SOAL_MINAT, type SoalMinat } from "./schema-client";
 
-type Isian = { teks: string; opsi: string[]; isActive: boolean };
-const KOSONG: Isian = { teks: "", opsi: ["", "", "", ""], isActive: true };
+type Isian = { teks: string; opsi: string[]; isActive: boolean; posisi: string };
+const KOSONG: Isian = { teks: "", opsi: ["", "", "", ""], isActive: true, posisi: "" };
 const json = { "Content-Type": "application/json" };
 
 /** Kelola soal tes minat bakat: tambah, ubah, urutkan, tampilkan atau sembunyikan, hapus. */
@@ -44,7 +44,9 @@ export function PanelSoalMinat() {
   }, [muat]);
 
   function bukaForm(soal?: SoalMinat) {
-    setIsian(soal ? { teks: soal.teks, opsi: [...soal.opsi], isActive: soal.isActive } : KOSONG);
+    // Soal baru bawaannya paling akhir; soal yang diubah bawaannya nomornya sekarang.
+    const nomor = soal ? (daftar?.findIndex((x) => x.id === soal.id) ?? -1) + 1 : (daftar?.length ?? 0) + 1;
+    setIsian(soal ? { teks: soal.teks, opsi: [...soal.opsi], isActive: soal.isActive, posisi: String(nomor) } : { ...KOSONG, posisi: String(nomor) });
     setGalat({});
     setGalatUmum(undefined);
     setForm({ soal });
@@ -55,7 +57,7 @@ export function PanelSoalMinat() {
     setGalat({});
     setGalatUmum(undefined);
     try {
-      const body = JSON.stringify(isian);
+      const body = JSON.stringify({ ...isian, posisi: isian.posisi.trim() === "" ? undefined : Number(isian.posisi) });
       if (form?.soal) await apiFetch(`/admin/soal-minat/${form.soal.id}`, { method: "PUT", headers: json, body });
       else await apiFetch("/admin/soal-minat", { method: "POST", headers: json, body });
       setForm(null);
@@ -198,6 +200,13 @@ export function PanelSoalMinat() {
               <Textarea rows={2} value={isian.opsi[i]} onChange={(e) => ubahOpsi(i, e.target.value)} />
             </Field>
           ))}
+          <Field
+            label="Tampil di nomor"
+            bantuan={`Isi 1 sampai ${Math.max(1, (daftar?.length ?? 0) + (form?.soal ? 0 : 1))}. Soal lain bergeser otomatis. Kosongkan untuk menaruhnya paling akhir.`}
+            galat={galat.posisi?.[0]}
+          >
+            <Input type="number" inputMode="numeric" min={1} value={isian.posisi} onChange={(e) => setIsian((n) => ({ ...n, posisi: e.target.value }))} className="max-w-28" />
+          </Field>
           <label className="flex min-h-11 items-center gap-3 font-semibold text-tinta">
             <input
               type="checkbox"

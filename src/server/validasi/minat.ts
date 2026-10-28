@@ -24,6 +24,8 @@ export const skemaSoalMinat = z.object({
     .length(JURUSAN_MINAT.length, "Soal harus punya tepat 4 pilihan jawaban (A sampai D)."),
   /** Kosong saat membuat = ditaruh di urutan terakhir. */
   urutan: z.coerce.number().int("Urutan harus bilangan bulat.").min(0).max(10000).optional(),
+  /** Nomor tampil (1 = pertama). Kosong saat membuat = paling akhir, kosong saat mengubah = tidak dipindah. Soal lain bergeser. */
+  posisi: z.coerce.number().int("Nomor harus bilangan bulat.").min(1, "Nomor minimal 1.").max(MAKS_SOAL_MINAT, `Nomor maksimal ${MAKS_SOAL_MINAT}.`).optional(),
   isActive: z.boolean().default(true),
 });
 

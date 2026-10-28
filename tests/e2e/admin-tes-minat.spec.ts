@@ -56,6 +56,17 @@ test.describe("admin: soal tes minat bakat", () => {
     await expect(page.getByText(`${teks} diubah`)).toHaveCount(0);
   });
 
+  test("soal baru bisa langsung ditaruh di nomor pilihan admin", async ({ page }) => {
+    const teks = `${AWALAN} nomor satu ${Date.now()}`;
+    await page.goto("/admin/tes-minat-bakat");
+    await page.getByRole("button", { name: "Tambah soal" }).first().click();
+    await page.getByLabel(/Teks soal/).fill(teks);
+    for (const huruf of ["A", "B", "C", "D"]) await page.getByLabel(new RegExp(`Pilihan ${huruf}`)).fill(`Jawaban ${huruf} untuk uji`);
+    await page.getByLabel("Tampil di nomor").fill("1");
+    await page.getByRole("button", { name: "Simpan" }).click();
+    await expect(page.locator("ol > li").first().locator("p.font-bold")).toHaveText(teks);
+  });
+
   test("geser soal naik mengubah urutan", async ({ page }) => {
     await page.goto("/admin/tes-minat-bakat");
     const pertama = await page.locator("ol > li").nth(1).locator("p.font-bold").innerText();

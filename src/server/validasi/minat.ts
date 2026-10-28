@@ -170,18 +170,14 @@ export const skemaGeserSoalMinat = z.object({ arah: z.enum(["naik", "turun"], { 
 /** Satu jawaban per soal: indeks pilihan (0 = A) atau null bila dilewati. Selalu sepanjang SOAL_MINAT. */
 export type JawabanMinat = (number | null)[];
 
-export const skemaJawabanMinat = z
-  .array(
-    z
-      .number()
-      .int()
-      .min(0)
-      .max(JURUSAN_MINAT.length - 1)
-      .nullable(),
-    { error: "Jawaban tes tidak valid." },
-  )
-  .max(SOAL_MINAT.length, "Jawaban tes tidak valid.")
-  .transform((j): JawabanMinat => SOAL_MINAT.map((_, i) => j[i] ?? null));
+/**
+ * Jawaban untuk `jumlah` soal aktif saat ini. Kelebihan elemen dibuang dan kekurangannya diisi null, sehingga admin yang
+ * mengurangi soal tidak membuat draf lama gagal dikirim. Nilai di luar A-D tetap ditolak.
+ */
+export const skemaJawaban = (jumlah: number) =>
+  z
+    .array(z.number().int().min(0).max(JURUSAN_MINAT.length - 1).nullable(), { error: "Jawaban tes tidak valid." })
+    .transform((j): JawabanMinat => Array.from({ length: jumlah }, (_, i) => j[i] ?? null));
 
 export const jumlahTerjawab = (j: JawabanMinat | undefined) =>
   (j ?? []).filter((x) => x !== null).length;

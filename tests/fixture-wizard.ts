@@ -1,5 +1,5 @@
 import { muatDefinisiField, simpanLangkah, unggahBerkas } from "@/server/services/draf";
-import { SOAL_MINAT } from "@/server/validasi/minat";
+import { SOAL_BAWAAN } from "../prisma/seed-data/soalMinat";
 import type { DefinisiField } from "@/server/validasi/wizard";
 
 export const PNG = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), Buffer.alloc(32, 1)]);
@@ -46,7 +46,7 @@ export function nilaiValid(f: DefinisiField): unknown {
 }
 
 /** Jawaban tes minat bakat contoh: 10 jawaban B (AKL) dan 5 jawaban D (TKR), jadi saran utama AKL. */
-export const JAWABAN_MINAT_CONTOH = SOAL_MINAT.map((_, i) => (i < 10 ? 1 : 3));
+export const JAWABAN_MINAT_CONTOH = SOAL_BAWAAN.map((_, i) => (i < 10 ? 1 : 3));
 
 // NISN unik per pendaftar uji (poin E memblokir NISN ganda); yang pertama di tiap berkas tes tetap 1234567890.
 let urutNisn = 0;

@@ -15,10 +15,10 @@ import { formulirDariToken } from "@/server/services/pdf/formulir";
 import { simpanPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
 import { hitungRekomendasi, muatJurusanAktif } from "@/server/services/rekomendasi";
-import { JURUSAN_MINAT, SOAL_MINAT, VERSI_MINAT } from "@/server/validasi/minat";
+import { VERSI_MINAT } from "@/server/validasi/minat";
 import { skemaLangkah } from "@/server/validasi/wizard";
 import { GalatApi } from "@/server/types/galat";
-import { seedFormField, seedReferensi } from "../../prisma/seed-lib";
+import { seedFormField, seedReferensi, seedSoalMinat } from "../../prisma/seed-lib";
 import { PNG, isiLengkap } from "../fixture-wizard";
 
 async function bersih() {
@@ -31,6 +31,8 @@ async function bersih() {
 beforeAll(async () => {
   await seedReferensi(prisma);
   await seedFormField(prisma);
+  await prisma.soalMinat.deleteMany();
+  await seedSoalMinat(prisma);
 });
 beforeEach(async () => {
   await bersih();
@@ -81,7 +83,7 @@ describe("rekomendasi jurusan dari tes minat bakat (PRD 1.3 butir 65)", () => {
     // Pilihan D (TKR) 9 kali, C (LPK3) 4 kali, sisanya dilewati: tes boleh dikerjakan sebagian.
     await simpanLangkah(token, 3, { minat: [3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2] });
     const minat = (await ambilDraf(token))?.data["3"]?.minat as (number | null)[];
-    expect(minat).toHaveLength(SOAL_MINAT.length);
+    expect(minat).toHaveLength(15);
     expect(minat.slice(-2)).toEqual([null, null]);
     const r = await rekomendasiDraf(token);
     expect(r.versi).toBe(VERSI_MINAT);
@@ -101,17 +103,26 @@ describe("rekomendasi jurusan dari tes minat bakat (PRD 1.3 butir 65)", () => {
     expect(r.filter((p) => p.label === "Paling Sesuai").map((p) => p.kode).sort()).toEqual(["AKL", "MPLB"]);
   });
 
-  it("jawaban di luar A-D atau lebih dari 15 soal ditolak", async () => {
+  it("jawaban di luar A-D atau bukan daftar ditolak; kelebihan elemen dibuang", async () => {
     const { token } = await buatDraf();
     await sampaiLangkah3(token);
     expect((await galat(simpanLangkah(token, 3, { minat: [4] }))).errors?.minat).toBeDefined();
-    expect((await galat(simpanLangkah(token, 3, { minat: Array(SOAL_MINAT.length + 1).fill(0) }))).errors?.minat).toBeDefined();
     expect((await galat(simpanLangkah(token, 3, { minat: "AKL" }))).errors?.minat).toBeDefined();
+    await simpanLangkah(token, 3, { minat: Array(20).fill(0) });
+    expect((await ambilDraf(token))?.data["3"]?.minat).toHaveLength(15);
   });
 
-  it("soal tes sama dengan halaman publik: 15 soal, tiap soal 4 pilihan A-D", () => {
-    expect(SOAL_MINAT).toHaveLength(15);
-    for (const s of SOAL_MINAT) expect(s.opsi).toHaveLength(JURUSAN_MINAT.length);
+  it("jumlah jawaban mengikuti soal aktif: 12 soal aktif berarti 12 jawaban, tanpa soal aktif berarti kosong", async () => {
+    const { token } = await buatDraf();
+    await sampaiLangkah3(token);
+    const soal = await prisma.soalMinat.findMany({ orderBy: { urutan: "asc" } });
+    await prisma.soalMinat.updateMany({ where: { id: { in: soal.slice(12).map((x) => x.id) } }, data: { isActive: false } });
+    await simpanLangkah(token, 3, { minat: Array(15).fill(1) });
+    expect((await ambilDraf(token))?.data["3"]?.minat).toHaveLength(12);
+    await prisma.soalMinat.updateMany({ data: { isActive: false } });
+    await simpanLangkah(token, 3, { minat: [] });
+    expect((await ambilDraf(token))?.data["3"]?.minat).toEqual([]);
+    await prisma.soalMinat.updateMany({ data: { isActive: true } });
   });
 });
 

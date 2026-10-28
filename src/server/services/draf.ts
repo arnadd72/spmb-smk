@@ -6,10 +6,11 @@ import { pastikanKuotaTersedia, terdaftarPerJurusan } from "@/server/services/ku
 import { PERINGATAN_NAMA_TANGGAL, adaNamaTanggalSama, pastikanNisnBelumTerdaftar } from "@/server/services/pendaftarGanda";
 import { ambilPengaturan } from "@/server/services/pengaturan";
 import { penyimpananTemp } from "@/server/services/penyimpanan";
+import { muatSoalMinat } from "@/server/services/soalMinat";
 import { hitungRekomendasi, muatJurusanAktif, type HasilRekomendasi } from "@/server/services/rekomendasi";
 import { GalatApi } from "@/server/types/galat";
 import { KUNCI_INTI, KUNCI_WAJIB } from "@/server/validasi/formField";
-import { skemaJawabanMinat, type JawabanMinat } from "@/server/validasi/minat";
+import { skemaJawaban, type JawabanMinat } from "@/server/validasi/minat";
 import { bersihkanIsianOcr, galatAngkaOcr } from "@/server/validasi/ocr";
 import { KUNCI_FILE_KHUSUS, TOTAL_LANGKAH, skemaLangkah, skemaNilaiUjian, type DefinisiField } from "@/server/validasi/wizard";
 
@@ -268,7 +269,8 @@ export async function hapusBerkas(token: string | undefined, kunci: string, ref:
 
 // ------------------------------------------------------------------ langkah
 
-export type KonteksValidasi = { fields: DefinisiField[] };
+/** `jumlahSoalMinat` = soal tes minat bakat yang aktif sekarang (PRD 1.3 butir 80). */
+export type KonteksValidasi = { fields: DefinisiField[]; jumlahSoalMinat: number };
 
 /**
  * Validasi isian satu langkah terhadap field (form builder) dan aturan khusus. Mengembalikan data bersih.
@@ -292,7 +294,7 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
 
   // Tes minat bakat (langkah 3, opsional; PRD 1.3 butir 65): satu indeks pilihan atau null per soal.
   if (langkah === 3) {
-    const m = skemaJawabanMinat.safeParse(mentah.minat ?? []);
+    const m = skemaJawaban(k.jumlahSoalMinat).safeParse(mentah.minat ?? []);
     if (m.success) hasil.minat = m.data;
     else (galat.minat ??= []).push(m.error.issues[0]?.message ?? "Jawaban tes tidak valid.");
   }
@@ -321,8 +323,8 @@ export function validasiLangkah(langkah: number, input: unknown, berkas: BerkasD
 }
 
 export async function konteksValidasi(): Promise<KonteksValidasi & { konfig: KonfigWizard }> {
-  const [fields, konfig] = await Promise.all([muatDefinisiField(), ambilKonfigWizard()]);
-  return { fields, konfig };
+  const [fields, konfig, soal] = await Promise.all([muatDefinisiField(), ambilKonfigWizard(), muatSoalMinat()]);
+  return { fields, konfig, jumlahSoalMinat: soal.length };
 }
 
 export async function simpanLangkah(

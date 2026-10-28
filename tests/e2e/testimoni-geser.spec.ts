@@ -69,6 +69,13 @@ test.describe("testimoni landing", () => {
     await expect(page.locator('[data-titik-testimoni="0"]')).toHaveAttribute("aria-current", "true", { timeout: 4000 });
   });
 
+  test("lebih dari empat testimoni: semuanya tampil sebagai titik dan kartu (dulu hanya 4 pertama)", async ({ page }) => {
+    await buat(page, 6);
+    await expect(page.locator("[data-titik-testimoni]")).toHaveCount(6);
+    // Kartu terakhir ada di jalur (tiga salinan: 6 x 3 = 18 kartu).
+    await expect(page.locator("[data-slider-testimoni] li", { hasText: "Isi testimoni nomor 6." })).not.toHaveCount(0);
+  });
+
   test("satu testimoni saja: tanpa titik", async ({ page }) => {
     await buat(page, 1);
     await expect(page.getByText(`${AWALAN} 1`).first()).toBeVisible();

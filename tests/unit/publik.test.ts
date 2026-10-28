@@ -85,6 +85,12 @@ describe("landing menampilkan konten dari database", () => {
     expect(d.jurusan).toHaveLength(4);
   });
 
+  it("testimoni: semua yang aktif tampil (lebih dari 4), urut sesuai urutan, yang nonaktif tidak", async () => {
+    for (let i = 1; i <= 7; i++) await buatKonten("testimoni", { nama: `Alumni ${i}`, isi: `Isi ${i}`, urutan: i, isActive: i !== 3 }, ctx);
+    const d = await ambilDataLanding();
+    expect(d.testimoni.map((t) => t.nama)).toEqual(["Alumni 1", "Alumni 2", "Alumni 4", "Alumni 5", "Alumni 6", "Alumni 7"]);
+  });
+
   it("foto tambahan hero: hanya yang aktif, urut sesuai urutan", async () => {
     await buatKonten("hero", { judul: "Kedua", gambar: "/images/h2.webp", urutan: 2, isActive: true }, ctx);
     await buatKonten("hero", { judul: "Pertama", gambar: "/images/h1.webp", urutan: 1, isActive: true }, ctx);

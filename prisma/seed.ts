@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../src/generated/prisma/client";
-import { seedFaq, seedFormField, seedReferensi, seedSuperadmin } from "./seed-lib";
+import { seedFaq, seedFormField, seedReferensi, seedSoalMinat, seedSuperadmin } from "./seed-lib";
 
 // Seed: superadmin dari ADMIN_SEED_USERNAME / ADMIN_SEED_PASSWORD, lalu jurusan, mata pelajaran, bobot,
 // field formulir bawaan, dan FAQ awal. Idempoten.
@@ -20,6 +20,7 @@ async function main() {
     await seedReferensi(prisma);
     await seedFormField(prisma);
     await seedFaq(prisma);
+    await seedSoalMinat(prisma);
     console.log(
       `Referensi: ${await prisma.jurusan.count()} jurusan, ${await prisma.mataPelajaran.count()} mapel, ` +
         `${await prisma.bobotJurusan.count()} bobot, ${await prisma.formField.count()} field formulir, ${await prisma.faq.count()} FAQ.`,

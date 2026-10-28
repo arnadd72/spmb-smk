@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { Prisma, type PrismaClient } from "../src/generated/prisma/client";
 import { FORM_FIELDS } from "./seed-data/formField";
 import { FAQ, JURUSAN } from "./seed-data/referensi";
+import { SOAL_BAWAAN } from "./seed-data/soalMinat";
 
 // Seed idempoten: boleh dijalankan berulang tanpa menduplikasi atau menimpa perubahan panitia
 // pada konten yang sudah ada (jurusan, mapel, bobot, form field hanya dibuat bila belum ada).
@@ -133,5 +134,13 @@ export async function seedFaq(prisma: PrismaClient) {
   if ((await prisma.faq.count()) > 0) return;
   await prisma.faq.createMany({
     data: FAQ.map((x, i) => ({ ...x, keywords: [...x.keywords], urutan: i + 1 })),
+  });
+}
+
+/** Soal tes minat bakat bawaan (PRD 1.3 butir 80). Hanya bila tabel kosong, agar perubahan admin tidak tertimpa. */
+export async function seedSoalMinat(prisma: PrismaClient) {
+  if ((await prisma.soalMinat.count()) > 0) return;
+  await prisma.soalMinat.createMany({
+    data: SOAL_BAWAAN.map((x, i) => ({ teks: x.teks, opsi: [...x.opsi], urutan: i + 1 })),
   });
 }

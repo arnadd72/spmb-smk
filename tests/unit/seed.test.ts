@@ -2,12 +2,13 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { ambilJurusanRingkas } from "@/server/actions/ambilReferensi";
 import { prisma } from "@/server/db/client";
-import { seedFaq, seedFormField, seedReferensi } from "../../prisma/seed-lib";
+import { seedFaq, seedFormField, seedReferensi, seedSoalMinat } from "../../prisma/seed-lib";
 
 beforeAll(async () => {
   await seedReferensi(prisma);
   await seedFormField(prisma);
   await seedFaq(prisma);
+  await seedSoalMinat(prisma);
 });
 
 afterAll(async () => {
@@ -16,6 +17,7 @@ afterAll(async () => {
   await prisma.jurusan.deleteMany();
   await prisma.formField.deleteMany();
   await prisma.faq.deleteMany();
+  await prisma.soalMinat.deleteMany();
   await prisma.$disconnect();
 });
 
@@ -36,10 +38,21 @@ describe("seed referensi", () => {
     expect(await prisma.bobotJurusan.count()).toBe(0);
   });
 
+  it("15 soal tes minat bakat bawaan, berurutan, masing-masing 4 pilihan (PRD 1.3 butir 80)", async () => {
+    const soal = await prisma.soalMinat.findMany({ orderBy: { urutan: "asc" } });
+    expect(soal.map((x) => x.urutan)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1));
+    for (const x of soal) {
+      expect(x.isActive).toBe(true);
+      expect(x.opsi).toHaveLength(4);
+    }
+  });
+
   it("seed idempoten: dijalankan lagi tidak menduplikasi", async () => {
     await seedReferensi(prisma);
     await seedFormField(prisma);
     await seedFaq(prisma);
+    await seedSoalMinat(prisma);
+    expect(await prisma.soalMinat.count()).toBe(15);
     expect(await prisma.jurusan.count()).toBe(4);
     expect(await prisma.faq.count()).toBe(6);
   });

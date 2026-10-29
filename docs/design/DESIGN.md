@@ -32,9 +32,9 @@ Turunan:
 | `primer-tua` (`hijau-tua`) | `#2C5A1C` | Hover tombol utama, judul di atas terang |
 | `hijau-gelap` | `#0D271B` | Footer, latar paling pekat |
 | `hijau-hutan` | `#1B4630` | Latar bagian pernyataan ("Di bawah naungan LP Ma'arif NU...") |
-| `mint` | `#C5D89D` | Latar tes minat-bakat landing, marquee jurusan, panel MPLB, sorotan teks di latar gelap |
+| `mint` | `#C5D89D` | Latar tes minat-bakat landing, marquee jurusan, sorotan teks di latar gelap |
 | `hijau-terang` | `#A3C960` | Sorotan teks di latar `hijau-hutan` |
-| `kunyit` | `#F2C94C` | Aksen kode AKL |
+| `kunyit` | `#F2C94C` | Aksen kode AKL; panel, latar detail, dan hasil tes MPLB; kode MPLB di marquee |
 | `jurusan-lpk3` | `#9B1E57` | Panel dan aksen LPK3 |
 | `jurusan-tkr` | `#24558A` | Panel dan aksen TKR |
 | `primer-tinta` | `#FFFFFF` | Teks di atas tombol utama |
@@ -51,7 +51,7 @@ Pasangan warna di tiap bagian landing:
 | Tes minat-bakat | `mint` | `ink` |
 | Kehidupan sekolah, testimoni | `permukaan` | `ink` |
 | Penutup | `ink` | `kertas` |
-| Panel jurusan | AKL `primer`, MPLB `mint`, LPK3 `jurusan-lpk3`, TKR `jurusan-tkr` | Kode jurusan: AKL `kunyit`, MPLB `ink`, LPK3/TKR `kertas` |
+| Panel jurusan | AKL `primer`, MPLB `kunyit`, LPK3 `jurusan-lpk3`, TKR `jurusan-tkr` | Kode jurusan: AKL `kunyit`, MPLB `ink`, LPK3/TKR `kertas` |
 
 Tema gelap disiapkan lewat atribut `data-tema="gelap"` untuk situs publik (nilainya belum disesuaikan dengan palet baru). Wizard dan admin tetap terang.
 

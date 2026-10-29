@@ -6,7 +6,7 @@ import { cn } from "@/lib/cn";
 import { HURUF_MINAT, JURUSAN_MINAT, poinMinat, type JawabanMinat, type SoalTes } from "./schema-client";
 
 const TAMPILAN: Record<(typeof JURUSAN_MINAT)[number], { nama: string; warna: string }> = {
-  MPLB: { nama: "Manajemen Perkantoran dan Layanan Bisnis", warna: "bg-mint" },
+  MPLB: { nama: "Manajemen Perkantoran dan Layanan Bisnis", warna: "bg-kunyit" },
   AKL: { nama: "Akuntansi dan Keuangan Lembaga", warna: "bg-primer" },
   LPK3: { nama: "Farmasi", warna: "bg-jurusan-lpk3" },
   TKR: { nama: "Teknik Kendaraan Ringan", warna: "bg-jurusan-tkr" },

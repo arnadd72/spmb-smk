@@ -482,7 +482,7 @@ RLS tetap diaktifkan di semua tabel (migrasi terakhir, sama seperti v3.1 Bagian 
 
 Sama seperti v3.1 Bagian 7.5, dengan penyesuaian klien:
 
-- Library: `googleapis` (Node), bukan `google/apiclient` (PHP). Yang diimpor hanya modul Drive v3 (`googleapis/build/src/apis/drive/v3`) dan `OAuth2Client` dari `google-auth-library`, bukan `import { google } from "googleapis"`: paket penuh memuat ratusan API (sekitar 100 MB RAM dan puluhan detik saat dimuat) sehingga Passenger di hosting cPanel 1 GB menyerah dan semua rute yang menyentuh Drive menjawab 502/500 (foto situs tidak tampil).
+- Library: `googleapis` (Node), bukan `google/apiclient` (PHP).
 - Alur OAuth: route handler `src/app/api/v1/admin/google-drive/hubungkan` dan `.../callback`, refresh token disimpan terenkripsi (`src/server/services/penyimpanan/kripto.ts`, pakai `AES-256-GCM` dengan kunci dari env) di tabel `pengaturan`.
 - Scope tetap `drive.file`. Status aplikasi OAuth wajib **"In production"** sebelum go-live (Fase B) — selama Fase A boleh "Testing" karena token di-refresh manual oleh developer.
 - Struktur folder, aturan privasi, kuota, retry, dan ketentuan lain: **tidak berubah dari v3.1 Bagian 7.5.1-7.5.3**, kecuali

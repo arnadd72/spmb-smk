@@ -1,7 +1,5 @@
-// Impor modular, bukan `import { google } from "googleapis"`: paket penuh memuat ratusan API (sekitar 100 MB RAM dan
-// puluhan detik saat pertama dimuat), yang membuat Passenger di hosting cPanel 1 GB menyerah (502). Yang dipakai cuma Drive v3.
-import { drive_v3 } from "googleapis/build/src/apis/drive/v3";
-import { OAuth2Client } from "google-auth-library";
+import { google, type drive_v3 } from "googleapis";
+import type { OAuth2Client } from "google-auth-library";
 import {
   ambilPengaturan,
   ambilPengaturanTerenkripsi,
@@ -27,7 +25,7 @@ export function klienOAuth(): OAuth2Client {
   if (!id || !rahasia || !redirect) {
     throw new Error("GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, dan GOOGLE_DRIVE_REDIRECT_URI belum diisi.");
   }
-  return new OAuth2Client(id, rahasia, redirect);
+  return new google.auth.OAuth2(id, rahasia, redirect);
 }
 
 export function urlOtorisasi(state: string): string {
@@ -52,7 +50,7 @@ export async function hubungkanDrive(kode: string): Promise<{ email: string | nu
   klien.setCredentials(tokens);
   let email: string | null = null;
   try {
-    const about = await new drive_v3.Drive({ auth: klien }).about.get({ fields: "user(emailAddress)" });
+    const about = await google.drive({ version: "v3", auth: klien }).about.get({ fields: "user(emailAddress)" });
     email = about.data.user?.emailAddress ?? null;
   } catch {
     // Email hanya informasi tampilan.
@@ -83,7 +81,7 @@ export async function klienDrive(): Promise<drive_v3.Drive> {
 
   const klien = klienOAuth();
   klien.setCredentials({ refresh_token: refresh });
-  return new drive_v3.Drive({ auth: klien });
+  return google.drive({ version: "v3", auth: klien });
 }
 
 /** ID folder root (mis. "SPMB"); dibuat otomatis bila belum ada. */

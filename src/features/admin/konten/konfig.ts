@@ -14,6 +14,8 @@ export type DefField = {
   awal?: unknown;
   /** Folder Drive untuk unggahan field bertipe "gambar" (SPMB/situs/{kategori}/). */
   kategori?: KategoriMedia;
+  /** Batas isian: tampil sebagai penghitung dan galat langsung saat mengetik (angkanya sama dengan validasi server). */
+  batas?: { karakter?: number; baris?: number; panjangBaris?: number };
 };
 
 export type DefKolom = { kunci: string; label: string; tipe?: "teks" | "tanggal" | "angka" | "status" | "gambar" | "potong" };

@@ -10,14 +10,34 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api-client";
 import type { DefField } from "./konfig";
 import { dariBaris, IsiForm, keBody } from "./panel-konten";
+import { BATAS_JURUSAN } from "./schema-client";
 
 type Ringkas = { kode: string; nama: string; kuota: number; isActive: boolean };
 
 const FIELD: DefField[] = [
   { kunci: "nama", label: "Nama jurusan", tipe: "teks", wajib: true },
-  { kunci: "deskripsi", label: "Deskripsi", tipe: "area" },
-  { kunci: "prospekKarir", label: "Prospek karier", tipe: "daftarTeks", bantuan: "Satu baris satu butir." },
-  { kunci: "keunggulan", label: "Keunggulan", tipe: "daftarTeks", bantuan: "Satu baris satu butir (maksimal 150 baris, 1500 karakter per baris). Baris yang berakhir titik dua, misalnya \"Tempat PKL:\", menjadi judul kelompok. Tidak ada titik atau nomor otomatis: tulis sendiri penandanya (mis. \"1.\" atau \"-\") bila perlu." },
+  {
+    kunci: "deskripsi",
+    label: "Deskripsi",
+    tipe: "area",
+    bantuan: "Paragraf pertama jadi ringkasan di kartu jurusan. Pisahkan paragraf dan daftar dengan baris kosong.",
+    batas: { karakter: BATAS_JURUSAN.deskripsi },
+  },
+  {
+    kunci: "prospekKarir",
+    label: "Prospek karier",
+    tipe: "daftarTeks",
+    bantuan: "Satu baris satu butir.",
+    batas: { baris: BATAS_JURUSAN.prospekBaris, panjangBaris: BATAS_JURUSAN.prospekPanjang },
+  },
+  {
+    kunci: "keunggulan",
+    label: "Keunggulan",
+    tipe: "daftarTeks",
+    bantuan:
+      'Satu baris satu butir. Baris yang berakhir titik dua, misalnya "Tempat PKL:", menjadi judul kelompok. Tidak ada titik atau nomor otomatis: tulis sendiri penandanya (mis. "1." atau "-") bila perlu.',
+    batas: { baris: BATAS_JURUSAN.keunggulanBaris, panjangBaris: BATAS_JURUSAN.keunggulanPanjang },
+  },
   { kunci: "kuota", label: "Kuota (daya tampung)", tipe: "angka", wajib: true, bantuan: "0 sampai 1000." },
   { kunci: "gambar", label: "Foto jurusan", tipe: "gambar", kategori: "jurusan" },
   { kunci: "urutan", label: "Urutan tampil", tipe: "angka", awal: 0 },
@@ -78,8 +98,12 @@ export function PanelJurusan() {
       await muat();
     } catch (e) {
       if (e instanceof ApiError) {
-        setGalat(e.errors ?? {});
-        setGalatUmum(e.errors ? "Periksa isian yang bertanda galat." : e.message);
+        const galatServer = e.errors ?? {};
+        setGalat(galatServer);
+        // Sebut kolom mana yang bermasalah, lalu gulir ke galat pertama (dialog bisa panjang di layar kecil).
+        const bermasalah = FIELD.filter((f) => Object.keys(galatServer).some((k) => k === f.kunci || k.startsWith(`${f.kunci}.`))).map((f) => f.label);
+        setGalatUmum(e.errors ? `Periksa isian yang bertanda galat${bermasalah.length > 0 ? `: ${bermasalah.join(", ")}` : ""}.` : e.message);
+        setTimeout(() => document.querySelector('[id$="-galat"]')?.scrollIntoView({ block: "center" }), 60);
       } else setGalatUmum("Tidak dapat terhubung ke server.");
     } finally {
       setMenyimpan(false);

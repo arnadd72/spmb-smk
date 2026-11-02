@@ -11,8 +11,10 @@ import { Field } from "@/components/ui/field";
 import { Input, Textarea } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ApiError, apiFetch } from "@/lib/api-client";
+import { cn } from "@/lib/cn";
 import { formatTanggal } from "@/lib/format";
 import type { DefField, DefKolom, KonfigKonten } from "./konfig";
+import { pecahBaris, periksaBatasDaftar, pesanKelebihan } from "./schema-client";
 
 type Baris = Record<string, unknown> & { id: string };
 type Daftar = { data: Baris[]; total: number; halaman: number; per: number };
@@ -76,6 +78,31 @@ function Sel({ kolom, baris }: { kolom: DefKolom; baris: Baris }) {
 
 // ---------------------------------------------------------------- form
 
+/** Gabung beberapa pesan galat jadi satu kalimat: maksimal tiga, sisanya diringkas. */
+function ringkasPesan(pesan: string[]): string | undefined {
+  if (pesan.length === 0) return undefined;
+  const tampil = pesan.slice(0, 3).join(" ");
+  return pesan.length > 3 ? `${tampil} Dan ${pesan.length - 3} galat lain.` : tampil;
+}
+
+/** Galat langsung (sebelum disimpan) untuk kolom yang punya batas; angka dan kalimatnya sama dengan validasi server. */
+function galatLangsung(f: DefField, teks: string): string[] {
+  const b = f.batas;
+  if (!b) return [];
+  if (f.tipe === "daftarTeks" && b.baris && b.panjangBaris) return periksaBatasDaftar(pecahBaris(teks), b.panjangBaris, b.baris).map((g) => g.pesan);
+  if (b.karakter) {
+    const p = pesanKelebihan(f.label, teks.trim().length, b.karakter);
+    return p ? [p] : [];
+  }
+  return [];
+}
+
+function ukuranIsian(f: DefField, teks: string): string {
+  const b = f.batas;
+  if (f.tipe === "daftarTeks" && b?.baris) return `${pecahBaris(teks).length} dari ${b.baris} baris (maksimal ${b.panjangBaris} karakter per baris)`;
+  return `${teks.trim().length} dari ${b?.karakter ?? 0} karakter`;
+}
+
 export function IsiForm({
   field,
   nilai,
@@ -90,8 +117,13 @@ export function IsiForm({
   return (
     <div className="flex flex-col gap-4">
       {field.map((f) => {
+        const teksNilai = String(nilai[f.kunci] ?? "");
         // Galat butir daftar datang dengan kunci bertingkat ("keunggulan.2"); tandai kolom induknya.
-        const pesan = galat[f.kunci]?.[0] ?? Object.entries(galat).find(([k]) => k.startsWith(`${f.kunci}.`))?.[1][0];
+        const dariServer = Object.entries(galat)
+          .filter(([k]) => k === f.kunci || k.startsWith(`${f.kunci}.`))
+          .flatMap(([, v]) => v);
+        const langsung = galatLangsung(f, teksNilai);
+        const pesan = ringkasPesan(langsung.length > 0 ? langsung : dariServer);
         if (f.tipe === "centang") {
           return (
             <label key={f.kunci} className="flex min-h-11 items-center gap-3 font-semibold text-tinta">
@@ -110,12 +142,19 @@ export function IsiForm({
             {f.tipe === "gambar" ? (
               <UnggahGambar kategori={f.kategori} nilai={String(nilai[f.kunci] ?? "")} onChange={(v) => ubah(f.kunci, v)} />
             ) : f.tipe === "area" || f.tipe === "html" || f.tipe === "daftarTeks" ? (
-              <Textarea
-                rows={f.tipe === "html" ? 10 : f.tipe === "daftarTeks" ? 5 : 4}
-                value={String(nilai[f.kunci] ?? "")}
-                onChange={(e) => ubah(f.kunci, e.target.value)}
-                className={f.tipe === "html" ? "font-mono text-sm" : undefined}
-              />
+              <>
+                <Textarea
+                  rows={f.tipe === "html" ? 10 : f.tipe === "daftarTeks" ? 5 : 4}
+                  value={teksNilai}
+                  onChange={(e) => ubah(f.kunci, e.target.value)}
+                  className={f.tipe === "html" ? "font-mono text-sm" : undefined}
+                />
+                {f.batas && (
+                  <p data-penghitung className={cn("text-xs tabular-nums", langsung.length > 0 ? "font-semibold text-bahaya" : "text-tinta-redup")}>
+                    {ukuranIsian(f, teksNilai)}
+                  </p>
+                )}
+              </>
             ) : (
               <Input
                 type={f.tipe === "angka" ? "number" : f.tipe === "tanggalwaktu" ? "datetime-local" : "text"}

@@ -158,9 +158,24 @@ describe("jurusan dan pengaturan", () => {
   it("ubah jurusan: butir daftar terlalu panjang ditolak dengan pesan Indonesia di kunci bertingkat", async () => {
     await seedReferensi(prisma);
     const j = (await ambilJurusanAdmin("AKL")) as { nama: string };
-    const e = await galat(ubahJurusan("AKL", { nama: j.nama, kuota: 80, prospekKarir: ["x".repeat(161)], keunggulan: [] }, ctx));
+    const e = await galat(ubahJurusan("AKL", { nama: j.nama, kuota: 80, prospekKarir: ["Aman", "x".repeat(161)], keunggulan: [] }, ctx));
     expect(e).toBeInstanceOf(Error);
-    expect(JSON.stringify((e as { issues?: unknown }).issues)).toContain("Tiap baris maksimal 160 karakter.");
+    const isu = (e as { issues: { path: (string | number)[]; message: string }[] }).issues;
+    expect(isu).toHaveLength(1);
+    expect(isu[0].path).toEqual(["prospekKarir", 1]);
+    expect(isu[0].message).toContain('Baris ke-2 ("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx…") terlalu panjang: 161 karakter, maksimal 160 (kelebihan 1).');
+  });
+
+  it("ubah jurusan: deskripsi kelebihan dan terlalu banyak baris keunggulan menyebut jumlahnya", async () => {
+    await seedReferensi(prisma);
+    const j = (await ambilJurusanAdmin("AKL")) as { nama: string };
+    const dasar = { nama: j.nama, kuota: 80, prospekKarir: [] as string[] };
+    const e1 = (await galat(ubahJurusan("AKL", { ...dasar, deskripsi: "d".repeat(5003), keunggulan: [] }, ctx))) as { issues: { path: string[]; message: string }[] };
+    expect(e1.issues[0].path).toEqual(["deskripsi"]);
+    expect(e1.issues[0].message).toBe("Deskripsi terlalu panjang: 5003 karakter, maksimal 5000 (kelebihan 3 karakter).");
+    const e2 = (await galat(ubahJurusan("AKL", { ...dasar, keunggulan: Array.from({ length: 152 }, (_, i) => `Butir ${i}`) }, ctx))) as { issues: { path: string[]; message: string }[] };
+    expect(e2.issues[0].path).toEqual(["keunggulan"]);
+    expect(e2.issues[0].message).toBe("Terlalu banyak baris: 152, maksimal 150. Hapus 2 baris.");
   });
 
   it("ubah jurusan: deskripsi 5000 dan keunggulan 150 baris x 1500 karakter tersimpan utuh, lebih dari itu ditolak", async () => {

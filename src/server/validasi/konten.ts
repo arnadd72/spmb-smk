@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { BATAS_JURUSAN, periksaBatasDaftar, pesanKelebihan } from "./batasJurusan";
 
 // Skema validasi konten admin (PRD v3.1 13.8, 13.9, 13.10). Satu skema dipakai server dan form klien.
 
@@ -91,22 +92,34 @@ export const skemaFaq = z.object({
   isActive: aktif,
 });
 
+/** Daftar baris. Galat menyebut baris mana yang kepanjangan (path "kolom.N") atau jumlah barisnya (path kolom). */
 const daftarTeks = (maxPanjang: number, maxBaris: number) =>
   z
     .union([z.array(z.string()), z.string()])
     .transform((v) => (Array.isArray(v) ? v : v.split("\n")).map((k) => k.trim()).filter(Boolean))
-    .pipe(
-      z
-        .array(z.string().max(maxPanjang, `Tiap baris maksimal ${maxPanjang} karakter.`))
-        .max(maxBaris, `Maksimal ${maxBaris} baris.`),
-    );
+    .superRefine((baris, ctx) => {
+      for (const g of periksaBatasDaftar(baris, maxPanjang, maxBaris)) {
+        ctx.addIssue({ code: "custom", message: g.pesan, ...(g.baris === null ? {} : { path: [g.baris] }) });
+      }
+    });
+
+/** Deskripsi jurusan: pesan galat menyebut jumlah karakter dan kelebihannya. */
+const deskripsiJurusan = z
+  .string()
+  .trim()
+  .nullish()
+  .superRefine((v, ctx) => {
+    const pesan = pesanKelebihan("Deskripsi", v?.length ?? 0, BATAS_JURUSAN.deskripsi);
+    if (pesan) ctx.addIssue({ code: "custom", message: pesan });
+  })
+  .transform((v) => (v ? v : null));
 
 /** Kode jurusan tidak bisa diubah (dipakai di URL dan tes minat bakat). */
 export const skemaJurusan = z.object({
   nama: teks("Nama jurusan", 3, 150),
-  deskripsi: teksOpsional(5000),
-  prospekKarir: daftarTeks(160, 20),
-  keunggulan: daftarTeks(1500, 150),
+  deskripsi: deskripsiJurusan,
+  prospekKarir: daftarTeks(BATAS_JURUSAN.prospekPanjang, BATAS_JURUSAN.prospekBaris),
+  keunggulan: daftarTeks(BATAS_JURUSAN.keunggulanPanjang, BATAS_JURUSAN.keunggulanBaris),
   kuota: z.coerce.number().int("Kuota harus bilangan bulat.").min(0, "Kuota minimal 0.").max(1000, "Kuota maksimal 1000."),
   gambar,
   urutan,

@@ -21,6 +21,7 @@
 ## Daftar isi
 
 - [Tentang proyek](#tentang-proyek)
+- [Tampilan](#tampilan)
 - [Fitur](#fitur)
 - [Alur pendaftaran](#alur-pendaftaran)
 - [Teknologi](#teknologi)
@@ -46,6 +47,61 @@ pendaftar sungguhan di produksi.
 
 Program keahlian: **AKL** (Akuntansi dan Keuangan Lembaga), **MPLB** (Manajemen Perkantoran dan Layanan Bisnis),
 **LPK3** (Layanan Penunjang Kefarmasian Klinis dan Komunitas), dan **TKR** (Teknik Kendaraan Ringan).
+
+## Tampilan
+
+Desain bernuansa hijau NU dan kuning kunyit, dengan tipografi Poppins. Halaman dirancang mobile-first dan diperiksa aksesibilitasnya secara otomatis (axe, WCAG 2.1 AA) di tes e2e.
+
+<div align="center">
+
+<img src="docs/screenshots/beranda.jpg" alt="Beranda situs SPMB SMK Ma'arif NU 1 Wangon" width="100%">
+
+<sub><b>Beranda</b>: tombol daftar dan cek pendaftaran langsung terlihat, tanpa perlu membuat akun.</sub>
+
+</div>
+
+<br>
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/program-keahlian.jpg" alt="Bagian program keahlian di beranda, kartu bergeser ke samping saat digulir">
+      <br><sub><b>Program keahlian</b> di beranda: gulir vertikal menggeser kartu ke samping.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/halaman-jurusan.jpg" alt="Halaman program keahlian dengan satu blok per jurusan">
+      <br><sub><b>Halaman jurusan</b>: profil, daya tampung, dan prospek karier tiap jurusan.</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/detail-jurusan.jpg" alt="Halaman detail jurusan AKL">
+      <br><sub><b>Detail jurusan</b>: foto, deskripsi, daya tampung, dan prospek karier.</sub>
+    </td>
+    <td width="50%" valign="top">
+      <img src="docs/screenshots/tes-minat-bakat.jpg" alt="Halaman tes minat bakat">
+      <br><sub><b>Tes minat bakat</b>: saran jurusan dari jawaban pendaftar.</sub>
+    </td>
+  </tr>
+</table>
+
+<br>
+
+<div align="center">
+
+<img src="docs/screenshots/hp-beranda.jpg" alt="Beranda di HP" width="30%">
+<img src="docs/screenshots/hp-program-keahlian.jpg" alt="Program keahlian di HP" width="30%">
+<img src="docs/screenshots/hp-detail-jurusan.jpg" alt="Detail jurusan di HP" width="30%">
+
+<sub><b>Di HP</b>: beranda, program keahlian, dan detail jurusan.</sub>
+
+<br><br>
+
+<img src="docs/screenshots/admin-jurusan.jpg" alt="Panel admin, halaman pengelolaan jurusan" width="100%">
+
+<sub><b>Panel admin</b>: menu terkelompok per tugas (pendaftar, aturan pendaftaran, isi situs, sistem). Tampilan di atas dari lingkungan pengembangan dengan data contoh.</sub>
+
+</div>
 
 ## Fitur
 

@@ -44,6 +44,10 @@ yarn-error.log*
 .DS_Store
 *.pem
 
+# Dokumen pengujian (memuat identitas penyusun): PDF dan bahan penyusunnya tidak di-commit
+/docs/Dokumen-Pengujian-SPMB.pdf
+/docs/pengujian/
+
 # Gambar konten hasil unggah saat pengembangan tanpa Supabase
 /public/uploads/
 

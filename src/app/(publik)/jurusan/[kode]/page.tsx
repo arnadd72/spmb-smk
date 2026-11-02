@@ -4,9 +4,11 @@ import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/motion/reveal";
 import { GambarKonten } from "@/features/berita/gambar-konten";
+import { BlokDeskripsi, JAJAR_SAMPING, KelompokButir } from "@/features/jurusan/blok-deskripsi";
 import { TAMPIL_JURUSAN, TAMPIL_STANDAR } from "@/features/jurusan/tampil";
 import { fotoJurusan } from "@/lib/aset-bawaan";
 import { cn } from "@/lib/cn";
+import { paragrafPertama } from "@/lib/deskripsi-jurusan";
 import { kelompokkanKeunggulan } from "@/lib/keunggulan-jurusan";
 import { ambilDaftarJurusan, ambilJurusanPublik } from "@/server/actions/ambilPublik";
 
@@ -23,7 +25,7 @@ async function cari(kode: string) {
 export async function generateMetadata({ params }: PageProps<"/jurusan/[kode]">) {
   const { kode } = await params;
   const j = await cari(kode);
-  return j ? { title: `${j.nama} (${j.kode})`, description: j.deskripsi } : { title: "Jurusan tidak ditemukan" };
+  return j ? { title: `${j.nama} (${j.kode})`, description: paragrafPertama(j.deskripsi) } : { title: "Jurusan tidak ditemukan" };
 }
 
 export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kode]">) {
@@ -39,8 +41,10 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
   return (
     <article>
       <header className={cn("py-12 lg:py-20", t.latar, t.teks)}>
-        <div className="wadah grid items-end gap-8 lg:grid-cols-[1.2fr_1fr] lg:gap-16">
-          <div>
+        {/* Desktop: baris atas berisi link, kode, dan nama jurusan di kiri; foto kecil di kanan, sejajar dengan baris paling atas.
+            Deskripsi ada di bawahnya selebar penuh, jadi memanjang ke samping dan tidak pernah menabrak foto. HP: judul, foto, deskripsi. */}
+        <div className="wadah grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)] lg:gap-x-12 lg:gap-y-8">
+          <div className="lg:col-start-1 lg:row-start-1">
             <Link href="/jurusan" className="inline-flex min-h-11 items-center text-sm font-bold underline underline-offset-4">
               Semua program keahlian
             </Link>
@@ -48,11 +52,15 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
               {j.kode}
             </h1>
             <p className="mt-5 max-w-[26ch] text-[clamp(1.35rem,2.4vw,1.9rem)] font-bold leading-tight">{j.nama}</p>
-            <p className="mt-3 max-w-[56ch] text-lg font-medium">{j.deskripsi}</p>
           </div>
           {foto && (
-            <div className="relative aspect-[16/10] overflow-hidden rounded-kartu">
-              <GambarKonten src={foto.src} alt={foto.alt} prioritas sizes="(min-width: 1024px) 40vw, 100vw" className={foto.posisi} />
+            <div className="relative aspect-[16/10] overflow-hidden rounded-kartu lg:col-start-2 lg:row-start-1 lg:self-start">
+              <GambarKonten src={foto.src} alt={foto.alt} prioritas sizes="(min-width: 1024px) 24rem, 100vw" className={foto.posisi} />
+            </div>
+          )}
+          {j.deskripsi && (
+            <div className="lg:col-span-2 lg:row-start-2">
+              <BlokDeskripsi teks={j.deskripsi} kelasTeks="font-medium" kelasKartu="bg-ink/15" />
             </div>
           )}
         </div>
@@ -104,20 +112,11 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
       {keunggulan.length > 0 && (
         <section aria-labelledby="keunggulan" className="wadah pb-12 lg:pb-20">
           <h2 id="keunggulan" className="text-2xl font-bold text-ink lg:text-3xl">
-            Keunggulan dan kerja sama
+            Keunggulan
           </h2>
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
+          <div className={cn("mt-6", JAJAR_SAMPING)}>
             {keunggulan.map((k, i) => (
-              <div key={i} className="rounded-kartu border border-garis bg-permukaan p-6 lg:p-8">
-                {k.judul && <h3 className="text-lg font-bold text-ink">{k.judul}</h3>}
-                {k.butir.length > 0 && (
-                  <ul className={cn("list-disc space-y-1.5 pl-5 text-tinta", k.judul && "mt-3")}>
-                    {k.butir.map((b, n) => (
-                      <li key={n}>{b}</li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+              <KelompokButir key={i} k={k} kelas="border border-garis bg-permukaan text-tinta lg:p-8" />
             ))}
           </div>
         </section>

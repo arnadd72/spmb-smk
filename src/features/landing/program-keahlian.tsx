@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ArrowRightIcon, CalculatorIcon, PillIcon } from "@phosphor-icons/react";
 import { useGsapPublik } from "@/components/motion/use-gsap";
 import { GambarKonten } from "@/features/berita/gambar-konten";
@@ -40,6 +40,42 @@ function Bentuk({ ikon }: { ikon?: "kalkulator" | "obat" }) {
   );
 }
 
+/**
+ * Ringkasan deskripsi: hanya paragraf pertama, dipotong 4 baris supaya ukuran kartu tetap. "Baca selengkapnya" (ke bagian
+ * jurusan itu di /jurusan) muncul hanya bila teks memang terpotong atau masih ada paragraf lanjutan.
+ */
+function DeskripsiRingkas({ teks, kode }: { teks: string; kode: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [terpotong, setTerpotong] = useState(false);
+  const [awal, ...lanjutan] = teks.trim().split(/\n\s*\n/);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const ukur = () => setTerpotong(el.scrollHeight > el.clientHeight + 1);
+    ukur();
+    const pengamat = new ResizeObserver(ukur);
+    pengamat.observe(el);
+    return () => pengamat.disconnect();
+  }, [teks]);
+
+  return (
+    <>
+      <p ref={ref} className="mt-2 line-clamp-4 max-w-[48ch] text-sm lg:text-[0.9375rem]">
+        {awal}
+      </p>
+      {(terpotong || lanjutan.length > 0) && (
+        <Link
+          href={`/jurusan#${kode.toLowerCase()}`}
+          className="inline-flex min-h-11 w-fit items-center text-sm font-bold underline decoration-2 underline-offset-4"
+        >
+          Baca selengkapnya
+        </Link>
+      )}
+    </>
+  );
+}
+
 function Panel({ j }: { j: JurusanLanding }) {
   const t = TAMPIL[j.kode] ?? { warna: "bg-permukaan text-ink", kode: "text-primer" };
   const foto = fotoJurusan(j.kode, j.nama, j.gambar);
@@ -58,7 +94,7 @@ function Panel({ j }: { j: JurusanLanding }) {
           {j.kode}
         </p>
         <h3 className="mt-4 max-w-[24ch] text-lg font-bold leading-tight sm:text-xl lg:text-2xl">{j.nama}</h3>
-        <p className="mt-2 max-w-[48ch] text-sm lg:text-[0.9375rem]">{j.deskripsi}</p>
+        <DeskripsiRingkas teks={j.deskripsi} kode={j.kode} />
         <ul className="mt-3 flex flex-wrap gap-1.5">
           {j.prospekKarir.map((k) => (
             <li key={k} className="rounded-full border border-current/40 px-2.5 py-0.5 text-xs font-semibold">

@@ -17,7 +17,7 @@ const FIELD: DefField[] = [
   { kunci: "nama", label: "Nama jurusan", tipe: "teks", wajib: true },
   { kunci: "deskripsi", label: "Deskripsi", tipe: "area" },
   { kunci: "prospekKarir", label: "Prospek karier", tipe: "daftarTeks", bantuan: "Satu baris satu butir." },
-  { kunci: "keunggulan", label: "Keunggulan", tipe: "daftarTeks", bantuan: "Satu baris satu butir (maksimal 150 baris, 1500 karakter per baris). Baris yang berakhir titik dua, misalnya \"Tempat PKL:\", menjadi judul kelompok; nomor di depan baris dibuang otomatis." },
+  { kunci: "keunggulan", label: "Keunggulan", tipe: "daftarTeks", bantuan: "Satu baris satu butir (maksimal 150 baris, 1500 karakter per baris). Baris yang berakhir titik dua, misalnya \"Tempat PKL:\", menjadi judul kelompok. Tidak ada titik atau nomor otomatis: tulis sendiri penandanya (mis. \"1.\" atau \"-\") bila perlu." },
   { kunci: "kuota", label: "Kuota (daya tampung)", tipe: "angka", wajib: true, bantuan: "0 sampai 1000." },
   { kunci: "gambar", label: "Foto jurusan", tipe: "gambar", kategori: "jurusan" },
   { kunci: "urutan", label: "Urutan tampil", tipe: "angka", awal: 0 },

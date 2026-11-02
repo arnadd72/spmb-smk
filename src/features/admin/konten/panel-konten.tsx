@@ -90,7 +90,8 @@ export function IsiForm({
   return (
     <div className="flex flex-col gap-4">
       {field.map((f) => {
-        const pesan = galat[f.kunci]?.[0];
+        // Galat butir daftar datang dengan kunci bertingkat ("keunggulan.2"); tandai kolom induknya.
+        const pesan = galat[f.kunci]?.[0] ?? Object.entries(galat).find(([k]) => k.startsWith(`${f.kunci}.`))?.[1][0];
         if (f.tipe === "centang") {
           return (
             <label key={f.kunci} className="flex min-h-11 items-center gap-3 font-semibold text-tinta">

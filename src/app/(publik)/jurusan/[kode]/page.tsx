@@ -7,6 +7,7 @@ import { GambarKonten } from "@/features/berita/gambar-konten";
 import { TAMPIL_JURUSAN, TAMPIL_STANDAR } from "@/features/jurusan/tampil";
 import { fotoJurusan } from "@/lib/aset-bawaan";
 import { cn } from "@/lib/cn";
+import { kelompokkanKeunggulan } from "@/lib/keunggulan-jurusan";
 import { ambilDaftarJurusan, ambilJurusanPublik } from "@/server/actions/ambilPublik";
 
 export const revalidate = 300;
@@ -32,6 +33,7 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
 
   const t = TAMPIL_JURUSAN[j.kode] ?? TAMPIL_STANDAR;
   const foto = fotoJurusan(j.kode, j.nama, j.gambar);
+  const keunggulan = kelompokkanKeunggulan(j.keunggulan);
   const lainnya = (await ambilDaftarJurusan().catch(() => [])).filter((x) => x.kode !== j.kode);
 
   return (
@@ -96,18 +98,30 @@ export default async function DetailJurusan({ params }: PageProps<"/jurusan/[kod
               </li>
             ))}
           </ul>
-          {j.keunggulan.length > 0 && (
-            <>
-              <h2 className="mt-8 text-2xl font-bold text-ink">Keunggulan</h2>
-              <ul className="mt-4 list-disc space-y-1.5 pl-5 text-tinta">
-                {j.keunggulan.map((k) => (
-                  <li key={k}>{k}</li>
-                ))}
-              </ul>
-            </>
-          )}
         </Reveal>
       </div>
+
+      {keunggulan.length > 0 && (
+        <section aria-labelledby="keunggulan" className="wadah pb-12 lg:pb-20">
+          <h2 id="keunggulan" className="text-2xl font-bold text-ink lg:text-3xl">
+            Keunggulan dan kerja sama
+          </h2>
+          <div className="mt-6 grid gap-5 md:grid-cols-2">
+            {keunggulan.map((k, i) => (
+              <div key={i} className="rounded-kartu border border-garis bg-permukaan p-6 lg:p-8">
+                {k.judul && <h3 className="text-lg font-bold text-ink">{k.judul}</h3>}
+                {k.butir.length > 0 && (
+                  <ul className={cn("list-disc space-y-1.5 pl-5 text-tinta", k.judul && "mt-3")}>
+                    {k.butir.map((b, n) => (
+                      <li key={n}>{b}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <div className="wadah pb-16 lg:pb-24">
         <div className="flex flex-col items-start justify-between gap-6 rounded-kartu bg-ink p-7 text-kertas sm:p-10 lg:flex-row lg:items-center">

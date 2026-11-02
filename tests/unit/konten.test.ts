@@ -155,6 +155,30 @@ describe("jurusan dan pengaturan", () => {
     expect((await prisma.auditLog.findFirst({ where: { aksi: "jurusan.ubah" } }))?.entitasId).toBe("AKL");
   });
 
+  it("ubah jurusan: butir daftar terlalu panjang ditolak dengan pesan Indonesia di kunci bertingkat", async () => {
+    await seedReferensi(prisma);
+    const j = (await ambilJurusanAdmin("AKL")) as { nama: string };
+    const e = await galat(ubahJurusan("AKL", { nama: j.nama, kuota: 80, prospekKarir: ["x".repeat(161)], keunggulan: [] }, ctx));
+    expect(e).toBeInstanceOf(Error);
+    expect(JSON.stringify((e as { issues?: unknown }).issues)).toContain("Tiap baris maksimal 160 karakter.");
+  });
+
+  it("ubah jurusan: deskripsi 5000 dan keunggulan 150 baris x 1500 karakter tersimpan utuh, lebih dari itu ditolak", async () => {
+    await seedReferensi(prisma);
+    const j = (await ambilJurusanAdmin("AKL")) as { nama: string };
+    const dasar = { nama: j.nama, kuota: 80, prospekKarir: [] as string[] };
+    const baris = Array.from({ length: 150 }, (_, i) => {
+      const awal = `${i + 1}. `;
+      return awal + "k".repeat(1500 - awal.length);
+    });
+    const baru = (await ubahJurusan("AKL", { ...dasar, deskripsi: "d".repeat(5000), keunggulan: baris }, ctx)) as { deskripsi: string; keunggulan: string[] };
+    expect(baru.deskripsi.length).toBe(5000);
+    expect(baru.keunggulan).toHaveLength(150);
+    expect(baru.keunggulan[149].length).toBe(1500);
+    expect(await galat(ubahJurusan("AKL", { ...dasar, deskripsi: "d".repeat(5001), keunggulan: [] }, ctx))).toBeDefined();
+    expect(await galat(ubahJurusan("AKL", { ...dasar, keunggulan: [...baris, "lebih"] }, ctx))).toBeDefined();
+  });
+
   it("jurusan nonaktif hilang dari halaman publik (404)", async () => {
     await seedReferensi(prisma);
     const j = (await ambilJurusanAdmin("TKR")) as { nama: string; kuota: number };

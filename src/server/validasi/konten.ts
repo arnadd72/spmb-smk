@@ -91,17 +91,22 @@ export const skemaFaq = z.object({
   isActive: aktif,
 });
 
-const daftarTeks = z
-  .union([z.array(z.string()), z.string()])
-  .transform((v) => (Array.isArray(v) ? v : v.split("\n")).map((k) => k.trim()).filter(Boolean))
-  .pipe(z.array(z.string().max(160)).max(20));
+const daftarTeks = (maxPanjang: number, maxBaris: number) =>
+  z
+    .union([z.array(z.string()), z.string()])
+    .transform((v) => (Array.isArray(v) ? v : v.split("\n")).map((k) => k.trim()).filter(Boolean))
+    .pipe(
+      z
+        .array(z.string().max(maxPanjang, `Tiap baris maksimal ${maxPanjang} karakter.`))
+        .max(maxBaris, `Maksimal ${maxBaris} baris.`),
+    );
 
 /** Kode jurusan tidak bisa diubah (dipakai di URL dan tes minat bakat). */
 export const skemaJurusan = z.object({
   nama: teks("Nama jurusan", 3, 150),
-  deskripsi: teksOpsional(3000),
-  prospekKarir: daftarTeks,
-  keunggulan: daftarTeks,
+  deskripsi: teksOpsional(5000),
+  prospekKarir: daftarTeks(160, 20),
+  keunggulan: daftarTeks(1500, 150),
   kuota: z.coerce.number().int("Kuota harus bilangan bulat.").min(0, "Kuota minimal 0.").max(1000, "Kuota maksimal 1000."),
   gambar,
   urutan,

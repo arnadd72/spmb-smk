@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { FormLogin } from "@/features/admin/auth/form-login";
 import { ambilSesiAdmin } from "@/server/auth/verifikasiSesi";
+import { siteKeyTurnstile } from "@/server/services/turnstile";
 
 export const metadata = { title: "Masuk panitia" };
 
@@ -13,7 +14,7 @@ export default async function HalamanLogin() {
       <h1 className="mt-2 text-4xl font-extrabold text-tinta">Masuk panitia SPMB</h1>
       <p className="mt-2 text-tinta-redup">Khusus petugas panitia dan operator konten.</p>
       <div className="mt-8 rounded-kartu border border-garis bg-permukaan p-6 shadow-kartu">
-        <FormLogin />
+        <FormLogin siteKey={siteKeyTurnstile()} />
       </div>
     </main>
   );

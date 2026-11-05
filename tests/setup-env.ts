@@ -5,4 +5,7 @@ const urlTest = process.env.TEST_DATABASE_URL ?? "postgresql://spmb:spmb_dev@loc
 process.env.DATABASE_URL = urlTest;
 process.env.DIRECT_URL = urlTest;
 process.env.JWT_SECRET = "rahasia-uji-jwt-yang-cukup-panjang-32-karakter-lebih";
-process.env.ENCRYPTION_KEY = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+// Captcha mati secara bawaan di test; test captcha mengisinya sendiri.
+process.env.TURNSTILE_SITE_KEY = "";
+process.env.TURNSTILE_SECRET_KEY = "";
+process.env.ENCRYPTION_KEY ="0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";

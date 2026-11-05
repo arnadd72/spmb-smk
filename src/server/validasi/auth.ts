@@ -3,6 +3,8 @@ import { z } from "zod";
 export const skemaLogin = z.object({
   username: z.string().trim().min(1, "Username wajib diisi.").max(100),
   password: z.string().min(1, "Password wajib diisi.").max(200),
+  // Token Cloudflare Turnstile (PRD 1.3 butir 86). Opsional di skema: wajib atau tidaknya ditentukan server.
+  captchaToken: z.string().max(4096).optional(),
 });
 
 export type InputLogin = z.infer<typeof skemaLogin>;

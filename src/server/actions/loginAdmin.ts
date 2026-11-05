@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/server/db/client";
 import { buatToken, type PeranAdmin } from "@/server/auth/sesi";
 import { catatAudit } from "@/server/services/audit";
+import { periksaTurnstile } from "@/server/services/turnstile";
 import { GalatApi } from "@/server/types/galat";
 import type { InputLogin } from "@/server/validasi/auth";
 
@@ -22,6 +23,11 @@ export type HasilLogin = {
 };
 
 export async function loginAdmin(input: InputLogin, ip?: string): Promise<HasilLogin> {
+  // Captcha dulu (PRD 1.3 butir 86): bot yang gagal captcha tidak menyentuh database dan tidak menambah hitungan gagal.
+  if (!(await periksaTurnstile(input.captchaToken, ip))) {
+    throw new GalatApi(400, "CAPTCHA_GAGAL", "Verifikasi captcha gagal. Centang ulang captcha lalu coba lagi.");
+  }
+
   const username = input.username.trim().toLowerCase();
   const sejak = new Date(Date.now() - JENDELA_MENIT * 60_000);
 
